@@ -7,6 +7,10 @@
   let arena: DiceArena3D | null = null;
   let isCollapsed = $state(false);
 
+  const currentRoll = $derived(
+    rollState.mode === 'quick' ? rollState.latestQuickRoll : rollState.latestRound,
+  );
+
   onMount(() => {
     if (canvasElement) {
       arena = new DiceArena3D(canvasElement, {
@@ -75,7 +79,10 @@
       <div class="hud-overlay" aria-hidden="true">
         <div class="hud-top">
           <div class="hud-pill round-badge">
-            {#if rollState.isComplete}
+            {#if rollState.mode === 'quick'}
+              <span class="status-dot green"></span>
+              <span>Quick Roll (Free)</span>
+            {:else if rollState.isComplete}
               <span class="status-dot green"></span>
               <span>Series Complete ({rollState.rounds.length}/{rollState.seriesLength})</span>
             {:else if rollState.rounds.length === 0}
@@ -93,15 +100,15 @@
         </div>
 
         <!-- Latest Values Banner at Bottom of Viewport -->
-        {#if rollState.latestRound}
+        {#if currentRoll}
           <div class="hud-bottom">
             <div class="results-hud-card">
               <span class="results-title">
-                Round #{rollState.latestRound.roundIndex + 1}:
+                {rollState.mode === 'quick' ? 'Quick Roll:' : `Round #${currentRoll.roundIndex + 1}:`}
               </span>
 
               <div class="hud-values-row">
-                {#each rollState.latestRound.values as val, idx (idx)}
+                {#each currentRoll.values as val, idx (idx)}
                   {#if rollState.faces === 2}
                     <span class="hud-value-badge coin" class:heads={val === 1} class:tails={val === 2}>
                       {val === 1 ? 'HEADS' : 'TAILS'}
@@ -114,15 +121,91 @@
                 {/each}
               </div>
 
-              {#if rollState.faces !== 2 && rollState.latestRound.values.length > 1}
+              {#if rollState.faces !== 2 && currentRoll.values.length > 1}
                 <span class="hud-sum-badge">
-                  Sum: <strong>{rollState.latestRound.sum}</strong>
+                  Sum: <strong>{currentRoll.sum}</strong>
                 </span>
               {/if}
             </div>
           </div>
         {/if}
       </div>
+    </div>
+
+    <!-- Attached Roll Control Toolbar (Issue #9) -->
+    <div class="arena-toolbar" role="toolbar" aria-label="Roll controls">
+      {#if rollState.mode === 'quick'}
+        <button
+          type="button"
+          class="action-btn primary-btn"
+          disabled={rollState.isRolling}
+          onclick={() => rollState.executeQuickRoll()}
+        >
+          {#if rollState.faces === 2}
+            🪙 Flip {rollState.countPerRoll === 1 ? 'Coin' : `${rollState.countPerRoll} Coins`}
+          {:else}
+            🎲 Roll {rollState.countPerRoll}d{rollState.faces}
+          {/if}
+        </button>
+
+        <button
+          type="button"
+          class="action-btn secondary-btn btn-clear-quick"
+          disabled={rollState.isRolling || rollState.quickRolls.length === 0}
+          onclick={() => rollState.clearQuickRolls()}
+          aria-label="Clear quick roll feed"
+        >
+          ↺ Clear Feed
+        </button>
+      {:else}
+        <button
+          type="button"
+          class="action-btn primary-btn"
+          disabled={rollState.isRolling || rollState.isComplete}
+          onclick={() => rollState.rollNextRound()}
+        >
+          {#if rollState.isComplete}
+            Series Complete ({rollState.rounds.length}/{rollState.seriesLength})
+          {:else}
+            Roll Round ({rollState.rounds.length + 1}/{rollState.seriesLength})
+          {/if}
+        </button>
+
+        <button
+          type="button"
+          class="action-btn secondary-btn"
+          class:auto-active={rollState.isAutoRolling}
+          disabled={(rollState.isRolling && !rollState.isAutoRolling) || rollState.isComplete}
+          onclick={() => {
+            if (rollState.isAutoRolling) {
+              rollState.stopAutoRoll();
+            } else {
+              rollState.autoRollSeries();
+            }
+          }}
+        >
+          {rollState.isAutoRolling ? '⏹ Stop Auto-Roll' : `⚡ Auto-Roll Series (${rollState.seriesLength})`}
+        </button>
+
+        <button
+          type="button"
+          class="action-btn secondary-btn btn-reset-series"
+          disabled={rollState.isRolling}
+          onclick={() => rollState.resetCurrentSeries()}
+        >
+          ↺ Reset
+        </button>
+      {/if}
+
+      {#if rollState.isRolling && !rollState.instantMode}
+        <button
+          type="button"
+          class="action-btn btn-skip"
+          onclick={() => rollState.skipAnimation()}
+        >
+          ⏩ Skip Animation
+        </button>
+      {/if}
     </div>
   </div>
 </section>
@@ -176,6 +259,9 @@
 
   .arena-body {
     width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 0.65rem;
   }
 
   .arena-body.collapsed {
@@ -185,8 +271,8 @@
   .arena-viewport {
     position: relative;
     width: 100%;
-    height: 460px;
-    max-height: 460px;
+    height: 400px;
+    max-height: 400px;
     background: radial-gradient(circle at center, #111827 0%, #030712 100%);
     border: 1px solid rgba(75, 85, 99, 0.4);
     border-radius: 0.75rem;
@@ -195,9 +281,9 @@
 
   @media (max-width: 860px) {
     .arena-viewport {
-      height: 230px;
-      min-height: 230px;
-      max-height: 230px;
+      height: 220px;
+      min-height: 220px;
+      max-height: 220px;
     }
   }
 
@@ -359,8 +445,90 @@
     color: #38bdf8;
   }
 
+  /* Attached Roll Toolbar */
+  .arena-toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.65rem 0.75rem;
+    background: rgba(17, 24, 39, 0.85);
+    border: 1px solid rgba(75, 85, 99, 0.4);
+    border-radius: 0.5rem;
+  }
+
+  .action-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-block-size: 40px;
+    padding: 0.6rem 1rem;
+    font-size: 0.9rem;
+    font-weight: 700;
+    border-radius: 0.5rem;
+    cursor: pointer;
+    transition: all 0.15s ease;
+  }
+
+  .primary-btn {
+    flex: 2;
+    min-inline-size: 130px;
+    background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%);
+    border: 1px solid #38bdf8;
+    color: #ffffff;
+    box-shadow: 0 4px 12px rgba(2, 132, 199, 0.3);
+  }
+
+  .primary-btn:hover:not(:disabled) {
+    background: linear-gradient(135deg, #0369a1 0%, #075985 100%);
+  }
+
+  .secondary-btn {
+    flex: 1;
+    min-inline-size: 90px;
+    background: #1e293b;
+    border: 1px solid #475569;
+    color: #f1f5f9;
+  }
+
+  .secondary-btn:hover:not(:disabled) {
+    background: #334155;
+  }
+
+  .secondary-btn.auto-active {
+    background: #be123c;
+    border-color: #f43f5e;
+    color: #ffffff;
+    animation: pulse 1.5s infinite;
+  }
+
+  .btn-skip {
+    background: transparent;
+    border: 1px solid #ca8a04;
+    color: #facc15;
+    padding: 0.5rem 0.75rem;
+  }
+
+  .btn-skip:hover:not(:disabled) {
+    background: rgba(202, 138, 4, 0.15);
+  }
+
+  .btn-clear-quick, .btn-reset-series {
+    flex: 0 1 auto;
+  }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.8; }
+  }
+
   button:focus-visible {
     outline: 2px solid #38bdf8;
     outline-offset: 2px;
+  }
+
+  button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
   }
 </style>

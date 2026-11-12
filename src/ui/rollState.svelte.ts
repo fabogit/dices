@@ -7,8 +7,15 @@ import {
   type RoundResult,
   type SeriesSummary,
 } from '../core/types';
-import { computePlayerLeaderboard, RollSeriesEngine } from '../core/engine';
+import {
+  computePlayerLeaderboard,
+  computeRoundResult,
+  RollSeriesEngine,
+} from '../core/engine';
+import { LocalCryptoRollProvider } from '../core/provider';
 import type { DiceArena3D } from '../three/DiceArena3D';
+
+export type AppMode = 'quick' | 'series';
 
 const STORAGE_KEY = 'dices_history_v1';
 const PLAYER_PALETTE = ['#38bdf8', '#34d399', '#f472b6', '#fbbf24', '#a78bfa', '#fb923c'];
@@ -46,6 +53,9 @@ function saveHistoryToStorage(history: SeriesSummary[]): void {
 }
 
 export class RollState {
+  // Application Mode ('quick' or 'series')
+  mode: AppMode = $state('series');
+
   // Reactive Configurations
   faces: DieFaces = $state(6);
   countPerRoll: number = $state(1);
@@ -66,14 +76,18 @@ export class RollState {
   // Announcer text for assistive technologies (aria-live="polite")
   announcerMessage: string = $state('');
 
-  // History & Reactive Rounds
+  // History & Reactive Rounds (Series mode)
   history: SeriesSummary[] = $state(loadHistoryFromStorage());
   rounds: RoundResult[] = $state([]);
+
+  // Session-only Quick Rolls (Quick mode, capped at 25)
+  quickRolls: RoundResult[] = $state([]);
 
   // Internal Engine
   private engine: RollSeriesEngine;
   private arena: DiceArena3D | null = null;
   private autoRollAborted: boolean = false;
+  private cryptoProvider: LocalCryptoRollProvider = new LocalCryptoRollProvider();
 
   constructor() {
     this.engine = this.createEngine();
@@ -121,6 +135,10 @@ export class RollState {
     return this.rounds.length > 0 ? this.rounds[this.rounds.length - 1] : null;
   }
 
+  get latestQuickRoll(): RoundResult | null {
+    return this.quickRolls.length > 0 ? this.quickRolls[0] : null;
+  }
+
   get summary(): SeriesSummary {
     return this.engine.getSummary();
   }
@@ -131,6 +149,16 @@ export class RollState {
 
   get leaderboard(): PlayerLeaderboardEntry[] {
     return computePlayerLeaderboard(this.history, this.players);
+  }
+
+  // Mode switching
+  setMode(mode: AppMode): void {
+    if (this.mode === mode) return;
+    this.stopAutoRoll();
+    this.skipAnimation();
+    this.mode = mode;
+    this.announcerMessage =
+      mode === 'quick' ? 'Switched to Quick Roll mode.' : 'Switched to Series mode.';
   }
 
   // Arena attachment
@@ -191,7 +219,45 @@ export class RollState {
     this.resetCurrentSeries();
   }
 
-  // Rolling actions
+  // Quick Roll action
+  async executeQuickRoll(): Promise<RoundResult | null> {
+    if (this.isRolling) {
+      return null;
+    }
+
+    this.isRolling = true;
+    try {
+      const values = await this.cryptoProvider.rollRound(this.faces, this.countPerRoll);
+      const round = computeRoundResult(this.quickRolls.length, values, this.faces);
+      this.quickRolls = [round, ...this.quickRolls.slice(0, 24)];
+
+      if (this.arena) {
+        await this.arena.rollVisual(this.faces, round.values, {
+          skipAnimation: this.instantMode,
+        });
+      }
+
+      if (this.faces === 2) {
+        const sideNames = round.values.map((v) => (v === 1 ? 'Heads' : 'Tails')).join(', ');
+        const outcome =
+          round.roundWinnerSide === 'TIE' ? 'Tied.' : `${round.roundWinnerSide} wins.`;
+        this.announcerMessage = `Quick roll: ${sideNames}. ${outcome}`;
+      } else {
+        this.announcerMessage = `Quick roll: Rolled ${round.values.join(', ')}. Sum: ${round.sum}.`;
+      }
+
+      return round;
+    } finally {
+      this.isRolling = false;
+    }
+  }
+
+  clearQuickRolls(): void {
+    this.quickRolls = [];
+    this.announcerMessage = 'Quick roll feed cleared.';
+  }
+
+  // Series Rolling actions
   async rollNextRound(): Promise<RoundResult | null> {
     if (this.isRolling || this.isComplete) {
       return null;

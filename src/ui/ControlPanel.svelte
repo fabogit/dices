@@ -13,18 +13,6 @@
     return f === 2 ? 'Coin (d2)' : `d${f}`;
   }
 
-  function handleRollClick() {
-    rollState.rollNextRound();
-  }
-
-  function handleAutoRollClick() {
-    if (rollState.isAutoRolling) {
-      rollState.stopAutoRoll();
-    } else {
-      rollState.autoRollSeries();
-    }
-  }
-
   let isCollapsed = $state(false);
 </script>
 
@@ -114,93 +102,84 @@
     </div>
   </div>
 
-  <!-- Series Length (K) -->
-  <div class="field-group">
-    <div class="field-label-row">
-      <label for="series-length-input" class="field-label">
-        Series Rounds (K):
-        <strong class="count-value">{rollState.seriesLength}</strong>
-      </label>
-      <span class="field-hint">1 to 21 rounds</span>
-    </div>
+  <!-- Series Length (K) - Shown only in Series mode -->
+  {#if rollState.mode === 'series'}
+    <div class="field-group">
+      <div class="field-label-row">
+        <label for="series-length-input" class="field-label">
+          Series Rounds (K):
+          <strong class="count-value">{rollState.seriesLength}</strong>
+        </label>
+        <span class="field-hint">1 to 21 rounds</span>
+      </div>
 
-    <!-- Presets -->
-    <div class="preset-buttons" role="group" aria-label="Series length presets">
-      {#each PRESETS as preset (preset.length)}
+      <!-- Presets -->
+      <div class="preset-buttons" role="group" aria-label="Series length presets">
+        {#each PRESETS as preset (preset.length)}
+          <button
+            type="button"
+            class="preset-btn"
+            class:active={rollState.seriesLength === preset.length}
+            disabled={rollState.isRolling}
+            onclick={() => rollState.setSeriesLength(preset.length)}
+          >
+            {preset.label}
+          </button>
+        {/each}
+      </div>
+
+      <!-- Range Slider + Steppers for Series Length -->
+      <div class="slider-controls">
         <button
           type="button"
-          class="preset-btn"
-          class:active={rollState.seriesLength === preset.length}
+          class="stepper-btn"
+          aria-label="Decrease series rounds"
+          disabled={rollState.seriesLength <= 1 || rollState.isRolling}
+          onclick={() => rollState.setSeriesLength(rollState.seriesLength - 1)}
+        >
+          −
+        </button>
+        <input
+          id="series-length-slider"
+          type="range"
+          min="1"
+          max="21"
+          step="1"
+          value={rollState.seriesLength}
           disabled={rollState.isRolling}
-          onclick={() => rollState.setSeriesLength(preset.length)}
-        >
-          {preset.label}
-        </button>
-      {/each}
-    </div>
-
-    <div class="stepper-row">
-      <label for="series-length-input" class="sr-only">Custom series length (1 to 21)</label>
-      <input
-        id="series-length-input"
-        type="number"
-        min="1"
-        max="21"
-        value={rollState.seriesLength}
-        disabled={rollState.isRolling}
-        onchange={(e) => rollState.setSeriesLength(Number((e.target as HTMLInputElement).value))}
-        class="numeric-input"
-      />
-      <span class="unit-text">rounds</span>
-    </div>
-  </div>
-
-  <!-- Primary Actions -->
-  <div class="actions-group">
-    <button
-      type="button"
-      class="action-btn primary-btn"
-      disabled={rollState.isRolling || rollState.isComplete}
-      onclick={handleRollClick}
-    >
-      {#if rollState.isComplete}
-        Series Complete ({rollState.rounds.length}/{rollState.seriesLength})
-      {:else}
-        Roll Round ({rollState.rounds.length + 1}/{rollState.seriesLength})
-      {/if}
-    </button>
-
-    <button
-      type="button"
-      class="action-btn secondary-btn"
-      class:auto-active={rollState.isAutoRolling}
-      disabled={(rollState.isRolling && !rollState.isAutoRolling) || rollState.isComplete}
-      onclick={handleAutoRollClick}
-    >
-      {rollState.isAutoRolling ? '⏹ Stop Auto-Roll' : `⚡ Auto-Roll Series (${rollState.seriesLength})`}
-    </button>
-
-    <div class="secondary-actions-row">
-      {#if rollState.isRolling && !rollState.instantMode}
+          aria-valuemin="1"
+          aria-valuemax="21"
+          aria-valuenow={rollState.seriesLength}
+          oninput={(e) => rollState.setSeriesLength(Number((e.target as HTMLInputElement).value))}
+          class="range-slider"
+        />
         <button
           type="button"
-          class="btn-skip"
-          onclick={() => rollState.skipAnimation()}
+          class="stepper-btn"
+          aria-label="Increase series rounds"
+          disabled={rollState.seriesLength >= 21 || rollState.isRolling}
+          onclick={() => rollState.setSeriesLength(rollState.seriesLength + 1)}
         >
-          ⏩ Skip Animation
+          +
         </button>
-      {/if}
+      </div>
 
-      <button
-        type="button"
-        class="btn-reset"
-        disabled={rollState.isRolling}
-        onclick={() => rollState.resetCurrentSeries()}
-      >
-        ↺ Reset Series
-      </button>
+      <div class="stepper-row">
+        <label for="series-length-input" class="sr-only">Custom series length (1 to 21)</label>
+        <input
+          id="series-length-input"
+          type="number"
+          min="1"
+          max="21"
+          value={rollState.seriesLength}
+          disabled={rollState.isRolling}
+          onchange={(e) => rollState.setSeriesLength(Number((e.target as HTMLInputElement).value))}
+          class="numeric-input"
+        />
+        <span class="unit-text">rounds (custom 1..21)</span>
+      </div>
     </div>
-  </div>
+  {/if}
   </div>
 </section>
 
@@ -425,91 +404,6 @@
   .unit-text {
     font-size: 0.8rem;
     color: #9ca3af;
-  }
-
-  .actions-group {
-    display: flex;
-    flex-direction: column;
-    gap: 0.65rem;
-    margin-top: 0.5rem;
-  }
-
-  .action-btn {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    min-block-size: 44px;
-    padding: 0.75rem 1rem;
-    font-size: 0.95rem;
-    font-weight: 700;
-    border-radius: 0.5rem;
-    cursor: pointer;
-    transition: all 0.15s ease;
-  }
-
-  .primary-btn {
-    background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%);
-    border: 1px solid #38bdf8;
-    color: #ffffff;
-    box-shadow: 0 4px 12px rgba(2, 132, 199, 0.3);
-  }
-
-  .primary-btn:hover:not(:disabled) {
-    background: linear-gradient(135deg, #0369a1 0%, #075985 100%);
-  }
-
-  .secondary-btn {
-    background: #1e293b;
-    border: 1px solid #475569;
-    color: #f1f5f9;
-  }
-
-  .secondary-btn:hover:not(:disabled) {
-    background: #334155;
-  }
-
-  .secondary-btn.auto-active {
-    background: #be123c;
-    border-color: #f43f5e;
-    color: #ffffff;
-    animation: pulse 1.5s infinite;
-  }
-
-  @keyframes pulse {
-    0%, 100% { opacity: 1; }
-    50% { opacity: 0.8; }
-  }
-
-  .secondary-actions-row {
-    display: flex;
-    gap: 0.5rem;
-  }
-
-  .btn-skip, .btn-reset {
-    flex: 1;
-    min-block-size: 34px;
-    padding: 0.4rem 0.6rem;
-    font-size: 0.8rem;
-    font-weight: 600;
-    background: transparent;
-    border: 1px solid #4b5563;
-    border-radius: 0.375rem;
-    color: #9ca3af;
-    cursor: pointer;
-  }
-
-  .btn-skip {
-    color: #facc15;
-    border-color: #ca8a04;
-  }
-
-  .btn-skip:hover:not(:disabled) {
-    background: rgba(202, 138, 4, 0.15);
-  }
-
-  .btn-reset:hover:not(:disabled) {
-    background: #1f2937;
-    color: #f3f4f6;
   }
 
   button:focus-visible, input:focus-visible {

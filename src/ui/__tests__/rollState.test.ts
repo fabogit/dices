@@ -120,4 +120,47 @@ describe('RollState Controller', () => {
     expect(state.leaderboard[0].totalRolls).toBe(6);
     expect(state.leaderboard[0].normalizedLuckScore).toBeGreaterThan(0);
   });
+
+  it('handles Quick Roll mode, continuous execution without locks, and feed clearing', async () => {
+    state.setMode('quick');
+    expect(state.mode).toBe('quick');
+    expect(state.announcerMessage).toContain('Switched to Quick Roll mode');
+
+    state.setFaces(20);
+    state.setCountPerRoll(2);
+
+    // Roll 1
+    const roll1 = await state.executeQuickRoll();
+    expect(roll1).not.toBeNull();
+    expect(roll1?.values.length).toBe(2);
+    expect(state.quickRolls.length).toBe(1);
+    expect(state.latestQuickRoll).toBe(roll1);
+    expect(state.history.length).toBe(0); // Quick rolls do NOT add to series history!
+
+    // Roll 2 immediately without reset
+    const roll2 = await state.executeQuickRoll();
+    expect(roll2).not.toBeNull();
+    expect(state.quickRolls.length).toBe(2);
+    expect(state.latestQuickRoll).toBe(roll2);
+    expect(state.history.length).toBe(0);
+
+    // Roll coin in quick mode
+    state.setFaces(2);
+    state.setCountPerRoll(3);
+    const rollCoin = await state.executeQuickRoll();
+    expect(rollCoin).not.toBeNull();
+    expect(rollCoin?.values.length).toBe(3);
+    expect(state.quickRolls.length).toBe(3);
+    expect(state.announcerMessage).toContain('Quick roll:');
+
+    // Clear feed
+    state.clearQuickRolls();
+    expect(state.quickRolls.length).toBe(0);
+    expect(state.latestQuickRoll).toBeNull();
+    expect(state.announcerMessage).toContain('Quick roll feed cleared');
+
+    // Switch back to series
+    state.setMode('series');
+    expect(state.mode).toBe('series');
+  });
 });

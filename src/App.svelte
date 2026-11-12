@@ -3,6 +3,7 @@
   import ArenaViewport from './ui/ArenaViewport.svelte';
   import SeriesScoreboard from './ui/SeriesScoreboard.svelte';
   import HistoryPanel from './ui/HistoryPanel.svelte';
+  import QuickResultPanel from './ui/QuickResultPanel.svelte';
   import { rollState } from './ui/rollState.svelte';
 
   let showAddPlayerModal = $state(false);
@@ -35,30 +36,55 @@
       </h1>
     </div>
 
-    <!-- Player Selector & Actions -->
+    <!-- Mode Switch & Controls -->
     <div class="header-controls">
-      <div class="player-selector-group">
-        <label for="player-select" class="player-label">Active Player:</label>
-        <select
-          id="player-select"
-          class="player-select"
-          value={rollState.activePlayerId}
-          onchange={(e) => rollState.setActivePlayer((e.target as HTMLSelectElement).value)}
-        >
-          {#each rollState.players as p (p.id)}
-            <option value={p.id}>{p.name}</option>
-          {/each}
-        </select>
-
+      <!-- Mode Toggle (Quick Roll vs Series) -->
+      <div class="mode-switch-group" role="group" aria-label="Application mode">
         <button
           type="button"
-          class="btn-add-player"
-          onclick={() => (showAddPlayerModal = true)}
-          aria-label="Add new local player"
+          class="mode-btn"
+          class:active={rollState.mode === 'quick'}
+          aria-pressed={rollState.mode === 'quick'}
+          onclick={() => rollState.setMode('quick')}
         >
-          + Player
+          ⚡ Quick Roll
+        </button>
+        <button
+          type="button"
+          class="mode-btn"
+          class:active={rollState.mode === 'series'}
+          aria-pressed={rollState.mode === 'series'}
+          onclick={() => rollState.setMode('series')}
+        >
+          📊 Series
         </button>
       </div>
+
+      <!-- Player Selector & Actions (Series Mode Only) -->
+      {#if rollState.mode === 'series'}
+        <div class="player-selector-group">
+          <label for="player-select" class="player-label">Player:</label>
+          <select
+            id="player-select"
+            class="player-select"
+            value={rollState.activePlayerId}
+            onchange={(e) => rollState.setActivePlayer((e.target as HTMLSelectElement).value)}
+          >
+            {#each rollState.players as p (p.id)}
+              <option value={p.id}>{p.name}</option>
+            {/each}
+          </select>
+
+          <button
+            type="button"
+            class="btn-add-player"
+            onclick={() => (showAddPlayerModal = true)}
+            aria-label="Add new local player"
+          >
+            + Player
+          </button>
+        </div>
+      {/if}
 
       <!-- Instant Fast Roll Toggle -->
       <button
@@ -70,7 +96,7 @@
         title="Toggle instant roll mode without 3D kinematic tumble"
       >
         <span class="toggle-icon">⚡</span>
-        <span>{rollState.instantMode ? 'Fast Roll: ON' : 'Fast Roll: OFF'}</span>
+        <span>{rollState.instantMode ? 'Fast: ON' : 'Fast: OFF'}</span>
       </button>
     </div>
   </header>
@@ -119,15 +145,19 @@
         <ControlPanel />
       </div>
 
-      <!-- Center Column: 3D Viewport -->
+      <!-- Center Column: 3D Viewport & Toolbar -->
       <div class="column-center">
         <ArenaViewport />
       </div>
 
-      <!-- Right Column: Scoreboard & History -->
+      <!-- Right Column: Scoreboard/History OR Quick Feed -->
       <div class="column-right">
-        <SeriesScoreboard />
-        <HistoryPanel />
+        {#if rollState.mode === 'quick'}
+          <QuickResultPanel />
+        {:else}
+          <SeriesScoreboard />
+          <HistoryPanel />
+        {/if}
       </div>
     </div>
   </main>
@@ -238,6 +268,40 @@
     align-items: center;
     gap: 1rem;
     flex-wrap: wrap;
+  }
+
+  .mode-switch-group {
+    display: inline-flex;
+    background: #111827;
+    border: 1px solid #374151;
+    border-radius: 0.5rem;
+    padding: 2px;
+  }
+
+  .mode-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    padding: 0.35rem 0.75rem;
+    min-block-size: 32px;
+    background: transparent;
+    border: none;
+    border-radius: 0.375rem;
+    color: var(--text-secondary);
+    font-size: 0.8rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.15s ease;
+  }
+
+  .mode-btn:hover {
+    color: var(--text-primary);
+  }
+
+  .mode-btn.active {
+    background: var(--primary-blue);
+    color: #ffffff;
+    box-shadow: 0 2px 6px rgba(2, 132, 199, 0.4);
   }
 
   .player-selector-group {
