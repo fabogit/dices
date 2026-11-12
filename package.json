@@ -13,12 +13,14 @@
     "build": "vite build",
     "preview": "vite preview",
     "test": "vitest run",
+    "test:e2e": "playwright test",
     "check": "tsc --noEmit"
   },
   "dependencies": {
     "three": "^0.170.0"
   },
   "devDependencies": {
+    "@playwright/test": "^1.65.0",
     "@sveltejs/vite-plugin-svelte": "^5.0.0",
     "@types/three": "^0.170.0",
     "svelte": "^5.15.0",
