@@ -27,6 +27,7 @@ export interface RoundResult {
   tailsCount?: number;
   roundWinnerSide?: CoinSide | 'TIE';
   timestamp: number;
+  faces?: DieFaces;
 }
 
 export interface ModeStat {
@@ -44,11 +45,29 @@ export interface FaceDistributionEntry {
   deltaPercentage: number;
 }
 
+export interface CoinSeriesStats {
+  headsCount: number;
+  tailsCount: number;
+  headsPercentage: number;
+  tailsPercentage: number;
+  headsDeltaPercentage: number;
+  tailsDeltaPercentage: number;
+  headsRoundsWon: number;
+  tailsRoundsWon: number;
+  tieRounds: number;
+}
+
 export interface SeriesAnalytics {
   totalDiceRolled: number;
   expectedRoundAverage: number;
   averageDelta: number;
   standardDeviation: number;
+  theoreticalRoundStdDev: number;
+  zScore: number;
+  sampleReliability: 'empty' | 'small' | 'moderate' | 'solid';
+  distributionPeakPercentage: number;
+  hottestFaces: number[];
+  coldestFaces: number[];
   highRollCount: number;
   highRollRate: number; // percentage (0..100) of rolls strictly in upper half (> faces / 2)
   criticalMaxCount: number;
@@ -56,6 +75,8 @@ export interface SeriesAnalytics {
   criticalMinCount: number;
   criticalMinRate: number; // percentage (0..100) of rolls equal to `1`
   distribution: FaceDistributionEntry[];
+  coinStats?: CoinSeriesStats;
+  insightSummary: string;
 }
 
 export interface SeriesSummary {
@@ -89,4 +110,40 @@ export interface PlayerLeaderboardEntry {
   normalizedLuckScore: number;
   criticalMaxRate: number;
   coinSeriesWon: number;
+  coinHeadsRate?: number;
+  coinTosses?: number;
+}
+
+export interface QuickRollStats {
+  faces: DieFaces;
+  values: number[];
+  timestamp: number;
+  headsCount?: number;
+  tailsCount?: number;
+  headsPercentage?: number;
+  tailsPercentage?: number;
+  sum?: number;
+  expectedSum?: number;
+  sumDelta?: number;
+  zScore?: number;
+  criticalMaxCount?: number;
+  criticalMinCount?: number;
+  insight: string;
+}
+
+export interface QuickRollSessionStats {
+  faces: DieFaces;
+  matchingThrows: number;
+  totalDiceCount: number;
+  totalHeads?: number;
+  totalTails?: number;
+  headsPercentage?: number;
+  tailsPercentage?: number;
+  balanceVerdict?: string;
+  actualAverage?: number;
+  expectedAverage?: number;
+  averageDelta?: number;
+  criticalMaxCount?: number;
+  criticalMinCount?: number;
+  insight: string;
 }

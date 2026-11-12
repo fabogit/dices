@@ -3,6 +3,8 @@ import {
   ALLOWED_FACES,
   computeMode,
   computePlayerLeaderboard,
+  computeQuickRollSessionStats,
+  computeQuickRollStats,
   computeRoundResult,
   computeSeriesAnalytics,
   computeSeriesSummary,
@@ -591,6 +593,98 @@ describe('computeSeriesAnalytics', () => {
     expect(analytics.distribution[1].label).toBe('TAILS');
     expect(analytics.distribution[1].count).toBe(1);
   });
+
+  it('computes theoreticalRoundStdDev, standardized zScore, sampleReliability, and insightSummary', () => {
+    // 2d6 series
+    const r1 = computeRoundResult(0, [6, 6], 6); // sum: 12
+    const r2 = computeRoundResult(1, [6, 5], 6); // sum: 11
+    const analytics = computeSeriesAnalytics(configD6, [r1, r2]);
+
+    // theoreticalRoundStdDev for 2d6: sqrt(2 * (36 - 1) / 12) = sqrt(70 / 12) = ~2.4152
+    expect(analytics.theoreticalRoundStdDev).toBeCloseTo(Math.sqrt(70 / 12), 4);
+
+    // 4 dice rolled: totalSum = 23, expected = 4 * 3.5 = 14
+    // totalStdDev = sqrt(4 * 35 / 12) = sqrt(140 / 12) = ~3.41565
+    // zScore = (23 - 14) / 3.41565 = ~2.6349
+    expect(analytics.zScore).toBeGreaterThan(2.0);
+    expect(analytics.sampleReliability).toBe('small'); // 4 dice < 10
+
+    // Peak percentage should accommodate either empirical or expected baseline * 1.4
+    expect(analytics.distributionPeakPercentage).toBeGreaterThanOrEqual(100 / 6);
+
+    // Hottest face should be 6 (rolled 3 times out of 4)
+    expect(analytics.hottestFaces).toEqual([6]);
+    expect(analytics.coldestFaces.length).toBeGreaterThan(0);
+
+    // insightSummary should be a descriptive English narrative
+    expect(typeof analytics.insightSummary).toBe('string');
+    expect(analytics.insightSummary).toContain('Small sample (4 dice)');
+    expect(analytics.insightSummary).toContain('Running hot');
+  });
+
+  it('computes coin d2 zScore, coinStats, and distribution scaling accurately', () => {
+    const configD2: RollConfig = {
+      faces: 2,
+      countPerRoll: 2,
+      seriesLength: 2,
+      playerId: 'p1',
+    };
+
+    // 4 tosses: 3 Heads (1), 1 Tails (2)
+    const r0 = computeRoundResult(0, [1, 1], 2); // 2 Heads -> HEADS won
+    const r1 = computeRoundResult(1, [1, 2], 2); // 1 Heads, 1 Tails -> TIE
+    const analytics = computeSeriesAnalytics(configD2, [r0, r1]);
+
+    expect(analytics.totalDiceRolled).toBe(4);
+    // theoreticalRoundStdDev for 2d2: sqrt(2 * (4 - 1) / 12) = sqrt(6 / 12) = sqrt(0.5) = ~0.7071
+    expect(analytics.theoreticalRoundStdDev).toBeCloseTo(Math.SQRT1_2, 4);
+
+    // zScore for d2: (headsCount - 0.5 * n) / (0.5 * sqrt(n)) = (3 - 2) / (0.5 * 2) = 1.0
+    expect(analytics.zScore).toBeCloseTo(1.0, 4);
+
+    expect(analytics.coinStats).toBeDefined();
+    expect(analytics.coinStats?.headsCount).toBe(3);
+    expect(analytics.coinStats?.tailsCount).toBe(1);
+    expect(analytics.coinStats?.headsPercentage).toBe(75);
+    expect(analytics.coinStats?.tailsPercentage).toBe(25);
+    expect(analytics.coinStats?.headsDeltaPercentage).toBe(25); // 75 - 50
+    expect(analytics.coinStats?.tailsDeltaPercentage).toBe(-25); // 25 - 50
+    expect(analytics.coinStats?.headsRoundsWon).toBe(1);
+    expect(analytics.coinStats?.tailsRoundsWon).toBe(0);
+    expect(analytics.coinStats?.tieRounds).toBe(1);
+
+    // distributionPeakPercentage should scale relative to the highest empirical bar (75%)
+    expect(analytics.distributionPeakPercentage).toBe(75);
+
+    expect(analytics.insightSummary).toContain('Heads-leaning');
+  });
+
+  it('classifies sampleReliability levels correctly from empty to solid', () => {
+    const configD20: RollConfig = {
+      faces: 20,
+      countPerRoll: 10,
+      seriesLength: 4,
+      playerId: 'p1',
+    };
+
+    expect(computeSeriesAnalytics(configD20, []).sampleReliability).toBe('empty');
+
+    const singleRoundSmall = [computeRoundResult(0, [5, 10, 15], 20)];
+    expect(computeSeriesAnalytics(configD20, singleRoundSmall).sampleReliability).toBe('small'); // 3 dice
+
+    const fifteenDice = [
+      computeRoundResult(0, [1, 2, 3, 4, 5, 6, 7, 8, 9, 10], 20),
+      computeRoundResult(1, [11, 12, 13, 14, 15], 20),
+    ];
+    expect(computeSeriesAnalytics(configD20, fifteenDice).sampleReliability).toBe('moderate'); // 15 dice
+
+    const thirtyDice = [
+      computeRoundResult(0, Array(10).fill(10), 20),
+      computeRoundResult(1, Array(10).fill(10), 20),
+      computeRoundResult(2, Array(10).fill(10), 20),
+    ];
+    expect(computeSeriesAnalytics(configD20, thirtyDice).sampleReliability).toBe('solid'); // 30 dice
+  });
 });
 
 describe('computePlayerLeaderboard', () => {
@@ -654,6 +748,167 @@ describe('computePlayerLeaderboard', () => {
     const leaderboard = computePlayerLeaderboard([summaryCoin], players);
     const aliceEntry = leaderboard.find((p) => p.playerId === 'p1');
     expect(aliceEntry?.coinSeriesWon).toBe(1);
+  });
+
+  it('correctly calculates d2 coin luck score (Heads-based) and avoids inverted scoring', () => {
+    // 100% Heads: should yield 200.0% Luck Score (not 66.7%)
+    const configCoin: RollConfig = {
+      faces: 2,
+      countPerRoll: 2,
+      seriesLength: 1,
+      playerId: 'p1',
+    };
+    const roundAllHeads = computeRoundResult(0, [1, 1], 2);
+    const summaryHeads = computeSeriesSummary('sc-heads', configCoin, 'Alice', [roundAllHeads]);
+
+    // 0% Heads (100% Tails): should yield 0.0% Luck Score (not 133.3%)
+    const configCoinBob: RollConfig = {
+      faces: 2,
+      countPerRoll: 2,
+      seriesLength: 1,
+      playerId: 'p2',
+    };
+    const roundAllTails = computeRoundResult(0, [2, 2], 2);
+    const summaryTails = computeSeriesSummary('sc-tails', configCoinBob, 'Bob', [roundAllTails]);
+
+    const leaderboard = computePlayerLeaderboard([summaryHeads, summaryTails], players);
+    const alice = leaderboard.find((p) => p.playerId === 'p1');
+    const bob = leaderboard.find((p) => p.playerId === 'p2');
+
+    expect(alice?.normalizedLuckScore).toBe(200);
+    expect(bob?.normalizedLuckScore).toBe(0);
+    expect(alice?.coinHeadsRate).toBe(100);
+    expect(bob?.coinHeadsRate).toBe(0);
+  });
+
+  it('weights player luckScore by total dice rolled in each series', () => {
+    // Alice plays a long 10-dice fair series (Luck 100%) and a 1-coin lucky Heads fluke (Luck 200%)
+    const configLong: RollConfig = {
+      faces: 6,
+      countPerRoll: 5,
+      seriesLength: 2,
+      playerId: 'p1',
+    };
+    // Expected round sum for 5d6 is 5 * 3.5 = 17.5. Two rounds of sum 17.5 = average 17.5 (100% luck)
+    const r1 = computeRoundResult(0, [3, 4, 3, 4, 4], 6); // sum 18
+    const r2 = computeRoundResult(1, [3, 4, 3, 4, 3], 6); // sum 17
+    const summaryLong = computeSeriesSummary('s-long', configLong, 'Alice', [r1, r2]);
+
+    const configFluke: RollConfig = {
+      faces: 2,
+      countPerRoll: 1,
+      seriesLength: 1,
+      playerId: 'p1',
+    };
+    const rFluke = computeRoundResult(0, [1], 2); // 1 Heads -> 200% luck
+    const summaryFluke = computeSeriesSummary('s-fluke', configFluke, 'Alice', [rFluke]);
+
+    const leaderboard = computePlayerLeaderboard([summaryLong, summaryFluke], players);
+    const alice = leaderboard.find((p) => p.playerId === 'p1')!;
+
+    // 10 rolls at 100% luck + 1 roll at 200% luck:
+    // Weighted luck: (10 * 100 + 1 * 200) / 11 = 1200 / 11 = 109.09%
+    // (If it were unweighted: (100 + 200) / 2 = 150%)
+    expect(alice.totalRolls).toBe(11);
+    expect(alice.normalizedLuckScore).toBeCloseTo(109.09, 1);
+  });
+});
+
+describe('computeQuickRollStats', () => {
+  it('computes single coin toss and multi-coin statistics', () => {
+    const singleCoin = computeRoundResult(0, [1], 2);
+    const stats1 = computeQuickRollStats(singleCoin, 2);
+    expect(stats1.faces).toBe(2);
+    expect(stats1.headsCount).toBe(1);
+    expect(stats1.tailsCount).toBe(0);
+    expect(stats1.headsPercentage).toBe(100);
+    expect(stats1.insight).toContain('Landed Heads');
+
+    const multiCoin = computeRoundResult(0, [1, 1, 2], 2);
+    const stats2 = computeQuickRollStats(multiCoin, 2);
+    expect(stats2.headsCount).toBe(2);
+    expect(stats2.tailsCount).toBe(1);
+    expect(stats2.headsPercentage).toBeCloseTo(66.67, 1);
+    expect(stats2.insight).toContain('Heads majority');
+  });
+
+  it('computes polyhedral dice single roll insights (nat 20, nat 1, delta)', () => {
+    const nat20 = computeRoundResult(0, [20], 20);
+    const stats20 = computeQuickRollStats(nat20, 20);
+    expect(stats20.expectedSum).toBe(10.5);
+    expect(stats20.sumDelta).toBe(9.5);
+    expect(stats20.criticalMaxCount).toBe(1);
+    expect(stats20.insight).toContain('Natural 20! Maximum possible roll');
+
+    const nat1 = computeRoundResult(0, [1], 20);
+    const stats1 = computeQuickRollStats(nat1, 20);
+    expect(stats1.criticalMinCount).toBe(1);
+    expect(stats1.insight).toContain('Natural 1. Minimum possible roll');
+  });
+
+  it('computes multi-dice round statistics and standardized z-score', () => {
+    // 3d6 roll: [6, 6, 5] -> sum 17
+    // Expected sum: 3 * 3.5 = 10.5. sumDelta = 6.5
+    const roll3d6 = computeRoundResult(0, [6, 6, 5], 6);
+    const stats = computeQuickRollStats(roll3d6, 6);
+    expect(stats.sum).toBe(17);
+    expect(stats.expectedSum).toBe(10.5);
+    expect(stats.sumDelta).toBe(6.5);
+    expect(stats.criticalMaxCount).toBe(2);
+    expect(stats.zScore).toBeGreaterThan(1.5);
+    expect(stats.insight).toContain('High roll');
+    expect(stats.insight).toContain('2x nat 6');
+  });
+});
+
+describe('computeQuickRollSessionStats', () => {
+  it('filters rolls matching active die face so d6 and d20 are not mixed', () => {
+    const rD6_1 = computeRoundResult(0, [4], 6);
+    rD6_1.faces = 6;
+    const rD6_2 = computeRoundResult(1, [6], 6);
+    rD6_2.faces = 6;
+
+    const rD20 = computeRoundResult(2, [20], 20);
+    rD20.faces = 20;
+
+    const quickRolls = [rD20, rD6_2, rD6_1];
+
+    const d6Session = computeQuickRollSessionStats(quickRolls, 6);
+    expect(d6Session.matchingThrows).toBe(2);
+    expect(d6Session.totalDiceCount).toBe(2);
+    // Average of 4 and 6 is 5.0
+    expect(d6Session.actualAverage).toBe(5.0);
+    expect(d6Session.expectedAverage).toBe(3.5);
+    expect(d6Session.averageDelta).toBe(1.5);
+    expect(d6Session.criticalMaxCount).toBe(1);
+
+    const d20Session = computeQuickRollSessionStats(quickRolls, 20);
+    expect(d20Session.matchingThrows).toBe(1);
+    expect(d20Session.actualAverage).toBe(20.0);
+  });
+
+  it('computes coin balance verdict and session split', () => {
+    const r1 = computeRoundResult(0, [1, 1], 2);
+    r1.faces = 2;
+    const r2 = computeRoundResult(1, [1, 2], 2);
+    r2.faces = 2;
+
+    const coinSession = computeQuickRollSessionStats([r2, r1], 2);
+    expect(coinSession.matchingThrows).toBe(2);
+    expect(coinSession.totalDiceCount).toBe(4);
+    expect(coinSession.totalHeads).toBe(3);
+    expect(coinSession.totalTails).toBe(1);
+    expect(coinSession.headsPercentage).toBe(75);
+    expect(coinSession.tailsPercentage).toBe(25);
+    expect(coinSession.balanceVerdict).toBe('Heads-leaning');
+    expect(coinSession.insight).toContain('75.0% Heads / 25.0% Tails');
+  });
+
+  it('handles empty quick roll sessions gracefully', () => {
+    const emptySession = computeQuickRollSessionStats([], 12);
+    expect(emptySession.matchingThrows).toBe(0);
+    expect(emptySession.totalDiceCount).toBe(0);
+    expect(emptySession.insight).toContain('No d12 rolls');
   });
 });
 

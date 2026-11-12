@@ -46,11 +46,11 @@
       No completed series yet. Complete a series to save records to local storage.
     </p>
   {:else}
-    <!-- Player Leaderboard / Comparison (Issue #7) -->
+    <!-- Player Leaderboard / Comparison (Issue #7 & #12) -->
     <div class="leaderboard-section">
       <div class="leaderboard-header">
         <h3 class="leaderboard-title">Player Leaderboard & Luck Index</h3>
-        <span class="leaderboard-sub">Normalized across all dice domains</span>
+        <span class="leaderboard-sub">Normalized across all dice domains (100% = fair baseline)</span>
       </div>
 
       <div class="leaderboard-grid">
@@ -65,7 +65,9 @@
                 class="luck-badge"
                 class:luck-hot={player.normalizedLuckScore >= 100}
                 class:luck-cold={player.normalizedLuckScore < 100}
-                title="Ratio of actual round averages to mathematical expectation"
+                role="img"
+                aria-label="Luck Index: {player.normalizedLuckScore.toFixed(1)}% (100% is fair baseline; for coins, 50% Heads is 100%)"
+                title="Normalized Luck Index: {player.normalizedLuckScore.toFixed(1)}% (100% is fair baseline; for coins, 50% Heads = 100%)"
               >
                 {player.normalizedLuckScore >= 100 ? '🔥' : '❄️'} {player.normalizedLuckScore.toFixed(1)}%
               </span>
@@ -88,6 +90,12 @@
                 <div class="metric-mini">
                   <span class="mini-label">Coins Won</span>
                   <span class="mini-val highlight-gold">{player.coinSeriesWon}</span>
+                </div>
+              {/if}
+              {#if player.coinHeadsRate !== undefined}
+                <div class="metric-mini">
+                  <span class="mini-label">Heads Rate</span>
+                  <span class="mini-val highlight-gold">{player.coinHeadsRate.toFixed(1)}%</span>
                 </div>
               {/if}
             </div>
@@ -131,13 +139,21 @@
 
               <div class="history-outcome">
                 {#if item.config.faces === 2}
-                  <span class="coin-outcome">
-                    {#if item.coinSeriesWinner === 'TIE'}
-                      Outcome: <em>Tie</em> ({item.headsRoundsWon}H / {item.tailsRoundsWon}T)
-                    {:else}
-                      Winner: <strong class="winner-name">{item.coinSeriesWinner}</strong> ({item.headsRoundsWon}H / {item.tailsRoundsWon}T)
-                    {/if}
-                  </span>
+                  {@const totalCoins = item.analytics.totalDiceRolled || 1}
+                  {@const headsPct = ((item.totalHeads ?? 0) / totalCoins) * 100}
+                  {@const tailsPct = ((item.totalTails ?? 0) / totalCoins) * 100}
+                  <div class="coin-outcome-block">
+                    <span class="coin-outcome">
+                      {#if item.coinSeriesWinner === 'TIE'}
+                        Outcome: <em>Tie</em> ({item.headsRoundsWon}H / {item.tailsRoundsWon}T rounds)
+                      {:else}
+                        Winner: <strong class="winner-name">{item.coinSeriesWinner}</strong> ({item.headsRoundsWon}H / {item.tailsRoundsWon}T rounds)
+                      {/if}
+                    </span>
+                    <span class="coin-history-pct">
+                      {headsPct.toFixed(1)}% Heads / {tailsPct.toFixed(1)}% Tails ({item.totalHeads ?? 0}H / {item.totalTails ?? 0}T coins)
+                    </span>
+                  </div>
                 {:else}
                   <div class="dice-outcome">
                     <span>Sum: <strong>{item.totalSum}</strong></span>
@@ -335,6 +351,7 @@
 
   .player-metrics-row {
     display: flex;
+    flex-wrap: wrap;
     gap: 0.75rem;
     font-size: 0.72rem;
   }
@@ -443,8 +460,19 @@
     padding-top: 0.35rem;
   }
 
+  .coin-outcome-block {
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+  }
+
   .coin-outcome {
     color: #e5e7eb;
+  }
+
+  .coin-history-pct {
+    font-size: 0.72rem;
+    color: #cbd5e1;
   }
 
   .winner-name {

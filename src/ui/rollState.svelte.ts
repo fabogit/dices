@@ -85,6 +85,7 @@ export class RollState {
 
   // Internal Engine
   private engine: RollSeriesEngine;
+  private summaryRevision: number = $state(0);
   private arena: DiceArena3D | null = null;
   private autoRollAborted: boolean = false;
   private cryptoProvider: LocalCryptoRollProvider = new LocalCryptoRollProvider();
@@ -140,6 +141,13 @@ export class RollState {
   }
 
   get summary(): SeriesSummary {
+    // Track reactive dependencies so Svelte 5 $derived consumers re-evaluate on rounds/config changes.
+    void this.summaryRevision;
+    void this.rounds.length;
+    void this.faces;
+    void this.countPerRoll;
+    void this.seriesLength;
+    void this.activePlayerId;
     return this.engine.getSummary();
   }
 
@@ -229,6 +237,7 @@ export class RollState {
     try {
       const values = await this.cryptoProvider.rollRound(this.faces, this.countPerRoll);
       const round = computeRoundResult(this.quickRolls.length, values, this.faces);
+      round.faces = this.faces;
       this.quickRolls = [round, ...this.quickRolls.slice(0, 24)];
 
       if (this.arena) {
@@ -267,6 +276,7 @@ export class RollState {
     try {
       const round = await this.engine.rollNextRound();
       this.rounds = [...this.engine.rounds];
+      this.summaryRevision++;
 
       // Visual 3D roll
       if (this.arena) {
@@ -352,6 +362,7 @@ export class RollState {
     this.skipAnimation();
     this.engine = this.createEngine();
     this.rounds = [];
+    this.summaryRevision++;
     this.announcerMessage = `Series reset for ${this.activePlayer.name}. Ready to roll.`;
   }
 

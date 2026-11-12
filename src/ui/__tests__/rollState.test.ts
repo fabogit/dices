@@ -112,6 +112,11 @@ describe('RollState Controller', () => {
     expect(state.summary.analytics.totalDiceRolled).toBe(6);
     expect(state.summary.analytics.distribution).toHaveLength(6);
     expect(state.summary.analytics.expectedRoundAverage).toBe(7);
+    expect(state.summary.analytics.theoreticalRoundStdDev).toBeGreaterThan(0);
+    expect(typeof state.summary.analytics.zScore).toBe('number');
+    expect(['small', 'moderate', 'solid']).toContain(state.summary.analytics.sampleReliability);
+    expect(state.summary.analytics.distributionPeakPercentage).toBeGreaterThan(0);
+    expect(state.summary.analytics.insightSummary.length).toBeGreaterThan(0);
 
     // Leaderboard should have an entry for Player 1
     expect(state.leaderboard).toHaveLength(1);
@@ -119,6 +124,33 @@ describe('RollState Controller', () => {
     expect(state.leaderboard[0].seriesPlayed).toBe(1);
     expect(state.leaderboard[0].totalRolls).toBe(6);
     expect(state.leaderboard[0].normalizedLuckScore).toBeGreaterThan(0);
+  });
+
+  it('preserves faces property on QuickRoll results across configuration changes', async () => {
+    state.setMode('quick');
+
+    state.setFaces(20);
+    state.setCountPerRoll(1);
+    const rollD20 = await state.executeQuickRoll();
+    expect(rollD20?.faces).toBe(20);
+    expect(state.latestQuickRoll).toBe(rollD20);
+
+    state.setFaces(6);
+    state.setCountPerRoll(2);
+    const rollD6 = await state.executeQuickRoll();
+    expect(rollD6?.faces).toBe(6);
+    expect(state.latestQuickRoll).toBe(rollD6);
+
+    state.setFaces(2);
+    state.setCountPerRoll(1);
+    const rollCoin = await state.executeQuickRoll();
+    expect(rollCoin?.faces).toBe(2);
+    expect(state.latestQuickRoll).toBe(rollCoin);
+
+    // Verify all history retains their respective original faces
+    expect(state.quickRolls[0].faces).toBe(2);
+    expect(state.quickRolls[1].faces).toBe(6);
+    expect(state.quickRolls[2].faces).toBe(20);
   });
 
   it('handles Quick Roll mode, continuous execution without locks, and feed clearing', async () => {
