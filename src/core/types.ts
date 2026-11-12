@@ -35,6 +35,29 @@ export interface ModeStat {
   isTie: boolean;
 }
 
+export interface FaceDistributionEntry {
+  face: number;
+  label: string;
+  count: number;
+  percentage: number;
+  expectedPercentage: number;
+  deltaPercentage: number;
+}
+
+export interface SeriesAnalytics {
+  totalDiceRolled: number;
+  expectedRoundAverage: number;
+  averageDelta: number;
+  standardDeviation: number;
+  highRollCount: number;
+  highRollRate: number; // percentage (0..100) of rolls strictly in upper half (> faces / 2)
+  criticalMaxCount: number;
+  criticalMaxRate: number; // percentage (0..100) of rolls equal to `faces` (or Heads for d2)
+  criticalMinCount: number;
+  criticalMinRate: number; // percentage (0..100) of rolls equal to `1`
+  distribution: FaceDistributionEntry[];
+}
+
 export interface SeriesSummary {
   id: string;
   config: RollConfig;
@@ -48,10 +71,22 @@ export interface SeriesSummary {
   bestRoundIndex: number;
   worstRoundIndex: number;
   mode: ModeStat;
+  analytics: SeriesAnalytics;
   coinSeriesWinner?: CoinSide | 'TIE';
   totalHeads?: number;
   totalTails?: number;
   headsRoundsWon?: number;
   tailsRoundsWon?: number;
   completedAt: number;
+}
+
+export interface PlayerLeaderboardEntry {
+  playerId: string;
+  playerName: string;
+  color: string;
+  seriesPlayed: number;
+  totalRolls: number;
+  normalizedLuckScore: number;
+  criticalMaxRate: number;
+  coinSeriesWon: number;
 }

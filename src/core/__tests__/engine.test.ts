@@ -2,7 +2,9 @@ import { describe, expect, it } from 'vitest';
 import {
   ALLOWED_FACES,
   computeMode,
+  computePlayerLeaderboard,
   computeRoundResult,
+  computeSeriesAnalytics,
   computeSeriesSummary,
   LocalCryptoRollProvider,
   rollBatchCryptoFair,
@@ -11,7 +13,9 @@ import {
   validateRollConfig,
   type DieFaces,
   type IRollProvider,
+  type Player,
   type RollConfig,
+  type RoundResult,
 } from '../index';
 
 describe('validateRollConfig', () => {
@@ -492,3 +496,164 @@ describe('RollSeriesEngine and IRollProvider', () => {
     }
   });
 });
+
+describe('computeSeriesAnalytics', () => {
+  const configD6: RollConfig = {
+    faces: 6,
+    countPerRoll: 2,
+    seriesLength: 2,
+    playerId: 'p1',
+  };
+
+  it('computes empty analytics correctly when no rounds have been played', () => {
+    const analytics = computeSeriesAnalytics(configD6, []);
+    expect(analytics.totalDiceRolled).toBe(0);
+    expect(analytics.expectedRoundAverage).toBe(7); // 2 * (6 + 1)/2 = 7
+    expect(analytics.averageDelta).toBe(0);
+    expect(analytics.standardDeviation).toBe(0);
+    expect(analytics.highRollRate).toBe(0);
+    expect(analytics.criticalMaxRate).toBe(0);
+    expect(analytics.criticalMinRate).toBe(0);
+    expect(analytics.distribution).toHaveLength(6);
+    for (const item of analytics.distribution) {
+      expect(item.count).toBe(0);
+      expect(item.percentage).toBe(0);
+      expect(item.expectedPercentage).toBeCloseTo(16.666, 2);
+      expect(item.deltaPercentage).toBeCloseTo(-16.666, 2);
+    }
+  });
+
+  it('computes mathematical variance, std deviation, and averages accurately', () => {
+    const round1 = computeRoundResult(0, [2, 4], 6); // sum = 6
+    const round2 = computeRoundResult(1, [6, 6], 6); // sum = 12
+    const rounds: RoundResult[] = [round1, round2];
+
+    const analytics = computeSeriesAnalytics(configD6, rounds);
+    expect(analytics.totalDiceRolled).toBe(4);
+    expect(analytics.expectedRoundAverage).toBe(7);
+
+    // Round sums: 6, 12. Mean = 9.
+    // Variance = ((6-9)^2 + (12-9)^2) / 2 = (9 + 9) / 2 = 9
+    // Std deviation = sqrt(9) = 3
+    expect(analytics.standardDeviation).toBe(3);
+    expect(analytics.averageDelta).toBe(2); // 9 - 7 = 2
+
+    // High rolls (> 3): [4, 6, 6] -> 3 out of 4 (75%)
+    expect(analytics.highRollCount).toBe(3);
+    expect(analytics.highRollRate).toBe(75);
+
+    // Critical max (= 6): [6, 6] -> 2 out of 4 (50%)
+    expect(analytics.criticalMaxCount).toBe(2);
+    expect(analytics.criticalMaxRate).toBe(50);
+
+    // Critical min (= 1): 0 out of 4 (0%)
+    expect(analytics.criticalMinCount).toBe(0);
+    expect(analytics.criticalMinRate).toBe(0);
+
+    // Distribution
+    const d6Face6 = analytics.distribution.find((d) => d.face === 6);
+    expect(d6Face6?.count).toBe(2);
+    expect(d6Face6?.percentage).toBe(50);
+    expect(d6Face6?.expectedPercentage).toBeCloseTo(16.666, 2);
+    expect(d6Face6?.deltaPercentage).toBeCloseTo(33.333, 2);
+
+    const d6Face2 = analytics.distribution.find((d) => d.face === 2);
+    expect(d6Face2?.count).toBe(1);
+    expect(d6Face2?.percentage).toBe(25);
+  });
+
+  it('computes coin d2 analytics with HEADS/TAILS labels and critical semantics', () => {
+    const configD2: RollConfig = {
+      faces: 2,
+      countPerRoll: 1,
+      seriesLength: 3,
+      playerId: 'p1',
+    };
+
+    // 1 = HEADS, 2 = TAILS
+    const round1 = computeRoundResult(0, [1], 2); // Heads
+    const round2 = computeRoundResult(1, [1], 2); // Heads
+    const round3 = computeRoundResult(2, [2], 2); // Tails
+    const rounds = [round1, round2, round3];
+
+    const analytics = computeSeriesAnalytics(configD2, rounds);
+    expect(analytics.totalDiceRolled).toBe(3);
+    expect(analytics.expectedRoundAverage).toBe(1.5); // 1 * (2 + 1)/2
+
+    // For d2, 1 = HEADS is criticalMax and highRoll, 2 = TAILS is criticalMin
+    expect(analytics.criticalMaxCount).toBe(2);
+    expect(analytics.criticalMaxRate).toBeCloseTo(66.666, 2);
+    expect(analytics.criticalMinCount).toBe(1);
+    expect(analytics.criticalMinRate).toBeCloseTo(33.333, 2);
+
+    expect(analytics.distribution[0].label).toBe('HEADS');
+    expect(analytics.distribution[0].count).toBe(2);
+    expect(analytics.distribution[1].label).toBe('TAILS');
+    expect(analytics.distribution[1].count).toBe(1);
+  });
+});
+
+describe('computePlayerLeaderboard', () => {
+  const players: Player[] = [
+    { id: 'p1', name: 'Alice', color: '#38bdf8' },
+    { id: 'p2', name: 'Bob', color: '#34d399' },
+  ];
+
+  it('aggregates and normalizes stats across different dice face sizes', () => {
+    const configD6: RollConfig = {
+      faces: 6,
+      countPerRoll: 1,
+      seriesLength: 2,
+      playerId: 'p1',
+    };
+    const r1 = computeRoundResult(0, [6], 6);
+    const r2 = computeRoundResult(1, [6], 6);
+    const summaryD6 = computeSeriesSummary('s1', configD6, 'Alice', [r1, r2]);
+    // Alice rolled average 6 on d6 (expected 3.5).
+    // Luck = (6 / 3.5) * 100 = ~171.4%
+
+    const configD20: RollConfig = {
+      faces: 20,
+      countPerRoll: 1,
+      seriesLength: 1,
+      playerId: 'p2',
+    };
+    const r3 = computeRoundResult(0, [10], 20);
+    const summaryD20 = computeSeriesSummary('s2', configD20, 'Bob', [r3]);
+    // Bob rolled average 10 on d20 (expected 10.5).
+    // Luck = (10 / 10.5) * 100 = ~95.2%
+
+    const leaderboard = computePlayerLeaderboard([summaryD6, summaryD20], players);
+
+    expect(leaderboard).toHaveLength(2);
+    // Alice should be ranked #1
+    expect(leaderboard[0].playerName).toBe('Alice');
+    expect(leaderboard[0].seriesPlayed).toBe(1);
+    expect(leaderboard[0].totalRolls).toBe(2);
+    expect(leaderboard[0].normalizedLuckScore).toBeGreaterThan(170);
+    expect(leaderboard[0].criticalMaxRate).toBe(100);
+
+    // Bob should be ranked #2
+    expect(leaderboard[1].playerName).toBe('Bob');
+    expect(leaderboard[1].seriesPlayed).toBe(1);
+    expect(leaderboard[1].totalRolls).toBe(1);
+    expect(leaderboard[1].normalizedLuckScore).toBeLessThan(100);
+    expect(leaderboard[1].criticalMaxRate).toBe(0);
+  });
+
+  it('tracks coinSeriesWon accurately when Heads wins the series', () => {
+    const configCoin: RollConfig = {
+      faces: 2,
+      countPerRoll: 1,
+      seriesLength: 1,
+      playerId: 'p1',
+    };
+    const roundWin = computeRoundResult(0, [1], 2); // Heads
+    const summaryCoin = computeSeriesSummary('sc1', configCoin, 'Alice', [roundWin]);
+
+    const leaderboard = computePlayerLeaderboard([summaryCoin], players);
+    const aliceEntry = leaderboard.find((p) => p.playerId === 'p1');
+    expect(aliceEntry?.coinSeriesWon).toBe(1);
+  });
+});
+

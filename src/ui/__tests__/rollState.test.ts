@@ -98,4 +98,26 @@ describe('RollState Controller', () => {
     state.clearHistory();
     expect(state.history.length).toBe(0);
   });
+
+  it('provides analytics and updates leaderboard upon series completion', async () => {
+    state.instantMode = true;
+    state.setFaces(6);
+    state.setCountPerRoll(2);
+    state.setSeriesLength(3);
+
+    await state.autoRollSeries();
+
+    expect(state.isComplete).toBe(true);
+    expect(state.summary.analytics).toBeDefined();
+    expect(state.summary.analytics.totalDiceRolled).toBe(6);
+    expect(state.summary.analytics.distribution).toHaveLength(6);
+    expect(state.summary.analytics.expectedRoundAverage).toBe(7);
+
+    // Leaderboard should have an entry for Player 1
+    expect(state.leaderboard).toHaveLength(1);
+    expect(state.leaderboard[0].playerName).toBe('Player 1');
+    expect(state.leaderboard[0].seriesPlayed).toBe(1);
+    expect(state.leaderboard[0].totalRolls).toBe(6);
+    expect(state.leaderboard[0].normalizedLuckScore).toBeGreaterThan(0);
+  });
 });

@@ -5,6 +5,7 @@
 
   let canvasElement: HTMLCanvasElement;
   let arena: DiceArena3D | null = null;
+  let isCollapsed = $state(false);
 
   onMount(() => {
     if (canvasElement) {
@@ -27,96 +28,184 @@
       arena = null;
     }
   });
+
+  function toggleCollapse() {
+    isCollapsed = !isCollapsed;
+    if (!isCollapsed && arena) {
+      setTimeout(() => {
+        arena?.render();
+      }, 50);
+    }
+  }
 </script>
 
-<div class="arena-viewport" role="region" aria-label="3D Dice Arena Viewport">
-  <canvas bind:this={canvasElement} class="three-canvas"></canvas>
+<section class="arena-section" aria-labelledby="arena-heading">
+  <div class="section-header">
+    <h2 id="arena-heading" class="section-title">3D Dice Arena</h2>
+    <button
+      type="button"
+      class="collapse-toggle-btn"
+      aria-expanded={!isCollapsed}
+      onclick={toggleCollapse}
+      aria-label="{isCollapsed ? 'Expand' : 'Collapse'} 3D Dice Arena"
+    >
+      <span class="chevron">{isCollapsed ? '▸' : '▾'}</span>
+      <span>{isCollapsed ? 'Show Arena' : 'Hide Arena'}</span>
+    </button>
+  </div>
 
-  <!-- WebGL Context Loss Banner -->
-  {#if rollState.contextLost}
-    <div class="context-loss-overlay" role="alert">
-      <div class="context-loss-card">
-        <span class="warning-icon" aria-hidden="true">⚠️</span>
-        <div>
-          <h3>WebGL Context Suspended</h3>
-          <p>Graphics context was lost. The browser will automatically restore it shortly.</p>
+  <div class="arena-body" class:collapsed={isCollapsed}>
+    <div class="arena-viewport" role="region" aria-label="3D Dice Arena Viewport">
+      <canvas bind:this={canvasElement} class="three-canvas"></canvas>
+
+      <!-- WebGL Context Loss Banner -->
+      {#if rollState.contextLost}
+        <div class="context-loss-overlay" role="alert">
+          <div class="context-loss-card">
+            <span class="warning-icon" aria-hidden="true">⚠️</span>
+            <div>
+              <h3>WebGL Context Suspended</h3>
+              <p>Graphics context was lost. The browser will automatically restore it shortly.</p>
+            </div>
+          </div>
         </div>
-      </div>
-    </div>
-  {/if}
-
-  <!-- Overlay HUD -->
-  <div class="hud-overlay" aria-hidden="true">
-    <div class="hud-top">
-      <div class="hud-pill round-badge">
-        {#if rollState.isComplete}
-          <span class="status-dot green"></span>
-          <span>Series Complete ({rollState.rounds.length}/{rollState.seriesLength})</span>
-        {:else if rollState.rounds.length === 0}
-          <span class="status-dot gray"></span>
-          <span>Ready to Roll</span>
-        {:else}
-          <span class="status-dot blue"></span>
-          <span>Round {rollState.rounds.length} of {rollState.seriesLength}</span>
-        {/if}
-      </div>
-
-      {#if rollState.instantMode}
-        <div class="hud-pill instant-badge">⚡ Fast Roll (No Anim)</div>
       {/if}
-    </div>
 
-    <!-- Latest Values Banner at Bottom of Viewport -->
-    {#if rollState.latestRound}
-      <div class="hud-bottom">
-        <div class="results-hud-card">
-          <span class="results-title">
-            Round #{rollState.latestRound.roundIndex + 1}:
-          </span>
-
-          <div class="hud-values-row">
-            {#each rollState.latestRound.values as val, idx (idx)}
-              {#if rollState.faces === 2}
-                <span class="hud-value-badge coin" class:heads={val === 1} class:tails={val === 2}>
-                  {val === 1 ? 'HEADS' : 'TAILS'}
-                </span>
-              {:else}
-                <span class="hud-value-badge die">
-                  {val}
-                </span>
-              {/if}
-            {/each}
+      <!-- Overlay HUD -->
+      <div class="hud-overlay" aria-hidden="true">
+        <div class="hud-top">
+          <div class="hud-pill round-badge">
+            {#if rollState.isComplete}
+              <span class="status-dot green"></span>
+              <span>Series Complete ({rollState.rounds.length}/{rollState.seriesLength})</span>
+            {:else if rollState.rounds.length === 0}
+              <span class="status-dot gray"></span>
+              <span>Ready to Roll</span>
+            {:else}
+              <span class="status-dot blue"></span>
+              <span>Round {rollState.rounds.length} of {rollState.seriesLength}</span>
+            {/if}
           </div>
 
-          {#if rollState.faces !== 2 && rollState.latestRound.values.length > 1}
-            <span class="hud-sum-badge">
-              Sum: <strong>{rollState.latestRound.sum}</strong>
-            </span>
+          {#if rollState.instantMode}
+            <div class="hud-pill instant-badge">⚡ Fast Roll (No Anim)</div>
           {/if}
         </div>
+
+        <!-- Latest Values Banner at Bottom of Viewport -->
+        {#if rollState.latestRound}
+          <div class="hud-bottom">
+            <div class="results-hud-card">
+              <span class="results-title">
+                Round #{rollState.latestRound.roundIndex + 1}:
+              </span>
+
+              <div class="hud-values-row">
+                {#each rollState.latestRound.values as val, idx (idx)}
+                  {#if rollState.faces === 2}
+                    <span class="hud-value-badge coin" class:heads={val === 1} class:tails={val === 2}>
+                      {val === 1 ? 'HEADS' : 'TAILS'}
+                    </span>
+                  {:else}
+                    <span class="hud-value-badge die">
+                      {val}
+                    </span>
+                  {/if}
+                {/each}
+              </div>
+
+              {#if rollState.faces !== 2 && rollState.latestRound.values.length > 1}
+                <span class="hud-sum-badge">
+                  Sum: <strong>{rollState.latestRound.sum}</strong>
+                </span>
+              {/if}
+            </div>
+          </div>
+        {/if}
       </div>
-    {/if}
+    </div>
   </div>
-</div>
+</section>
 
 <style>
+  .arena-section {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    width: 100%;
+  }
+
+  .section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .section-title {
+    margin: 0;
+    font-size: 1.15rem;
+    font-weight: 700;
+    color: #f3f4f6;
+  }
+
+  .collapse-toggle-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.25rem 0.6rem;
+    min-block-size: 28px;
+    background: #1f2937;
+    border: 1px solid #374151;
+    border-radius: 0.375rem;
+    color: #9ca3af;
+    font-size: 0.75rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.15s ease;
+  }
+
+  .collapse-toggle-btn:hover {
+    background: #374151;
+    color: #f3f4f6;
+  }
+
+  .chevron {
+    font-size: 0.85rem;
+    color: #38bdf8;
+  }
+
+  .arena-body {
+    width: 100%;
+  }
+
+  .arena-body.collapsed {
+    display: none;
+  }
+
   .arena-viewport {
     position: relative;
     width: 100%;
-    min-height: 380px;
-    height: 100%;
+    height: 460px;
+    max-height: 460px;
     background: radial-gradient(circle at center, #111827 0%, #030712 100%);
     border: 1px solid rgba(75, 85, 99, 0.4);
     border-radius: 0.75rem;
     overflow: hidden;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+  }
+
+  @media (max-width: 860px) {
+    .arena-viewport {
+      height: 230px;
+      min-height: 230px;
+      max-height: 230px;
+    }
   }
 
   .three-canvas {
-    width: 100%;
-    height: 100%;
+    position: absolute;
+    inset: 0;
+    width: 100% !important;
+    height: 100% !important;
     display: block;
     outline: none;
   }
@@ -268,5 +357,10 @@
 
   .hud-sum-badge strong {
     color: #38bdf8;
+  }
+
+  button:focus-visible {
+    outline: 2px solid #38bdf8;
+    outline-offset: 2px;
   }
 </style>

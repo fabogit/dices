@@ -416,8 +416,6 @@
   .column-center {
     display: flex;
     flex-direction: column;
-    min-height: 540px;
-    height: 100%;
   }
 
   .column-right {
@@ -446,9 +444,6 @@
       grid-column: span 1;
       display: flex;
       flex-direction: column;
-    }
-    .column-center {
-      min-height: 400px;
     }
   }
 

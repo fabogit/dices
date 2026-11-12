@@ -78,10 +78,13 @@ export class DiceArena3D {
     this.scene = new THREE.Scene();
     this.scene.background = new THREE.Color(0x0b0f19);
 
-    const width = canvas.clientWidth || 640;
-    const height = canvas.clientHeight || 480;
-    this.camera = new THREE.PerspectiveCamera(38, width / height, 0.1, 100);
-    this.camera.position.set(0, 15, 12);
+    const container = canvas.parentElement ?? canvas;
+    const width = container.clientWidth || 640;
+    const height = container.clientHeight || 360;
+    const aspect = width / height;
+    const zoomOut = aspect < 1.25 ? 1.25 / Math.max(0.55, aspect) : 1;
+    this.camera = new THREE.PerspectiveCamera(38, aspect, 0.1, 100);
+    this.camera.position.set(0, 15 * zoomOut, 12 * zoomOut);
     this.camera.lookAt(0, 0, 0);
 
     try {
@@ -210,9 +213,14 @@ export class DiceArena3D {
 
   private handleResize(): void {
     if (this.isDisposed || !this.renderer) return;
-    const width = this.canvas.clientWidth || 640;
-    const height = this.canvas.clientHeight || 480;
-    this.camera.aspect = width / height;
+    const container = this.canvas.parentElement ?? this.canvas;
+    const width = container.clientWidth || 640;
+    const height = container.clientHeight || 360;
+    const aspect = width / height;
+    const zoomOut = aspect < 1.25 ? 1.25 / Math.max(0.55, aspect) : 1;
+    this.camera.aspect = aspect;
+    this.camera.position.set(0, 15 * zoomOut, 12 * zoomOut);
+    this.camera.lookAt(0, 0, 0);
     this.camera.updateProjectionMatrix();
     this.renderer.setSize(width, height, false);
     this.render();

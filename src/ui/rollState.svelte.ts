@@ -2,11 +2,12 @@ import {
   ALLOWED_FACES,
   type DieFaces,
   type Player,
+  type PlayerLeaderboardEntry,
   type RollConfig,
   type RoundResult,
   type SeriesSummary,
 } from '../core/types';
-import { RollSeriesEngine } from '../core/engine';
+import { computePlayerLeaderboard, RollSeriesEngine } from '../core/engine';
 import type { DiceArena3D } from '../three/DiceArena3D';
 
 const STORAGE_KEY = 'dices_history_v1';
@@ -126,6 +127,10 @@ export class RollState {
 
   get progressPercent(): number {
     return Math.min(100, Math.round((this.rounds.length / this.seriesLength) * 100));
+  }
+
+  get leaderboard(): PlayerLeaderboardEntry[] {
+    return computePlayerLeaderboard(this.history, this.players);
   }
 
   // Arena attachment

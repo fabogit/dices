@@ -7,7 +7,6 @@
     { label: 'Single (1)', length: 1 },
     { label: 'Bo3 (3)', length: 3 },
     { label: 'Bo5 (5)', length: 5 },
-    { label: 'Bo7 (7)', length: 7 },
   ];
 
   function getFaceLabel(f: DieFaces): string {
@@ -25,11 +24,26 @@
       rollState.autoRollSeries();
     }
   }
+
+  let isCollapsed = $state(false);
 </script>
 
 <section class="control-panel" aria-labelledby="control-panel-heading">
-  <h2 id="control-panel-heading" class="panel-heading">Dice & Series Setup</h2>
+  <div class="panel-header-row">
+    <h2 id="control-panel-heading" class="panel-heading">Dice & Series Setup</h2>
+    <button
+      type="button"
+      class="collapse-toggle-btn"
+      aria-expanded={!isCollapsed}
+      onclick={() => (isCollapsed = !isCollapsed)}
+      aria-label="{isCollapsed ? 'Expand' : 'Collapse'} Dice & Series Setup"
+    >
+      <span class="chevron">{isCollapsed ? '▸' : '▾'}</span>
+      <span>{isCollapsed ? 'Show' : 'Hide'}</span>
+    </button>
+  </div>
 
+  <div class="panel-body" class:collapsed={isCollapsed}>
   <!-- Instrument Selector -->
   <fieldset class="field-group">
     <legend class="field-label">Choose Instrument</legend>
@@ -187,18 +201,25 @@
       </button>
     </div>
   </div>
+  </div>
 </section>
 
 <style>
   .control-panel {
     display: flex;
     flex-direction: column;
-    gap: 1.25rem;
+    gap: 1rem;
     padding: 1.25rem;
     background: rgba(17, 24, 39, 0.75);
     border: 1px solid rgba(75, 85, 99, 0.4);
     border-radius: 0.75rem;
     backdrop-filter: blur(8px);
+  }
+
+  .panel-header-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
   }
 
   .panel-heading {
@@ -207,6 +228,42 @@
     font-weight: 700;
     color: #f3f4f6;
     letter-spacing: -0.01em;
+  }
+
+  .collapse-toggle-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.25rem 0.6rem;
+    min-block-size: 28px;
+    background: #1f2937;
+    border: 1px solid #374151;
+    border-radius: 0.375rem;
+    color: #9ca3af;
+    font-size: 0.75rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.15s ease;
+  }
+
+  .collapse-toggle-btn:hover {
+    background: #374151;
+    color: #f3f4f6;
+  }
+
+  .chevron {
+    font-size: 0.85rem;
+    color: #38bdf8;
+  }
+
+  .panel-body {
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+  }
+
+  .panel-body.collapsed {
+    display: none;
   }
 
   .field-group {
