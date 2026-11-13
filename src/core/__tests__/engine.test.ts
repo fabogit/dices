@@ -824,12 +824,24 @@ describe('computeQuickRollStats', () => {
     expect(stats1.headsPercentage).toBe(100);
     expect(stats1.insight).toContain('Landed Heads');
 
+    const singleTails = computeRoundResult(0, [2], 2);
+    const statsTails = computeQuickRollStats(singleTails, 2);
+    expect(statsTails.insight).toBe('Landed Tails.');
+
     const multiCoin = computeRoundResult(0, [1, 1, 2], 2);
     const stats2 = computeQuickRollStats(multiCoin, 2);
     expect(stats2.headsCount).toBe(2);
     expect(stats2.tailsCount).toBe(1);
     expect(stats2.headsPercentage).toBeCloseTo(66.67, 1);
     expect(stats2.insight).toContain('Heads majority');
+
+    const multiTails = computeRoundResult(0, [1, 2, 2], 2);
+    const stats3 = computeQuickRollStats(multiTails, 2);
+    expect(stats3.insight).toContain('Tails majority');
+
+    const evenSplit = computeRoundResult(0, [1, 2], 2);
+    const statsEven = computeQuickRollStats(evenSplit, 2);
+    expect(statsEven.insight).toBe('Even split (1H / 1T).');
   });
 
   it('computes polyhedral dice single roll insights (nat 20, nat 1, delta)', () => {
@@ -844,6 +856,14 @@ describe('computeQuickRollStats', () => {
     const stats1 = computeQuickRollStats(nat1, 20);
     expect(stats1.criticalMinCount).toBe(1);
     expect(stats1.insight).toContain('Natural 1. Minimum possible roll');
+
+    const aboveAvg = computeRoundResult(0, [5], 6);
+    const statsAbove = computeQuickRollStats(aboveAvg, 6);
+    expect(statsAbove.insight).toContain('Above average');
+
+    const belowAvg = computeRoundResult(0, [2], 6);
+    const statsBelow = computeQuickRollStats(belowAvg, 6);
+    expect(statsBelow.insight).toContain('Below average');
   });
 
   it('computes multi-dice round statistics and standardized z-score', () => {
@@ -858,6 +878,20 @@ describe('computeQuickRollStats', () => {
     expect(stats.zScore).toBeGreaterThan(1.5);
     expect(stats.insight).toContain('High roll');
     expect(stats.insight).toContain('2x nat 6');
+
+    // 3d6 low roll: [1, 1, 1] -> sum 3
+    const low3d6 = computeRoundResult(0, [1, 1, 1], 6);
+    const statsLow = computeQuickRollStats(low3d6, 6);
+    expect(statsLow.zScore).toBeLessThan(-1.5);
+    expect(statsLow.insight).toContain('Low roll: sum 3');
+    expect(statsLow.insight).toContain('3x nat 1');
+
+    // 3d6 typical roll: [3, 4, 4] -> sum 11 (near 10.5)
+    const typical3d6 = computeRoundResult(0, [3, 4, 4], 6);
+    const statsTypical = computeQuickRollStats(typical3d6, 6);
+    expect(statsTypical.zScore).toBeDefined();
+    expect(Math.abs(statsTypical.zScore!)).toBeLessThan(1.0);
+    expect(statsTypical.insight).toContain('Typical roll: sum 11');
   });
 });
 
@@ -902,6 +936,25 @@ describe('computeQuickRollSessionStats', () => {
     expect(coinSession.tailsPercentage).toBe(25);
     expect(coinSession.balanceVerdict).toBe('Heads-leaning');
     expect(coinSession.insight).toContain('75.0% Heads / 25.0% Tails');
+
+    // Tails-leaning session
+    const rTails1 = computeRoundResult(2, [2, 2], 2);
+    rTails1.faces = 2;
+    const rTails2 = computeRoundResult(3, [2, 2], 2);
+    rTails2.faces = 2;
+    const tailsSession = computeQuickRollSessionStats([rTails2, rTails1], 2);
+    expect(tailsSession.balanceVerdict).toBe('Tails-leaning');
+    expect(tailsSession.headsPercentage).toBe(0);
+    expect(tailsSession.tailsPercentage).toBe(100);
+
+    // Evenly balanced session
+    const rEven1 = computeRoundResult(4, [1, 2], 2);
+    rEven1.faces = 2;
+    const rEven2 = computeRoundResult(5, [1, 2], 2);
+    rEven2.faces = 2;
+    const evenSession = computeQuickRollSessionStats([rEven2, rEven1], 2);
+    expect(evenSession.balanceVerdict).toBe('Evenly balanced');
+    expect(evenSession.headsPercentage).toBe(50);
   });
 
   it('handles empty quick roll sessions gracefully', () => {

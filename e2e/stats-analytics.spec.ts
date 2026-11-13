@@ -1,6 +1,6 @@
 import { test, expect } from '@playwright/test';
 
-test.describe('Statistics Alignment & Descriptive Insights (Issue #12)', () => {
+test.describe('Statistics Alignment & Descriptive Insights (Issue #12 & #13)', () => {
   test('displays coin percentages, statistical verdict, aligned d2 grid, and accessible distribution bars', async ({ page }) => {
     await page.goto('/');
 
@@ -95,5 +95,174 @@ test.describe('Statistics Alignment & Descriptive Insights (Issue #12)', () => {
     await expect(feedBadges.nth(0)).toHaveText('Coin');
     await expect(feedBadges.nth(1)).toHaveText('d6');
     await expect(feedBadges.nth(2)).toHaveText('d6');
+  });
+
+  test('computes deterministic polyhedral 2d6 statistics across multiple rounds and resets cleanly', async ({ page }) => {
+    // Override crypto.getRandomValues with exact sequence: [1, 3, 5, 5]
+    // rollCryptoFair computes (rand % faces) + 1:
+    // Round 1 (2d6): rand 1 -> face 2, rand 3 -> face 4 => values [2, 4], sum 6
+    // Round 2 (2d6): rand 5 -> face 6, rand 5 -> face 6 => values [6, 6], sum 12
+    await page.addInitScript(() => {
+      const mockValues = [1, 3, 5, 5];
+      let callCount = 0;
+      const originalGetRandomValues = window.crypto.getRandomValues.bind(window.crypto);
+      window.crypto.getRandomValues = function <T extends ArrayBufferView | null>(array: T): T {
+        if (array instanceof Uint32Array) {
+          for (let i = 0; i < array.length; i++) {
+            array[i] = mockValues[callCount % mockValues.length]!;
+            callCount++;
+          }
+          return array;
+        }
+        return originalGetRandomValues(array);
+      };
+    });
+
+    await page.goto('/');
+
+    const fastModeBtn = page.locator('.instant-toggle-btn');
+    if ((await fastModeBtn.getAttribute('aria-pressed')) !== 'true') {
+      await fastModeBtn.click();
+    }
+
+    // Configure 2d6
+    await page.getByRole('radio', { name: 'd6' }).click();
+    await page.getByRole('button', { name: 'Increase quantity' }).click();
+
+    const toolbar = page.getByRole('toolbar', { name: 'Roll controls' });
+    const rollBtn = toolbar.locator('.primary-btn');
+
+    // Execute Round 1 (values [2, 4], sum 6)
+    await rollBtn.click();
+
+    const diceCountTag = page.locator('.dice-count-tag');
+    await expect(diceCountTag).toHaveText('2 dice rolled');
+
+    // Expected Avg (E[X]) = 7.0, -1.0 Δ
+    const analyticsGrid = page.locator('.analytics-metrics-grid');
+    await expect(analyticsGrid).toContainText('7.0');
+    await expect(analyticsGrid).toContainText('-1.0 Δ');
+
+    // Std Deviation (σ) = 0.00
+    await expect(analyticsGrid).toContainText('0.00');
+
+    // Crit Max (= 6) = 0.0% (0/2)
+    await expect(analyticsGrid).toContainText('Crit Max (= 6)');
+    await expect(analyticsGrid).toContainText('0.0%');
+    await expect(analyticsGrid).toContainText('(0/2)');
+
+    // Crit Min (= 1) = 0.0% (0/2)
+    await expect(analyticsGrid).toContainText('Crit Min (= 1)');
+
+    // Reliability badge: Small sample (<10)
+    await expect(page.locator('.reliability-chip')).toContainText('Small sample (<10)');
+
+    // Execute Round 2 (values [6, 6], sum 12)
+    await rollBtn.click();
+
+    await expect(diceCountTag).toHaveText('4 dice rolled');
+
+    // Expected Avg (E[X]) = 7.0, +2.0 Δ (round average is (6 + 12) / 2 = 9.0 -> delta +2.0)
+    await expect(analyticsGrid).toContainText('+2.0 Δ');
+
+    // Population Std Deviation (σ) = 3.00
+    await expect(analyticsGrid).toContainText('3.00');
+
+    // Crit Max (= 6) = 50.0% (2/4)
+    await expect(analyticsGrid).toContainText('50.0%');
+    await expect(analyticsGrid).toContainText('(2/4)');
+
+    // Crit Min (= 1) = 0.0% (0/4)
+    await expect(analyticsGrid).toContainText('(0/4)');
+
+    // Face 6 marked as hot face
+    const hotFaceLabel = page.locator('.hot-face-label');
+    await expect(hotFaceLabel).toContainText('6');
+    await expect(hotFaceLabel.locator('.hot-badge')).toHaveText('🔥');
+
+    // Distribution bar percentages sum to 100%
+    const distRows = page.locator('.bars-container .dist-row');
+    await expect(distRows).toHaveCount(6);
+    let totalPct = 0;
+    for (let i = 0; i < 6; i++) {
+      const pctText = await distRows.nth(i).locator('.pct-text').textContent();
+      totalPct += parseFloat(pctText?.replace('%', '') ?? '0');
+    }
+    expect(Math.round(totalPct)).toBe(100);
+
+    // Face 6 empirical bar scales to 100% width
+    const face6Bar = distRows.nth(5).locator('.empirical-bar');
+    await expect(face6Bar).toHaveAttribute('style', /width:\s*100%/);
+
+    // Trigger Reset via toolbar
+    const resetBtn = toolbar.locator('.btn-reset-series');
+    await resetBtn.click();
+
+    // Verify clean reset
+    await expect(diceCountTag).toHaveText('0 dice rolled');
+    await expect(page.locator('.reliability-chip')).toHaveText('No Rolls');
+    await expect(analyticsGrid).toContainText('0.0%');
+    for (let i = 0; i < 6; i++) {
+      await expect(distRows.nth(i).locator('.count-text')).toHaveText('0');
+    }
+  });
+
+  test('handles sample reliability transitions, dynamic d20 switching, and collapse toggling', async ({ page }) => {
+    await page.goto('/');
+
+    const fastModeBtn = page.locator('.instant-toggle-btn');
+    if ((await fastModeBtn.getAttribute('aria-pressed')) !== 'true') {
+      await fastModeBtn.click();
+    }
+
+    // Set count to 5 on d6 (Bo3 preset)
+    await page.getByRole('radio', { name: 'd6' }).click();
+    for (let i = 1; i < 5; i++) {
+      await page.getByRole('button', { name: 'Increase quantity' }).click();
+    }
+
+    const toolbar = page.getByRole('toolbar', { name: 'Roll controls' });
+    const rollBtn = toolbar.locator('.primary-btn');
+
+    // Round 1 (5 dice rolled -> Small sample (<10))
+    await rollBtn.click();
+    const reliabilityChip = page.locator('.reliability-chip');
+    await expect(reliabilityChip).toContainText('Small sample (<10)');
+
+    // Round 2 (10 dice rolled -> Moderate sample (10–29))
+    await rollBtn.click();
+    await expect(reliabilityChip).toContainText('Moderate sample (10–29)');
+
+    // Dynamic instrument switching: switch to d20
+    await page.getByRole('radio', { name: 'd20' }).click();
+    await expect(page.locator('.analytics-section .section-subtitle')).toHaveText('Statistical Breakdown (d20)');
+
+    // Distribution renders 20 rows
+    const distRows = page.locator('.bars-container .dist-row');
+    await expect(distRows).toHaveCount(20);
+
+    // Expected legend updates to 5.0%
+    await expect(page.locator('.expected-legend')).toContainText('Expected: 5.0%');
+
+    // Crit labels update to d20
+    const analyticsGrid = page.locator('.analytics-metrics-grid');
+    await expect(analyticsGrid).toContainText('Crit Max (= 20)');
+    await expect(analyticsGrid).toContainText('Crit Min (= 1)');
+
+    // Test collapse/expand toggle for Statistical Breakdown & Distribution
+    const collapseToggleBtn = page.locator('.analytics-section .collapse-toggle-btn');
+    await expect(collapseToggleBtn).toHaveAttribute('aria-expanded', 'true');
+    const analyticsBody = page.locator('.analytics-body');
+    await expect(analyticsBody).not.toHaveClass(/collapsed/);
+
+    // Collapse
+    await collapseToggleBtn.click();
+    await expect(collapseToggleBtn).toHaveAttribute('aria-expanded', 'false');
+    await expect(analyticsBody).toHaveClass(/collapsed/);
+
+    // Expand
+    await collapseToggleBtn.click();
+    await expect(collapseToggleBtn).toHaveAttribute('aria-expanded', 'true');
+    await expect(analyticsBody).not.toHaveClass(/collapsed/);
   });
 });

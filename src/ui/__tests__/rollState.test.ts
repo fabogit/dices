@@ -18,6 +18,8 @@ describe('RollState Controller', () => {
     expect(state.activePlayer.name).toBe('Player 1');
     expect(state.rounds.length).toBe(0);
     expect(state.isComplete).toBe(false);
+    expect(state.latestRound).toBeNull();
+    expect(state.progressPercent).toBe(0);
   });
 
   it('updates faces and clamps parameters', () => {
@@ -194,5 +196,139 @@ describe('RollState Controller', () => {
     // Switch back to series
     state.setMode('series');
     expect(state.mode).toBe('series');
+  });
+
+  it('manages arena attachment, animations, and context loss', async () => {
+    let rollVisualCalled = false;
+    let skipAnimationCalled = false;
+
+    const mockArena: any = {
+      rollVisual: async () => {
+        rollVisualCalled = true;
+      },
+      skipCurrentAnimation: () => {
+        skipAnimationCalled = true;
+      },
+      render: () => {},
+      dispose: () => {},
+    };
+
+    state.setArena(mockArena);
+    state.skipAnimation();
+    expect(skipAnimationCalled).toBe(true);
+
+    expect(state.contextLost).toBe(false);
+    state.setContextLost(true);
+    expect(state.contextLost).toBe(true);
+    state.setContextLost(false);
+    expect(state.contextLost).toBe(false);
+
+    // Roll with arena attached
+    state.instantMode = true;
+    await state.rollNextRound();
+    expect(rollVisualCalled).toBe(true);
+
+    // Quick roll with arena attached
+    rollVisualCalled = false;
+    await state.executeQuickRoll();
+    expect(rollVisualCalled).toBe(true);
+
+    state.setArena(null);
+  });
+
+  it('runs animated autoRollSeries with brief pause when instantMode is false', async () => {
+    state.instantMode = false;
+    state.setSeriesLength(2);
+    state.setCountPerRoll(1);
+    await state.autoRollSeries();
+    expect(state.rounds.length).toBe(2);
+    expect(state.isComplete).toBe(true);
+  });
+
+  it('handles edge cases in configuration setters and player management', () => {
+    // Setting identical face count does nothing
+    state.setFaces(6);
+    expect(state.faces).toBe(6);
+
+    // Setting identical count does nothing
+    state.setCountPerRoll(1);
+    expect(state.countPerRoll).toBe(1);
+
+    // Setting identical series length does nothing
+    state.setSeriesLength(3);
+    expect(state.seriesLength).toBe(3);
+
+    // addPlayer with whitespace or empty string does not create a player
+    const prevCount = state.players.length;
+    state.addPlayer('');
+    expect(state.players.length).toBe(prevCount);
+    state.addPlayer('   ');
+    expect(state.players.length).toBe(prevCount);
+
+    // setActivePlayer with identical ID does nothing
+    state.setActivePlayer(state.activePlayerId);
+
+    // setActivePlayer with non-existent ID does nothing
+    state.setActivePlayer('non-existent-player-id');
+    expect(state.activePlayerId).toBe('player-1');
+
+    // setMode with identical mode does nothing
+    state.setMode('series');
+    expect(state.mode).toBe('series');
+  });
+
+  it('handles concurrency and guard conditions on roll actions', async () => {
+    state.instantMode = true;
+    state.setSeriesLength(1);
+
+    // Complete the series
+    await state.rollNextRound();
+    expect(state.isComplete).toBe(true);
+
+    // Attempting rollNextRound when isComplete returns null
+    const extraRoll = await state.rollNextRound();
+    expect(extraRoll).toBeNull();
+
+    // Attempting autoRollSeries when isComplete returns early without error
+    await state.autoRollSeries();
+
+    // Reset and test isRolling lock guard
+    state.resetCurrentSeries();
+    state.isRolling = true;
+    const lockedRound = await state.rollNextRound();
+    expect(lockedRound).toBeNull();
+
+    const lockedQuick = await state.executeQuickRoll();
+    expect(lockedQuick).toBeNull();
+
+    await state.autoRollSeries(); // Returns early because isRolling = true
+    state.isRolling = false;
+  });
+
+  it('stops autoRollSeries cleanly when requested', async () => {
+    state.instantMode = false;
+    state.setSeriesLength(10);
+
+    // Start auto roll and immediately stop
+    const autoPromise = state.autoRollSeries();
+    state.stopAutoRoll();
+    await autoPromise;
+
+    expect(state.isAutoRolling).toBe(false);
+    expect(state.rounds.length).toBeLessThan(10);
+  });
+
+  it('handles corrupt localStorage or non-array payloads safely', () => {
+    if (typeof localStorage !== 'undefined') {
+      localStorage.setItem('dices_history_v1', 'invalid-json{{');
+      const stateFromCorrupt = new RollState();
+      expect(stateFromCorrupt.history).toEqual([]);
+
+      localStorage.setItem('dices_history_v1', '{"not":"an array"}');
+      const stateFromObject = new RollState();
+      expect(stateFromObject.history).toEqual([]);
+
+      localStorage.removeItem('dices_history_v1');
+    }
   });
 });

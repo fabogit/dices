@@ -82,7 +82,7 @@ The architecture cleanly decouples mathematical random generation, domain statis
 * **3D Graphics & Rendering:** [Three.js](https://threejs.org/) (`^0.170.0`), `@types/three` (`^0.170.0`)
 * **Language & Typings:** [TypeScript](https://www.typescriptlang.org/) (`^7.0.2`), ECMAScript 2022 Target
 * **Build Tooling & Bundler:** [Vite 6](https://vite.dev/) (`^6.0.0`), `@sveltejs/vite-plugin-svelte` (`^5.0.0`), with manual chunk splitting for `three`
-* **Testing & Quality:** [Vitest](https://vitest.dev/) (`^2.1.0`), [Playwright](https://playwright.dev/) (`^1.65.0`, Chromium E2E), GitHub Actions CI, and strict type-checking via `tsc --noEmit`
+* **Testing & Quality:** [Vitest](https://vitest.dev/) (`^2.1.0`) with `@vitest/coverage-v8`, [Playwright](https://playwright.dev/) (`^1.65.0`, Chromium E2E), GitHub Actions CI, and strict type-checking via `tsc --noEmit`
 * **Package Management & Engine:** [pnpm](https://pnpm.io/) (`pnpm@11.21.0`), Node.js `>=26.13.1` (pinned via `.node-version`)
 * **Cloud Infrastructure & Security:** [Cloudflare Pages](https://pages.cloudflare.com/) (`wrangler.jsonc`, `compatibility_date: 2026-11-01`), strict security headers via `public/_headers`
 
@@ -291,10 +291,13 @@ pnpm run preview
 # Run strict TypeScript type verification without emitting files
 pnpm run check
 
-# Execute comprehensive Vitest unit/state test suite (88 tests across core, 3D, and state)
+# Execute comprehensive Vitest unit/state test suite (94 tests across core, 3D, and state)
 pnpm test
 
-# Execute Chromium Playwright E2E test suite against the built production preview (7 specs)
+# Run Vitest test suite with V8 code coverage and threshold enforcement
+pnpm run test:coverage
+
+# Execute Chromium Playwright E2E test suite against the built production preview (13 tests across 8 specs)
 pnpm run test:e2e
 ```
 
