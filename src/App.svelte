@@ -169,7 +169,8 @@
     --bg-dark: #090d16;
     --surface-dark: #111827;
     --border-color: rgba(75, 85, 99, 0.4);
-    --primary-blue: #0284c7;
+    --primary-blue: #0369a1;
+    --primary-blue-dark: #075985;
     --accent-blue: #38bdf8;
     --text-primary: #f9fafb;
     --text-secondary: #9ca3af;
@@ -197,12 +198,38 @@
     white-space: nowrap !important;
   }
 
+  :global(.collapse-toggle-btn) {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.25rem 0.6rem;
+    min-block-size: 28px;
+    background: #1f2937;
+    border: 1px solid #374151;
+    border-radius: 0.375rem;
+    color: var(--text-secondary);
+    font-size: 0.75rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.15s ease;
+  }
+
+  :global(.collapse-toggle-btn:hover) {
+    background: #374151;
+    color: #f3f4f6;
+  }
+
+  :global(.collapse-toggle-btn .chevron) {
+    font-size: 0.85rem;
+    color: var(--accent-blue);
+  }
+
   .skip-link:focus-visible {
     position: fixed !important;
     top: 1rem !important;
     left: 1rem !important;
     z-index: 1000 !important;
-    background: #0284c7 !important;
+    background: var(--primary-blue) !important;
     color: #ffffff !important;
     padding: 0.6rem 1.2rem !important;
     border-radius: 0.375rem !important;

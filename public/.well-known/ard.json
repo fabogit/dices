@@ -1,0 +1,17 @@
+{
+  "$schema": "https://agenticresourcediscovery.org/spec/schemas/ard-manifest.schema.json",
+  "entries": [
+    {
+      "identifier": "urn:air:github.com:fabogit:dices-app",
+      "displayName": "Dices - 3D Polyhedral Dice & Coin Roller",
+      "type": "text/html",
+      "url": "https://github.com/fabogit/dices",
+      "description": "Interactive CSPRNG-powered 3D polyhedral dice (d4-d20) and coin (d2) simulator with series scoring, statistical breakdown, and local leaderboard.",
+      "representativeQueries": [
+        "Roll 3d6 in a best-of-5 series",
+        "Flip a fair coin with statistical breakdown",
+        "Compare player luck index leaderboard"
+      ]
+    }
+  ]
+}

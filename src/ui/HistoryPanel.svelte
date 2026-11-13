@@ -32,9 +32,9 @@
         class="collapse-toggle-btn"
         aria-expanded={!isCollapsed}
         onclick={() => (isCollapsed = !isCollapsed)}
-        aria-label="{isCollapsed ? 'Expand' : 'Collapse'} History & Leaderboard"
+        aria-label="{isCollapsed ? 'Show' : 'Hide'} History & Leaderboard"
       >
-        <span class="chevron">{isCollapsed ? '▸' : '▾'}</span>
+        <span class="chevron" aria-hidden="true">{isCollapsed ? '▸' : '▾'}</span>
         <span>{isCollapsed ? 'Show' : 'Hide'}</span>
       </button>
     </div>
@@ -203,32 +203,6 @@
     gap: 0.4rem;
   }
 
-  .collapse-toggle-btn {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.35rem;
-    padding: 0.25rem 0.6rem;
-    min-block-size: 28px;
-    background: #1f2937;
-    border: 1px solid #374151;
-    border-radius: 0.375rem;
-    color: #9ca3af;
-    font-size: 0.75rem;
-    font-weight: 600;
-    cursor: pointer;
-    transition: all 0.15s ease;
-  }
-
-  .collapse-toggle-btn:hover {
-    background: #374151;
-    color: #f3f4f6;
-  }
-
-  .chevron {
-    font-size: 0.85rem;
-    color: #38bdf8;
-  }
-
   .history-body {
     display: flex;
     flex-direction: column;
@@ -259,7 +233,7 @@
   .empty-history {
     margin: 0;
     font-size: 0.85rem;
-    color: #6b7280;
+    color: var(--text-secondary, #9ca3af);
     font-style: italic;
     padding: 0.75rem 0;
   }
@@ -362,7 +336,7 @@
   }
 
   .mini-label {
-    color: #6b7280;
+    color: var(--text-secondary, #9ca3af);
     font-size: 0.68rem;
     text-transform: uppercase;
   }

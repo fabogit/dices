@@ -19,9 +19,9 @@
       class="collapse-toggle-btn"
       aria-expanded={!isScoreboardCollapsed}
       onclick={() => (isScoreboardCollapsed = !isScoreboardCollapsed)}
-      aria-label="{isScoreboardCollapsed ? 'Expand' : 'Collapse'} Live Series Scoreboard"
+      aria-label="{isScoreboardCollapsed ? 'Show' : 'Hide'} Live Series Scoreboard"
     >
-      <span class="chevron">{isScoreboardCollapsed ? '▸' : '▾'}</span>
+      <span class="chevron" aria-hidden="true">{isScoreboardCollapsed ? '▸' : '▾'}</span>
       <span>{isScoreboardCollapsed ? 'Show' : 'Hide'}</span>
     </button>
   </div>
@@ -234,9 +234,9 @@
         class="collapse-toggle-btn"
         aria-expanded={!isAnalyticsCollapsed}
         onclick={() => (isAnalyticsCollapsed = !isAnalyticsCollapsed)}
-        aria-label="{isAnalyticsCollapsed ? 'Expand' : 'Collapse'} Statistical Breakdown & Distribution"
+        aria-label="{isAnalyticsCollapsed ? 'Show' : 'Hide'} Statistical Breakdown & Distribution"
       >
-        <span class="chevron">{isAnalyticsCollapsed ? '▸' : '▾'}</span>
+        <span class="chevron" aria-hidden="true">{isAnalyticsCollapsed ? '▸' : '▾'}</span>
         <span>{isAnalyticsCollapsed ? 'Show' : 'Hide'}</span>
       </button>
     </div>
@@ -500,32 +500,6 @@
     color: #f3f4f6;
   }
 
-  .collapse-toggle-btn {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.35rem;
-    padding: 0.25rem 0.6rem;
-    min-block-size: 28px;
-    background: #1f2937;
-    border: 1px solid #374151;
-    border-radius: 0.375rem;
-    color: #9ca3af;
-    font-size: 0.75rem;
-    font-weight: 600;
-    cursor: pointer;
-    transition: all 0.15s ease;
-  }
-
-  .collapse-toggle-btn:hover {
-    background: #374151;
-    color: #f3f4f6;
-  }
-
-  .chevron {
-    font-size: 0.85rem;
-    color: #38bdf8;
-  }
-
   .scoreboard-body {
     display: flex;
     flex-direction: column;
@@ -639,7 +613,7 @@
   }
 
   .sub-stat-sep {
-    color: #6b7280;
+    color: var(--text-secondary, #9ca3af);
   }
 
   .sub-stat {
@@ -886,7 +860,7 @@
 
   .sub-label {
     font-size: 0.72rem;
-    color: #6b7280;
+    color: var(--text-secondary, #9ca3af);
   }
 
   /* Distribution Chart */
@@ -1020,7 +994,7 @@
 
   .delta-pct {
     font-size: 0.68rem;
-    color: #6b7280;
+    color: var(--text-secondary, #9ca3af);
   }
 
   .delta-pct.delta-pos {
@@ -1099,7 +1073,7 @@
   .empty-table-cell {
     text-align: center;
     padding: 1.5rem !important;
-    color: #6b7280;
+    color: var(--text-secondary, #9ca3af);
     font-style: italic;
   }
 

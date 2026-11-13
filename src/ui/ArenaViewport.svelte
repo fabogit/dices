@@ -1,6 +1,6 @@
 <script lang="ts">
-  import { onMount, onDestroy } from 'svelte';
-  import { DiceArena3D } from '../three/DiceArena3D';
+  import { onMount } from 'svelte';
+  import type { DiceArena3D } from '../three/DiceArena3D';
   import { rollState } from './rollState.svelte';
 
   let canvasElement: HTMLCanvasElement;
@@ -12,25 +12,34 @@
   );
 
   onMount(() => {
-    if (canvasElement) {
-      arena = new DiceArena3D(canvasElement, {
-        onContextLost: () => {
-          rollState.setContextLost(true);
-        },
-        onContextRestored: () => {
-          rollState.setContextLost(false);
-        },
-      });
-      rollState.setArena(arena);
-    }
-  });
+    let destroyed = false;
 
-  onDestroy(() => {
-    if (arena) {
-      arena.dispose();
-      rollState.setArena(null);
-      arena = null;
-    }
+    void (async () => {
+      try {
+        const { DiceArena3D: ArenaClass } = await import('../three/DiceArena3D');
+        if (destroyed || !canvasElement) return;
+        arena = new ArenaClass(canvasElement, {
+          onContextLost: () => {
+            rollState.setContextLost(true);
+          },
+          onContextRestored: () => {
+            rollState.setContextLost(false);
+          },
+        });
+        rollState.setArena(arena);
+      } catch (err) {
+        console.error('Failed to load 3D Dice Arena:', err);
+      }
+    })();
+
+    return () => {
+      destroyed = true;
+      if (arena) {
+        arena.dispose();
+        rollState.setArena(null);
+        arena = null;
+      }
+    };
   });
 
   function toggleCollapse() {
@@ -51,9 +60,9 @@
       class="collapse-toggle-btn"
       aria-expanded={!isCollapsed}
       onclick={toggleCollapse}
-      aria-label="{isCollapsed ? 'Expand' : 'Collapse'} 3D Dice Arena"
+      aria-label="{isCollapsed ? 'Show Arena' : 'Hide Arena'} for 3D Dice"
     >
-      <span class="chevron">{isCollapsed ? '▸' : '▾'}</span>
+      <span class="chevron" aria-hidden="true">{isCollapsed ? '▸' : '▾'}</span>
       <span>{isCollapsed ? 'Show Arena' : 'Hide Arena'}</span>
     </button>
   </div>
@@ -229,32 +238,6 @@
     font-size: 1.15rem;
     font-weight: 700;
     color: #f3f4f6;
-  }
-
-  .collapse-toggle-btn {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.35rem;
-    padding: 0.25rem 0.6rem;
-    min-block-size: 28px;
-    background: #1f2937;
-    border: 1px solid #374151;
-    border-radius: 0.375rem;
-    color: #9ca3af;
-    font-size: 0.75rem;
-    font-weight: 600;
-    cursor: pointer;
-    transition: all 0.15s ease;
-  }
-
-  .collapse-toggle-btn:hover {
-    background: #374151;
-    color: #f3f4f6;
-  }
-
-  .chevron {
-    font-size: 0.85rem;
-    color: #38bdf8;
   }
 
   .arena-body {
@@ -473,14 +456,14 @@
   .primary-btn {
     flex: 2;
     min-inline-size: 130px;
-    background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%);
+    background: linear-gradient(135deg, var(--primary-blue, #0369a1) 0%, var(--primary-blue-dark, #075985) 100%);
     border: 1px solid #38bdf8;
     color: #ffffff;
-    box-shadow: 0 4px 12px rgba(2, 132, 199, 0.3);
+    box-shadow: 0 4px 12px rgba(3, 105, 161, 0.35);
   }
 
   .primary-btn:hover:not(:disabled) {
-    background: linear-gradient(135deg, #0369a1 0%, #075985 100%);
+    background: linear-gradient(135deg, #075985 0%, #0c4a6e 100%);
   }
 
   .secondary-btn {

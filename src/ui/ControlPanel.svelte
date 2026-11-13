@@ -24,9 +24,9 @@
       class="collapse-toggle-btn"
       aria-expanded={!isCollapsed}
       onclick={() => (isCollapsed = !isCollapsed)}
-      aria-label="{isCollapsed ? 'Expand' : 'Collapse'} Dice & Series Setup"
+      aria-label="{isCollapsed ? 'Show' : 'Hide'} Dice & Series Setup"
     >
-      <span class="chevron">{isCollapsed ? '▸' : '▾'}</span>
+      <span class="chevron" aria-hidden="true">{isCollapsed ? '▸' : '▾'}</span>
       <span>{isCollapsed ? 'Show' : 'Hide'}</span>
     </button>
   </div>
@@ -106,7 +106,7 @@
   {#if rollState.mode === 'series'}
     <div class="field-group">
       <div class="field-label-row">
-        <label for="series-length-input" class="field-label">
+        <label for="series-length-slider" class="field-label">
           Series Rounds (K):
           <strong class="count-value">{rollState.seriesLength}</strong>
         </label>
@@ -207,32 +207,6 @@
     font-weight: 700;
     color: #f3f4f6;
     letter-spacing: -0.01em;
-  }
-
-  .collapse-toggle-btn {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.35rem;
-    padding: 0.25rem 0.6rem;
-    min-block-size: 28px;
-    background: #1f2937;
-    border: 1px solid #374151;
-    border-radius: 0.375rem;
-    color: #9ca3af;
-    font-size: 0.75rem;
-    font-weight: 600;
-    cursor: pointer;
-    transition: all 0.15s ease;
-  }
-
-  .collapse-toggle-btn:hover {
-    background: #374151;
-    color: #f3f4f6;
-  }
-
-  .chevron {
-    font-size: 0.85rem;
-    color: #38bdf8;
   }
 
   .panel-body {
@@ -377,8 +351,8 @@
   }
 
   .preset-btn.active {
-    background: #0284c7;
-    border-color: #38bdf8;
+    background: var(--primary-blue, #0369a1);
+    border-color: var(--accent-blue, #38bdf8);
     color: #ffffff;
   }
 

@@ -1,0 +1,8 @@
+# Dices - 3D Polyhedral Dice & Coin Roller
+
+> CSPRNG-powered 3D polyhedral dice (d4, d6, d8, d10, d12, d20) and coin (d2) roller built with Svelte 5 and Three.js, featuring real-time series scoring, statistical breakdown, and accessible keyboard/screen-reader controls.
+
+## Resources
+
+- [Dices Web App](/): Interactive 3D dice arena with Quick Roll and Series modes, local player leaderboard, and statistical distribution analytics.
+- [Source Repository](https://github.com/fabogit/dices): Source code, CSPRNG rejection-sampling engine, unit tests, and Playwright E2E suite.
