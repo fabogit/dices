@@ -18,19 +18,22 @@ test.describe('Statistics Alignment & Descriptive Insights (Issue #12 & #13)', (
     const toolbar = page.getByRole('toolbar', { name: 'Roll controls' });
     const rollBtn = toolbar.locator('.primary-btn');
 
-    // Complete 3 rounds to populate both Live Analytics and History Leaderboard
+    // Complete round 1 on default Scoreboard tab
     await rollBtn.click();
     await expect(page.locator('.series-badge')).toHaveText('Round 1 of 3');
+
+    // Verify coin summary cards display percentages (%)
+    await expect(page.locator('.heads-card .sub-stat-pct')).toContainText('%');
+    await expect(page.locator('.tails-card .sub-stat-pct')).toContainText('%');
+
+    // Switch to Breakdown tab to inspect statistical verdict & distribution
+    await page.getByRole('tab', { name: /Breakdown/i }).click();
 
     // Verify descriptive verdict and sample reliability chip
     await expect(page.locator('.insight-banner .insight-title')).toHaveText('Statistical Verdict');
     await expect(page.locator('.reliability-chip')).toContainText('Small sample');
     const verdictText = await page.locator('.insight-text').textContent();
     expect(verdictText?.trim().length).toBeGreaterThan(15);
-
-    // Verify coin summary cards display percentages (%)
-    await expect(page.locator('.heads-card .sub-stat-pct')).toContainText('%');
-    await expect(page.locator('.tails-card .sub-stat-pct')).toContainText('%');
 
     // Verify d2 aligned analytics grid (Heads Share, Tails Share, Balance Deviation, Round Split)
     const coinGrid = page.locator('.coin-analytics-grid');
@@ -45,12 +48,14 @@ test.describe('Statistics Alignment & Descriptive Insights (Issue #12 & #13)', (
     await expect(distBars.nth(0)).toHaveAttribute('role', 'img');
     await expect(distBars.nth(0)).toHaveAttribute('aria-label', /Face HEADS:.*expected 50\.0%/);
 
-    // Complete remaining rounds
+    // Complete remaining rounds and verify Scoreboard tab badge updates
     await rollBtn.click();
     await rollBtn.click();
+    await page.getByRole('tab', { name: /Scoreboard/i }).click();
     await expect(page.locator('.series-badge')).toHaveText('Round 3 of 3');
 
-    // Verify History & Leaderboard reflects Luck Index aria-label and Coin % breakdown
+    // Switch to History tab and verify Luck Index aria-label & Coin % breakdown
+    await page.getByRole('tab', { name: /History/i }).click();
     const luckBadge = page.locator('.luck-badge').first();
     await expect(luckBadge).toHaveAttribute('role', 'img');
     await expect(luckBadge).toHaveAttribute('aria-label', /100% is fair baseline/);
@@ -132,8 +137,9 @@ test.describe('Statistics Alignment & Descriptive Insights (Issue #12 & #13)', (
     const toolbar = page.getByRole('toolbar', { name: 'Roll controls' });
     const rollBtn = toolbar.locator('.primary-btn');
 
-    // Execute Round 1 (values [2, 4], sum 6)
+    // Execute Round 1 (values [2, 4], sum 6) and open Breakdown tab
     await rollBtn.click();
+    await page.getByRole('tab', { name: /Breakdown/i }).click();
 
     const diceCountTag = page.locator('.dice-count-tag');
     await expect(diceCountTag).toHaveText('2 dice rolled');
@@ -223,6 +229,9 @@ test.describe('Statistics Alignment & Descriptive Insights (Issue #12 & #13)', (
 
     const toolbar = page.getByRole('toolbar', { name: 'Roll controls' });
     const rollBtn = toolbar.locator('.primary-btn');
+
+    // Open Breakdown tab to monitor live transitions
+    await page.getByRole('tab', { name: /Breakdown/i }).click();
 
     // Round 1 (5 dice rolled -> Small sample (<10))
     await rollBtn.click();

@@ -6,13 +6,33 @@
   import QuickResultPanel from './ui/QuickResultPanel.svelte';
   import { rollState } from './ui/rollState.svelte';
 
-  const appVersion = typeof __APP_VERSION__ !== 'undefined' ? __APP_VERSION__ : '1.0.1';
+  const appVersion = typeof __APP_VERSION__ !== 'undefined' ? __APP_VERSION__ : '1.0.2';
   const appAuthor = typeof __APP_AUTHOR__ !== 'undefined' ? __APP_AUTHOR__ : 'fabogit';
   const buildYear =
     typeof __BUILD_YEAR__ !== 'undefined' ? __BUILD_YEAR__ : new Date().getFullYear().toString();
 
+  type RightPanelTab = 'scoreboard' | 'analytics' | 'history';
+  const RIGHT_TABS: RightPanelTab[] = ['scoreboard', 'analytics', 'history'];
+
   let showAddPlayerModal = $state(false);
   let newPlayerName = $state('');
+  let rightPanelTab = $state<RightPanelTab>('scoreboard');
+
+  function handleTabKeyDown(e: KeyboardEvent) {
+    const currentIndex = RIGHT_TABS.indexOf(rightPanelTab);
+    let nextIndex = -1;
+    if (e.key === 'ArrowRight') nextIndex = (currentIndex + 1) % RIGHT_TABS.length;
+    else if (e.key === 'ArrowLeft') nextIndex = (currentIndex - 1 + RIGHT_TABS.length) % RIGHT_TABS.length;
+    else if (e.key === 'Home') nextIndex = 0;
+    else if (e.key === 'End') nextIndex = RIGHT_TABS.length - 1;
+
+    if (nextIndex !== -1) {
+      e.preventDefault();
+      const nextTab = RIGHT_TABS[nextIndex]!;
+      rightPanelTab = nextTab;
+      document.getElementById(`tab-${nextTab}`)?.focus();
+    }
+  }
 
   function handleAddPlayerSubmit(e: Event) {
     e.preventDefault();
@@ -155,13 +175,90 @@
         <ArenaViewport />
       </div>
 
-      <!-- Right Column: Scoreboard/History OR Quick Feed -->
+      <!-- Right Column: Tabbed Scoreboard/Breakdown/History OR Quick Feed -->
       <div class="column-right">
         {#if rollState.mode === 'quick'}
           <QuickResultPanel />
         {:else}
-          <SeriesScoreboard />
-          <HistoryPanel />
+          <div
+            class="right-panel-tabs"
+            role="tablist"
+            aria-label="Series analysis views"
+          >
+            <button
+              id="tab-scoreboard"
+              type="button"
+              role="tab"
+              class="panel-tab-btn"
+              class:active={rightPanelTab === 'scoreboard'}
+              aria-selected={rightPanelTab === 'scoreboard'}
+              aria-controls="tabpanel-scoreboard"
+              tabindex={rightPanelTab === 'scoreboard' ? 0 : -1}
+              onkeydown={handleTabKeyDown}
+              onclick={() => (rightPanelTab = 'scoreboard')}
+            >
+              <span>Scoreboard</span>
+              {#if rollState.rounds.length > 0}
+                <span class="tab-badge">{rollState.rounds.length}/{rollState.seriesLength}</span>
+              {/if}
+            </button>
+            <button
+              id="tab-analytics"
+              type="button"
+              role="tab"
+              class="panel-tab-btn"
+              class:active={rightPanelTab === 'analytics'}
+              aria-selected={rightPanelTab === 'analytics'}
+              aria-controls="tabpanel-analytics"
+              tabindex={rightPanelTab === 'analytics' ? 0 : -1}
+              onkeydown={handleTabKeyDown}
+              onclick={() => (rightPanelTab = 'analytics')}
+            >
+              <span>Breakdown</span>
+            </button>
+            <button
+              id="tab-history"
+              type="button"
+              role="tab"
+              class="panel-tab-btn"
+              class:active={rightPanelTab === 'history'}
+              aria-selected={rightPanelTab === 'history'}
+              aria-controls="tabpanel-history"
+              tabindex={rightPanelTab === 'history' ? 0 : -1}
+              onkeydown={handleTabKeyDown}
+              onclick={() => (rightPanelTab = 'history')}
+            >
+              <span>History</span>
+              {#if rollState.history.length > 0}
+                <span class="tab-badge">{rollState.history.length}</span>
+              {/if}
+            </button>
+          </div>
+
+          <div
+            id="tabpanel-scoreboard"
+            role="tabpanel"
+            aria-labelledby="tab-scoreboard"
+            hidden={rightPanelTab !== 'scoreboard'}
+          >
+            <SeriesScoreboard section="scoreboard" />
+          </div>
+          <div
+            id="tabpanel-analytics"
+            role="tabpanel"
+            aria-labelledby="tab-analytics"
+            hidden={rightPanelTab !== 'analytics'}
+          >
+            <SeriesScoreboard section="analytics" />
+          </div>
+          <div
+            id="tabpanel-history"
+            role="tabpanel"
+            aria-labelledby="tab-history"
+            hidden={rightPanelTab !== 'history'}
+          >
+            <HistoryPanel />
+          </div>
         {/if}
       </div>
     </div>
@@ -537,7 +634,7 @@
 
   .layout-grid {
     display: grid;
-    grid-template-columns: 320px 1fr 340px;
+    grid-template-columns: 310px 1fr 380px;
     gap: 1.25rem;
     align-items: start;
   }
@@ -556,34 +653,59 @@
   .column-right {
     display: flex;
     flex-direction: column;
-    gap: 1.25rem;
+    gap: 0.75rem;
   }
 
-  /* Responsive Breakpoints */
-  @media (max-width: 1200px) {
-    .layout-grid {
-      grid-template-columns: 300px 1fr;
-    }
-    .column-right {
-      grid-column: span 2;
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-    }
+  .right-panel-tabs {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0.25rem;
+    padding: 0.25rem;
+    background: var(--surface-dark);
+    border: 1px solid var(--border-color);
+    border-radius: 0.65rem;
   }
 
-  @media (max-width: 860px) {
-    .layout-grid {
-      grid-template-columns: 1fr;
-    }
-    .column-right {
-      grid-column: span 1;
-      display: flex;
-      flex-direction: column;
-    }
-    .app-footer {
-      justify-content: center;
-      text-align: center;
-    }
+  .panel-tab-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.35rem;
+    min-block-size: 34px;
+    padding: 0.35rem 0.5rem;
+    background: transparent;
+    border: 1px solid transparent;
+    border-radius: 0.45rem;
+    color: var(--text-secondary);
+    font-size: 0.8rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.15s ease;
+  }
+
+  .panel-tab-btn:hover {
+    color: var(--text-primary);
+    background: rgba(31, 41, 55, 0.7);
+  }
+
+  .panel-tab-btn.active {
+    background: var(--primary-blue);
+    border-color: var(--accent-blue);
+    color: #ffffff;
+  }
+
+  .tab-badge {
+    padding: 0.05rem 0.35rem;
+    border-radius: 9999px;
+    font-size: 0.68rem;
+    font-weight: 700;
+    background: #1f2937;
+    color: var(--accent-blue);
+  }
+
+  .panel-tab-btn.active .tab-badge {
+    background: rgba(255, 255, 255, 0.2);
+    color: #ffffff;
   }
 
   /* Semantic Footer */
@@ -635,6 +757,48 @@
 
   .footer-version:hover {
     color: var(--accent-blue);
+  }
+
+  /* Responsive Breakpoints */
+  @media (max-width: 1200px) {
+    .layout-grid {
+      grid-template-columns: 300px 1fr;
+    }
+    .column-right {
+      grid-column: span 2;
+      display: flex;
+      flex-direction: column;
+    }
+  }
+
+  @media (max-width: 920px) {
+    .app-header {
+      justify-content: center;
+    }
+    .header-branding {
+      justify-content: center;
+    }
+    .header-controls {
+      justify-content: center;
+    }
+    .app-footer {
+      justify-content: center;
+      text-align: center;
+    }
+    .footer-group {
+      justify-content: center;
+    }
+  }
+
+  @media (max-width: 860px) {
+    .layout-grid {
+      grid-template-columns: 1fr;
+    }
+    .column-right {
+      grid-column: span 1;
+      display: flex;
+      flex-direction: column;
+    }
   }
 
   a:focus-visible, button:focus-visible, select:focus-visible, input:focus-visible {

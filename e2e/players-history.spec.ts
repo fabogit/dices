@@ -96,7 +96,8 @@ test.describe('Player Management, Leaderboard, & History Persistence (Issue #13)
     await rollBtn.click();
     await expect(rollBtn).toHaveText(/Series Complete/i);
 
-    // Step 6: Verify Leaderboard rankings & metrics
+    // Step 6: Switch to History tab and verify Leaderboard rankings & metrics
+    await page.getByRole('tab', { name: /History/i }).click();
     const playerCards = page.locator('.leaderboard-grid .player-card');
     await expect(playerCards).toHaveCount(2);
 
@@ -128,6 +129,7 @@ test.describe('Player Management, Leaderboard, & History Persistence (Issue #13)
 
     // Step 7: Reload the page and verify localStorage persistence
     await page.reload();
+    await page.getByRole('tab', { name: /History/i }).click();
 
     const reloadedPlayerCards = page.locator('.leaderboard-grid .player-card');
     await expect(reloadedPlayerCards).toHaveCount(2);
@@ -151,6 +153,7 @@ test.describe('Player Management, Leaderboard, & History Persistence (Issue #13)
 
     // Persist empty history across reload
     await page.reload();
+    await page.getByRole('tab', { name: /History/i }).click();
     await expect(page.locator('.empty-history')).toBeVisible();
     await expect(page.locator('.clear-btn')).not.toBeVisible();
     await expect(page.locator('.history-item')).toHaveCount(0);

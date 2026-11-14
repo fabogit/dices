@@ -1,12 +1,18 @@
 <script lang="ts">
   import { rollState } from './rollState.svelte';
 
+  let { section = 'all' }: { section?: 'all' | 'scoreboard' | 'analytics' } = $props();
+
   const analytics = $derived(rollState.summary.analytics);
   let isScoreboardCollapsed = $state(false);
   let isAnalyticsCollapsed = $state(false);
 </script>
 
-<section class="series-scoreboard" aria-labelledby="scoreboard-heading">
+<section
+  class="series-scoreboard"
+  aria-labelledby={section === 'analytics' ? 'analytics-heading' : 'scoreboard-heading'}
+>
+  {#if section === 'all' || section === 'scoreboard'}
   <div class="scoreboard-header">
     <div class="title-with-badge">
       <h2 id="scoreboard-heading" class="scoreboard-title">Live Series Scoreboard</h2>
@@ -217,14 +223,21 @@
       </table>
     </div>
   </div>
+  {/if}
 
+  {#if section === 'all' || section === 'analytics'}
   <!-- Advanced Statistical Breakdown (Issue #7 & #12) -->
-  <div class="analytics-section">
+  <div class="analytics-section" class:analytics-standalone={section === 'analytics'}>
     <div class="section-title-row">
       <div class="title-with-badge">
-        <h3 class="section-subtitle">
+        <svelte:element
+          this={section === 'analytics' ? 'h2' : 'h3'}
+          id={section === 'analytics' ? 'analytics-heading' : undefined}
+          class="section-subtitle"
+          class:scoreboard-title={section === 'analytics'}
+        >
           Statistical Breakdown ({rollState.faces === 2 ? 'Coin d2' : `d${rollState.faces}`})
-        </h3>
+        </svelte:element>
         <span class="dice-count-tag">
           {analytics.totalDiceRolled} {analytics.totalDiceRolled === 1 ? 'die rolled' : 'dice rolled'}
         </span>
@@ -466,6 +479,7 @@
       </figure>
     </div>
   </div>
+  {/if}
 </section>
 
 <style>
@@ -690,6 +704,11 @@
     border-top: 1px solid rgba(75, 85, 99, 0.3);
   }
 
+  .analytics-section.analytics-standalone {
+    padding-top: 0;
+    border-top: none;
+  }
+
   .section-title-row {
     display: flex;
     justify-content: space-between;
@@ -702,6 +721,11 @@
     font-weight: 700;
     color: #e5e7eb;
     letter-spacing: -0.01em;
+  }
+
+  .section-subtitle.scoreboard-title {
+    font-size: 1.15rem;
+    color: #f3f4f6;
   }
 
   .dice-count-tag {
@@ -905,6 +929,9 @@
     display: flex;
     flex-direction: column;
     gap: 0.4rem;
+    max-block-size: 290px;
+    overflow-y: auto;
+    padding-inline-end: 0.25rem;
   }
 
   .dist-row {

@@ -46,5 +46,26 @@ test.describe('Accessibility & Arena Toolbar (Issue #9)', () => {
 
     await rollBtn.click();
     await expect(liveRegion).toContainText('Round 1 of');
+
+    // Verify right-column WAI-ARIA tablist keyboard navigation
+    const scoreboardTab = page.getByRole('tab', { name: /Scoreboard/i });
+    const breakdownTab = page.getByRole('tab', { name: /Breakdown/i });
+    const historyTab = page.getByRole('tab', { name: /History/i });
+
+    await scoreboardTab.focus();
+    await expect(scoreboardTab).toHaveAttribute('aria-selected', 'true');
+    await page.keyboard.press('ArrowRight');
+    await expect(breakdownTab).toBeFocused();
+    await expect(breakdownTab).toHaveAttribute('aria-selected', 'true');
+    await expect(page.getByRole('tabpanel', { name: /Breakdown/i })).toBeVisible();
+
+    await page.keyboard.press('ArrowRight');
+    await expect(historyTab).toBeFocused();
+    await expect(historyTab).toHaveAttribute('aria-selected', 'true');
+    await expect(page.getByRole('tabpanel', { name: /History/i })).toBeVisible();
+
+    await page.keyboard.press('Home');
+    await expect(scoreboardTab).toBeFocused();
+    await expect(scoreboardTab).toHaveAttribute('aria-selected', 'true');
   });
 });

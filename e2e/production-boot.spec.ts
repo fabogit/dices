@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import pkg from '../package.json' with { type: 'json' };
 
 test.describe('Production Boot & Baseline Sanity', () => {
   test('boots without console errors, renders correct title, favicon, and 3D canvas', async ({ page }) => {
@@ -31,7 +32,7 @@ test.describe('Production Boot & Baseline Sanity', () => {
     // Verify semantic footer version, build year, license, and author links
     const footer = page.getByRole('contentinfo');
     await expect(footer).toBeVisible();
-    await expect(footer.getByRole('link', { name: 'Dices v1.0.1' })).toHaveAttribute(
+    await expect(footer.getByRole('link', { name: `Dices v${pkg.version}` })).toHaveAttribute(
       'href',
       'https://github.com/fabogit/dices',
     );
