@@ -6,6 +6,11 @@
   import QuickResultPanel from './ui/QuickResultPanel.svelte';
   import { rollState } from './ui/rollState.svelte';
 
+  const appVersion = typeof __APP_VERSION__ !== 'undefined' ? __APP_VERSION__ : '1.0.1';
+  const appAuthor = typeof __APP_AUTHOR__ !== 'undefined' ? __APP_AUTHOR__ : 'fabogit';
+  const buildYear =
+    typeof __BUILD_YEAR__ !== 'undefined' ? __BUILD_YEAR__ : new Date().getFullYear().toString();
+
   let showAddPlayerModal = $state(false);
   let newPlayerName = $state('');
 
@@ -161,6 +166,45 @@
       </div>
     </div>
   </main>
+
+  <!-- Semantic Footer -->
+  <footer class="app-footer">
+    <div class="footer-group">
+      <a
+        href="https://github.com/fabogit/dices"
+        target="_blank"
+        rel="noopener noreferrer"
+        class="footer-link footer-version"
+      >
+        Dices v{appVersion}
+      </a>
+      <span class="footer-sep" aria-hidden="true">·</span>
+      <span>© {buildYear}</span>
+      <a
+        href="https://github.com/fabogit/dices/blob/main/LICENSE"
+        target="_blank"
+        rel="noopener noreferrer"
+        class="footer-link"
+      >
+        MIT License
+      </a>
+    </div>
+
+    <div class="footer-group">
+      <span>
+        Made with <span aria-hidden="true">❤️</span><span class="sr-only">love</span> &amp;
+        <span aria-hidden="true">🤖</span><span class="sr-only">AI</span> by
+        <a
+          href="https://github.com/fabogit"
+          target="_blank"
+          rel="noopener noreferrer"
+          class="footer-link"
+        >
+          {appAuthor}
+        </a>
+      </span>
+    </div>
+  </footer>
 </div>
 
 <style>
@@ -536,9 +580,64 @@
       display: flex;
       flex-direction: column;
     }
+    .app-footer {
+      justify-content: center;
+      text-align: center;
+    }
   }
 
-  button:focus-visible, select:focus-visible, input:focus-visible {
+  /* Semantic Footer */
+  .app-footer {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem 1.5rem;
+    padding: 0.85rem 1.5rem;
+    background: #0f1523;
+    border-top: 1px solid var(--border-color);
+    color: var(--text-secondary);
+    font-size: 0.8rem;
+  }
+
+  .footer-group {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.4rem;
+  }
+
+  .footer-sep {
+    color: #4b5563;
+  }
+
+  .footer-link {
+    display: inline-flex;
+    align-items: center;
+    min-block-size: 24px;
+    padding: 0.1rem 0.25rem;
+    color: var(--accent-blue);
+    font-weight: 600;
+    text-decoration: none;
+    border-radius: 0.25rem;
+    transition: color 0.15s ease, text-decoration-color 0.15s ease;
+  }
+
+  .footer-link:hover {
+    color: #7dd3fc;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+  }
+
+  .footer-version {
+    color: var(--text-primary);
+  }
+
+  .footer-version:hover {
+    color: var(--accent-blue);
+  }
+
+  a:focus-visible, button:focus-visible, select:focus-visible, input:focus-visible {
     outline: 2px solid var(--accent-blue);
     outline-offset: 2px;
   }

@@ -28,6 +28,23 @@ test.describe('Production Boot & Baseline Sanity', () => {
     const titleText = page.locator('.title-gradient');
     await expect(titleText).toHaveText('Dices');
 
+    // Verify semantic footer version, build year, license, and author links
+    const footer = page.getByRole('contentinfo');
+    await expect(footer).toBeVisible();
+    await expect(footer.getByRole('link', { name: 'Dices v1.0.1' })).toHaveAttribute(
+      'href',
+      'https://github.com/fabogit/dices',
+    );
+    await expect(footer).toContainText(new Date().getFullYear().toString());
+    await expect(footer.getByRole('link', { name: 'MIT License' })).toHaveAttribute(
+      'href',
+      'https://github.com/fabogit/dices/blob/main/LICENSE',
+    );
+    await expect(footer.getByRole('link', { name: 'fabogit' })).toHaveAttribute(
+      'href',
+      'https://github.com/fabogit',
+    );
+
     // Verify 3D canvas is mounted with non-zero dimensions
     const canvas = page.locator('canvas.three-canvas');
     await expect(canvas).toBeVisible();
