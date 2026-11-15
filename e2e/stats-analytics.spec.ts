@@ -1,7 +1,9 @@
 import { test, expect } from '@playwright/test';
 
 test.describe('Statistics Alignment & Descriptive Insights (Issue #12 & #13)', () => {
-  test('displays coin percentages, statistical verdict, aligned d2 grid, and accessible distribution bars', async ({ page }) => {
+  test('displays coin percentages, statistical verdict, aligned d2 grid, and accessible distribution bars', async ({
+    page,
+  }) => {
     await page.goto('/');
 
     // Enable Fast mode for deterministic instant execution
@@ -16,7 +18,9 @@ test.describe('Statistics Alignment & Descriptive Insights (Issue #12 & #13)', (
 
     // Verify Bo3 preset is selected (3 rounds * 2 coins = 6 coins total -> small sample)
     const toolbar = page.getByRole('toolbar', { name: 'Roll controls' });
-    const rollBtn = toolbar.getByRole('button', { name: /Roll Round|Roll \d+d\d+|Flip|Series Complete/ });
+    const rollBtn = toolbar.getByRole('button', {
+      name: /Roll Round|Roll \d+d\d+|Flip|Series Complete/,
+    });
 
     // Complete round 1 on default Scoreboard tab
     await rollBtn.click();
@@ -32,7 +36,9 @@ test.describe('Statistics Alignment & Descriptive Insights (Issue #12 & #13)', (
     await page.getByRole('tab', { name: /Breakdown/i }).click();
 
     // Verify descriptive verdict and sample reliability chip
-    await expect(page.getByRole('heading', { name: 'Statistical Verdict' })).toHaveText('Statistical Verdict');
+    await expect(page.getByRole('heading', { name: 'Statistical Verdict' })).toHaveText(
+      'Statistical Verdict',
+    );
     await expect(page.getByTestId('sample-reliability')).toContainText('Small sample');
     const verdictText = await page.getByTestId('insight-text').textContent();
     expect(verdictText?.trim().length).toBeGreaterThan(15);
@@ -69,7 +75,9 @@ test.describe('Statistics Alignment & Descriptive Insights (Issue #12 & #13)', (
     await expect(page.getByTestId('history-coin-pct').first()).toContainText('% Heads /');
   });
 
-  test('renders Quick Roll expected comparisons, session summary, and preserves historical die badges', async ({ page }) => {
+  test('renders Quick Roll expected comparisons, session summary, and preserves historical die badges', async ({
+    page,
+  }) => {
     await page.goto('/');
 
     const fastModeBtn = page.getByRole('button', { name: /Fast: (ON|OFF)/ });
@@ -78,11 +86,16 @@ test.describe('Statistics Alignment & Descriptive Insights (Issue #12 & #13)', (
     }
 
     // Switch to Quick Roll mode with 2d6
-    await page.getByRole('group', { name: 'Application mode' }).getByRole('button', { name: /Quick Roll/i }).click();
+    await page
+      .getByRole('group', { name: 'Application mode' })
+      .getByRole('button', { name: /Quick Roll/i })
+      .click();
     await page.getByRole('button', { name: 'Increase quantity' }).click();
 
     const toolbar = page.getByRole('toolbar', { name: 'Roll controls' });
-    const rollBtn = toolbar.getByRole('button', { name: /Roll Round|Roll \d+d\d+|Flip|Series Complete/ });
+    const rollBtn = toolbar.getByRole('button', {
+      name: /Roll Round|Roll \d+d\d+|Flip|Series Complete/,
+    });
 
     // Execute 2 throws of 2d6
     await rollBtn.click();
@@ -111,7 +124,9 @@ test.describe('Statistics Alignment & Descriptive Insights (Issue #12 & #13)', (
     await expect(feedBadges.nth(2)).toHaveText('d6');
   });
 
-  test('computes deterministic polyhedral 2d6 statistics across multiple rounds and resets cleanly', async ({ page }) => {
+  test('computes deterministic polyhedral 2d6 statistics across multiple rounds and resets cleanly', async ({
+    page,
+  }) => {
     // Override crypto.getRandomValues with exact sequence: [1, 3, 5, 5]
     // rollCryptoFair computes (rand % faces) + 1:
     // Round 1 (2d6): rand 1 -> face 2, rand 3 -> face 4 => values [2, 4], sum 6
@@ -144,7 +159,9 @@ test.describe('Statistics Alignment & Descriptive Insights (Issue #12 & #13)', (
     await page.getByRole('button', { name: 'Increase quantity' }).click();
 
     const toolbar = page.getByRole('toolbar', { name: 'Roll controls' });
-    const rollBtn = toolbar.getByRole('button', { name: /Roll Round|Roll \d+d\d+|Flip|Series Complete/ });
+    const rollBtn = toolbar.getByRole('button', {
+      name: /Roll Round|Roll \d+d\d+|Flip|Series Complete/,
+    });
 
     // Execute Round 1 (values [2, 4], sum 6) and open Breakdown tab
     await rollBtn.click();
@@ -226,7 +243,9 @@ test.describe('Statistics Alignment & Descriptive Insights (Issue #12 & #13)', (
     }
   });
 
-  test('handles sample reliability transitions, dynamic d20 switching, and collapse toggling', async ({ page }) => {
+  test('handles sample reliability transitions, dynamic d20 switching, and collapse toggling', async ({
+    page,
+  }) => {
     await page.goto('/');
 
     const fastModeBtn = page.getByRole('button', { name: /Fast: (ON|OFF)/ });
@@ -241,7 +260,9 @@ test.describe('Statistics Alignment & Descriptive Insights (Issue #12 & #13)', (
     }
 
     const toolbar = page.getByRole('toolbar', { name: 'Roll controls' });
-    const rollBtn = toolbar.getByRole('button', { name: /Roll Round|Roll \d+d\d+|Flip|Series Complete/ });
+    const rollBtn = toolbar.getByRole('button', {
+      name: /Roll Round|Roll \d+d\d+|Flip|Series Complete/,
+    });
 
     // Open Breakdown tab to monitor live transitions
     await page.getByRole('tab', { name: /Breakdown/i }).click();
@@ -257,7 +278,9 @@ test.describe('Statistics Alignment & Descriptive Insights (Issue #12 & #13)', (
 
     // Dynamic instrument switching: switch to d20
     await page.getByRole('radio', { name: 'd20' }).click();
-    await expect(page.getByRole('heading', { name: /Statistical Breakdown/ })).toHaveText('Statistical Breakdown (d20)');
+    await expect(page.getByRole('heading', { name: /Statistical Breakdown/ })).toHaveText(
+      'Statistical Breakdown (d20)',
+    );
 
     // Distribution renders 20 rows
     const distRows = page

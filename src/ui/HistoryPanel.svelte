@@ -41,124 +41,70 @@
   </div>
 
   <div class="history-body" class:collapsed={isCollapsed}>
-  {#if rollState.history.length === 0}
-    <p class="empty-history">
-      No completed series yet. Complete a series to save records to local storage.
-    </p>
-  {:else}
-    <!-- Player Leaderboard / Comparison (Issue #7 & #12) -->
-    <div class="leaderboard-section">
-      <div class="leaderboard-header">
-        <h3 class="leaderboard-title">Player Leaderboard & Luck Index</h3>
-        <span class="leaderboard-sub">Normalized across all dice domains (100% = fair baseline)</span>
-      </div>
+    {#if rollState.history.length === 0}
+      <p class="empty-history">
+        No completed series yet. Complete a series to save records to local storage.
+      </p>
+    {:else}
+      <!-- Player Leaderboard / Comparison (Issue #7 & #12) -->
+      <div class="leaderboard-section">
+        <div class="leaderboard-header">
+          <h3 class="leaderboard-title">Player Leaderboard & Luck Index</h3>
+          <span class="leaderboard-sub"
+            >Normalized across all dice domains (100% = fair baseline)</span
+          >
+        </div>
 
-      <ul class="leaderboard-grid" role="list" aria-label="Player leaderboard">
-        {#each leaderboard as player (player.playerId)}
-          <li class="player-card">
-            <div class="player-header-row">
-              <div class="player-identity">
-                <span class="player-dot" style:background-color={player.color}></span>
-                <strong class="player-name" data-testid="player-name">{player.playerName}</strong>
-              </div>
-              <span
-                class="luck-badge"
-                class:luck-hot={player.normalizedLuckScore >= 100}
-                class:luck-cold={player.normalizedLuckScore < 100}
-                role="img"
-                aria-label="Luck Index: {player.normalizedLuckScore.toFixed(1)}% (100% is fair baseline; for coins, 50% Heads is 100%)"
-                title="Normalized Luck Index: {player.normalizedLuckScore.toFixed(1)}% (100% is fair baseline; for coins, 50% Heads = 100%)"
-              >
-                {player.normalizedLuckScore >= 100 ? '🔥' : '❄️'} {player.normalizedLuckScore.toFixed(1)}%
-              </span>
-            </div>
-
-            <div class="player-metrics-row">
-              <div class="metric-mini">
-                <span class="mini-label">Series</span>
-                <span class="mini-val">{player.seriesPlayed}</span>
-              </div>
-              <div class="metric-mini">
-                <span class="mini-label">Total Dice</span>
-                <span class="mini-val">{player.totalRolls}</span>
-              </div>
-              <div class="metric-mini">
-                <span class="mini-label">Crit Max</span>
-                <span class="mini-val highlight-crit">{player.criticalMaxRate.toFixed(1)}%</span>
-              </div>
-              {#if player.coinSeriesWon > 0}
-                <div class="metric-mini">
-                  <span class="mini-label">Coins Won</span>
-                  <span class="mini-val highlight-gold" data-testid="coin-series-won">{player.coinSeriesWon}</span>
+        <ul class="leaderboard-grid" role="list" aria-label="Player leaderboard">
+          {#each leaderboard as player (player.playerId)}
+            <li class="player-card">
+              <div class="player-header-row">
+                <div class="player-identity">
+                  <span class="player-dot" style:background-color={player.color}></span>
+                  <strong class="player-name" data-testid="player-name">{player.playerName}</strong>
                 </div>
-              {/if}
-              {#if player.coinHeadsRate !== undefined}
+                <span
+                  class="luck-badge"
+                  class:luck-hot={player.normalizedLuckScore >= 100}
+                  class:luck-cold={player.normalizedLuckScore < 100}
+                  role="img"
+                  aria-label="Luck Index: {player.normalizedLuckScore.toFixed(
+                    1,
+                  )}% (100% is fair baseline; for coins, 50% Heads is 100%)"
+                  title="Normalized Luck Index: {player.normalizedLuckScore.toFixed(
+                    1,
+                  )}% (100% is fair baseline; for coins, 50% Heads = 100%)"
+                >
+                  {player.normalizedLuckScore >= 100 ? '🔥' : '❄️'}
+                  {player.normalizedLuckScore.toFixed(1)}%
+                </span>
+              </div>
+
+              <div class="player-metrics-row">
                 <div class="metric-mini">
-                  <span class="mini-label">Heads Rate</span>
-                  <span class="mini-val highlight-gold">{player.coinHeadsRate.toFixed(1)}%</span>
+                  <span class="mini-label">Series</span>
+                  <span class="mini-val">{player.seriesPlayed}</span>
                 </div>
-              {/if}
-            </div>
-          </li>
-        {/each}
-      </ul>
-    </div>
-
-    <!-- Chronological Past Series Log -->
-    <div class="series-log-section">
-      <h3 class="log-title">Past Completed Series</h3>
-
-      <!-- svelte-ignore a11y_no_noninteractive_tabindex -->
-      <div
-        class="history-list-wrapper"
-        tabindex="0"
-        role="region"
-        aria-label="Scrollable list of past series"
-      >
-        <ul class="history-list" role="list">
-          {#each rollState.history as item (item.id)}
-            <li class="history-item">
-              <div class="history-meta">
-                <span class="player-tag">
-                  {item.playerName}
-                </span>
-                <span class="timestamp-tag">{formatTime(item.completedAt)}</span>
-              </div>
-
-              <div class="series-config-desc">
-                <strong>
-                  {item.config.faces === 2 ? 'Coin d2' : `d${item.config.faces}`}
-                </strong>
-                <span>
-                  × {item.config.countPerRoll} {item.config.countPerRoll === 1 ? 'die' : 'dice'}
-                </span>
-                <span class="rounds-tag">
-                  ({item.rounds.length} {item.rounds.length === 1 ? 'round' : 'rounds'})
-                </span>
-              </div>
-
-              <div class="history-outcome">
-                {#if item.config.faces === 2}
-                  {@const totalCoins = item.analytics.totalDiceRolled || 1}
-                  {@const headsPct = ((item.totalHeads ?? 0) / totalCoins) * 100}
-                  {@const tailsPct = ((item.totalTails ?? 0) / totalCoins) * 100}
-                  <div class="coin-outcome-block">
-                    <span class="coin-outcome">
-                      {#if item.coinSeriesWinner === 'TIE'}
-                        Outcome: <em>Tie</em> ({item.headsRoundsWon}H / {item.tailsRoundsWon}T rounds)
-                      {:else}
-                        Winner: <strong class="winner-name">{item.coinSeriesWinner}</strong> ({item.headsRoundsWon}H / {item.tailsRoundsWon}T rounds)
-                      {/if}
-                    </span>
-                    <span class="coin-history-pct" data-testid="history-coin-pct">
-                      {headsPct.toFixed(1)}% Heads / {tailsPct.toFixed(1)}% Tails ({item.totalHeads ?? 0}H / {item.totalTails ?? 0}T coins)
-                    </span>
+                <div class="metric-mini">
+                  <span class="mini-label">Total Dice</span>
+                  <span class="mini-val">{player.totalRolls}</span>
+                </div>
+                <div class="metric-mini">
+                  <span class="mini-label">Crit Max</span>
+                  <span class="mini-val highlight-crit">{player.criticalMaxRate.toFixed(1)}%</span>
+                </div>
+                {#if player.coinSeriesWon > 0}
+                  <div class="metric-mini">
+                    <span class="mini-label">Coins Won</span>
+                    <span class="mini-val highlight-gold" data-testid="coin-series-won"
+                      >{player.coinSeriesWon}</span
+                    >
                   </div>
-                {:else}
-                  <div class="dice-outcome">
-                    <span>Sum: <strong>{item.totalSum}</strong></span>
-                    <span>Avg: <strong>{item.average.toFixed(1)}</strong></span>
-                    <span>Best: <strong>#{item.bestRoundIndex + 1}</strong></span>
+                {/if}
+                {#if player.coinHeadsRate !== undefined}
+                  <div class="metric-mini">
+                    <span class="mini-label">Heads Rate</span>
+                    <span class="mini-val highlight-gold">{player.coinHeadsRate.toFixed(1)}%</span>
                   </div>
                 {/if}
               </div>
@@ -166,8 +112,76 @@
           {/each}
         </ul>
       </div>
-    </div>
-  {/if}
+
+      <!-- Chronological Past Series Log -->
+      <div class="series-log-section">
+        <h3 class="log-title">Past Completed Series</h3>
+
+        <!-- svelte-ignore a11y_no_noninteractive_tabindex -->
+        <div
+          class="history-list-wrapper"
+          tabindex="0"
+          role="region"
+          aria-label="Scrollable list of past series"
+        >
+          <ul class="history-list" role="list">
+            {#each rollState.history as item (item.id)}
+              <li class="history-item">
+                <div class="history-meta">
+                  <span class="player-tag">
+                    {item.playerName}
+                  </span>
+                  <span class="timestamp-tag">{formatTime(item.completedAt)}</span>
+                </div>
+
+                <div class="series-config-desc">
+                  <strong>
+                    {item.config.faces === 2 ? 'Coin d2' : `d${item.config.faces}`}
+                  </strong>
+                  <span>
+                    × {item.config.countPerRoll}
+                    {item.config.countPerRoll === 1 ? 'die' : 'dice'}
+                  </span>
+                  <span class="rounds-tag">
+                    ({item.rounds.length}
+                    {item.rounds.length === 1 ? 'round' : 'rounds'})
+                  </span>
+                </div>
+
+                <div class="history-outcome">
+                  {#if item.config.faces === 2}
+                    {@const totalCoins = item.analytics.totalDiceRolled || 1}
+                    {@const headsPct = ((item.totalHeads ?? 0) / totalCoins) * 100}
+                    {@const tailsPct = ((item.totalTails ?? 0) / totalCoins) * 100}
+                    <div class="coin-outcome-block">
+                      <span class="coin-outcome">
+                        {#if item.coinSeriesWinner === 'TIE'}
+                          Outcome: <em>Tie</em> ({item.headsRoundsWon}H / {item.tailsRoundsWon}T
+                          rounds)
+                        {:else}
+                          Winner: <strong class="winner-name">{item.coinSeriesWinner}</strong>
+                          ({item.headsRoundsWon}H / {item.tailsRoundsWon}T rounds)
+                        {/if}
+                      </span>
+                      <span class="coin-history-pct" data-testid="history-coin-pct">
+                        {headsPct.toFixed(1)}% Heads / {tailsPct.toFixed(1)}% Tails ({item.totalHeads ??
+                          0}H / {item.totalTails ?? 0}T coins)
+                      </span>
+                    </div>
+                  {:else}
+                    <div class="dice-outcome">
+                      <span>Sum: <strong>{item.totalSum}</strong></span>
+                      <span>Avg: <strong>{item.average.toFixed(1)}</strong></span>
+                      <span>Best: <strong>#{item.bestRoundIndex + 1}</strong></span>
+                    </div>
+                  {/if}
+                </div>
+              </li>
+            {/each}
+          </ul>
+        </div>
+      </div>
+    {/if}
   </div>
 </aside>
 

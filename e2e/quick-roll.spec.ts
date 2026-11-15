@@ -1,7 +1,9 @@
 import { test, expect } from '@playwright/test';
 
 test.describe('Quick Roll Mode Flow', () => {
-  test('switches to Quick Roll, executes rolls within valid bounds, updates feed, and clears feed cleanly', async ({ page }) => {
+  test('switches to Quick Roll, executes rolls within valid bounds, updates feed, and clears feed cleanly', async ({
+    page,
+  }) => {
     await page.goto('/');
 
     // Switch to Quick Roll mode
@@ -24,7 +26,9 @@ test.describe('Quick Roll Mode Flow', () => {
 
     // Trigger first quick roll
     const toolbar = page.getByRole('toolbar', { name: 'Roll controls' });
-    const rollBtn = toolbar.getByRole('button', { name: /Roll Round|Roll \d+d\d+|Flip|Series Complete/ });
+    const rollBtn = toolbar.getByRole('button', {
+      name: /Roll Round|Roll \d+d\d+|Flip|Series Complete/,
+    });
     await expect(rollBtn).toContainText('Roll 1d6');
     await rollBtn.click();
 

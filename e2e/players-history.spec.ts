@@ -1,7 +1,9 @@
 import { test, expect } from '@playwright/test';
 
 test.describe('Player Management, Leaderboard, & History Persistence (Issue #13)', () => {
-  test('manages players, ranks leaderboard deterministically, persists to localStorage, and clears cleanly', async ({ page }) => {
+  test('manages players, ranks leaderboard deterministically, persists to localStorage, and clears cleanly', async ({
+    page,
+  }) => {
     // Inject deterministic random provider queue
     await page.addInitScript(() => {
       let queue: number[] = [];
@@ -35,7 +37,9 @@ test.describe('Player Management, Leaderboard, & History Persistence (Issue #13)
     await page.getByRole('button', { name: 'Add new local player' }).click();
     const modal = page.getByRole('dialog', { name: 'Add Local Player' });
     await expect(modal).toBeVisible();
-    await expect(modal.getByRole('heading', { name: 'Add Local Player' })).toHaveText('Add Local Player');
+    await expect(modal.getByRole('heading', { name: 'Add Local Player' })).toHaveText(
+      'Add Local Player',
+    );
 
     await modal.getByLabel('Player Name:').fill('CancelledPlayer');
     await modal.getByRole('button', { name: 'Cancel' }).click();
@@ -66,7 +70,9 @@ test.describe('Player Management, Leaderboard, & History Persistence (Issue #13)
     expect(await getSelectedPlayerName()).toBe('Alice');
 
     const toolbar = page.getByRole('toolbar', { name: 'Roll controls' });
-    const rollBtn = toolbar.getByRole('button', { name: /Roll Round|Roll \d+d\d+|Flip|Series Complete/ });
+    const rollBtn = toolbar.getByRole('button', {
+      name: /Roll Round|Roll \d+d\d+|Flip|Series Complete/,
+    });
 
     // Step 3: Alice executes 2d6 Single series (values [6, 6] -> Luck > 170%)
     // (5 % 6) + 1 = 6
@@ -136,13 +142,19 @@ test.describe('Player Management, Leaderboard, & History Persistence (Issue #13)
     await page.reload();
     await page.getByRole('tab', { name: /History/i }).click();
 
-    const reloadedPlayerCards = page.getByRole('list', { name: /Leaderboard/i }).getByRole('listitem');
+    const reloadedPlayerCards = page
+      .getByRole('list', { name: /Leaderboard/i })
+      .getByRole('listitem');
     await expect(reloadedPlayerCards).toHaveCount(2);
     await expect(reloadedPlayerCards.nth(0).getByTestId('player-name')).toHaveText('Alice');
-    await expect(reloadedPlayerCards.nth(0).getByRole('img', { name: /Luck Index/ })).toContainText('🔥');
+    await expect(reloadedPlayerCards.nth(0).getByRole('img', { name: /Luck Index/ })).toContainText(
+      '🔥',
+    );
     await expect(reloadedPlayerCards.nth(0)).toContainText('Coins Won');
     await expect(reloadedPlayerCards.nth(1).getByTestId('player-name')).toHaveText('Player 1');
-    await expect(reloadedPlayerCards.nth(1).getByRole('img', { name: /Luck Index/ })).toContainText('❄️');
+    await expect(reloadedPlayerCards.nth(1).getByRole('img', { name: /Luck Index/ })).toContainText(
+      '❄️',
+    );
 
     const reloadedHistoryItems = page
       .getByRole('region', { name: 'Scrollable list of past series' })

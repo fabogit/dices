@@ -162,10 +162,7 @@ function generateSeriesInsightSummary(
   return `${samplePrefix}${performanceVerdict}${highlightStr}${caution}`;
 }
 
-export function computeSeriesAnalytics(
-  config: RollConfig,
-  rounds: RoundResult[],
-): SeriesAnalytics {
+export function computeSeriesAnalytics(config: RollConfig, rounds: RoundResult[]): SeriesAnalytics {
   const allValues = rounds.flatMap((r) => r.values);
   const totalDiceRolled = allValues.length;
   const totalSum = allValues.reduce((acc, v) => acc + v, 0);
@@ -235,12 +232,7 @@ export function computeSeriesAnalytics(
     const count = freqMap.get(face) ?? 0;
     const percentage = totalDiceRolled > 0 ? (count / totalDiceRolled) * 100 : 0;
     const deltaPercentage = percentage - expectedPercentage;
-    const label =
-      config.faces === 2
-        ? face === 1
-          ? 'HEADS'
-          : 'TAILS'
-        : `${face}`;
+    const label = config.faces === 2 ? (face === 1 ? 'HEADS' : 'TAILS') : `${face}`;
 
     distribution.push({
       face,
@@ -255,11 +247,7 @@ export function computeSeriesAnalytics(
   // Distribution peak percentage for proportional bar and expected-marker scaling
   const maxEmpiricalPercentage =
     distribution.length > 0 ? Math.max(...distribution.map((d) => d.percentage)) : 0;
-  const distributionPeakPercentage = Math.max(
-    maxEmpiricalPercentage,
-    expectedPercentage * 1.4,
-    1,
-  );
+  const distributionPeakPercentage = Math.max(maxEmpiricalPercentage, expectedPercentage * 1.4, 1);
 
   // Sample reliability classification
   let sampleReliability: 'empty' | 'small' | 'moderate' | 'solid' = 'empty';
@@ -284,9 +272,7 @@ export function computeSeriesAnalytics(
     } else {
       // For d4..d20: (totalSum - n * expectedMean) / sqrt(n * (faces^2 - 1) / 12)
       const expectedTotalSum = totalDiceRolled * ((config.faces + 1) / 2);
-      const totalStdDev = Math.sqrt(
-        totalDiceRolled * ((config.faces * config.faces - 1) / 12),
-      );
+      const totalStdDev = Math.sqrt(totalDiceRolled * ((config.faces * config.faces - 1) / 12));
       zScore = totalStdDev > 0 ? (totalSum - expectedTotalSum) / totalStdDev : 0;
     }
   }
@@ -445,11 +431,7 @@ export function computeSeriesSummary(
     const headsRoundsWon = rounds.filter((r) => r.roundWinnerSide === 'HEADS').length;
     const tailsRoundsWon = rounds.filter((r) => r.roundWinnerSide === 'TAILS').length;
     const coinSeriesWinner: CoinSide | 'TIE' =
-      headsRoundsWon > tailsRoundsWon
-        ? 'HEADS'
-        : tailsRoundsWon > headsRoundsWon
-          ? 'TAILS'
-          : 'TIE';
+      headsRoundsWon > tailsRoundsWon ? 'HEADS' : tailsRoundsWon > headsRoundsWon ? 'TAILS' : 'TIE';
 
     summary.totalHeads = totalHeads;
     summary.totalTails = totalTails;
@@ -496,8 +478,7 @@ export function computePlayerLeaderboard(
       let seriesLuck = 100;
       if (s.config.faces === 2) {
         const headsInSeries =
-          s.totalHeads ??
-          s.rounds.reduce((acc, r) => acc + (r.headsCount ?? 0), 0);
+          s.totalHeads ?? s.rounds.reduce((acc, r) => acc + (r.headsCount ?? 0), 0);
         coinTosses += rollsInSeries;
         totalCoinHeads += headsInSeries;
 
@@ -522,8 +503,7 @@ export function computePlayerLeaderboard(
       weightedLuckScoreSum += seriesLuck * rollsInSeries;
     }
 
-    const normalizedLuckScore =
-      totalRolls > 0 ? weightedLuckScoreSum / totalRolls : 100;
+    const normalizedLuckScore = totalRolls > 0 ? weightedLuckScoreSum / totalRolls : 100;
     const criticalMaxRate = totalRolls > 0 ? (criticalMaxCountTotal / totalRolls) * 100 : 0;
     const coinHeadsRate = coinTosses > 0 ? (totalCoinHeads / coinTosses) * 100 : undefined;
 
@@ -552,7 +532,7 @@ export function computePlayerLeaderboard(
 
 export function computeQuickRollStats(
   round: RoundResult,
-  faces: DieFaces = (round.faces ?? 6),
+  faces: DieFaces = round.faces ?? 6,
 ): QuickRollStats {
   const actualFaces = round.faces ?? faces;
   const count = round.values.length;
@@ -651,9 +631,7 @@ export function computeQuickRollSessionStats(
   quickRolls: RoundResult[],
   currentFaces: DieFaces,
 ): QuickRollSessionStats {
-  const matchingRolls = quickRolls.filter(
-    (r) => (r.faces ?? currentFaces) === currentFaces,
-  );
+  const matchingRolls = quickRolls.filter((r) => (r.faces ?? currentFaces) === currentFaces);
   const matchingThrows = matchingRolls.length;
   const allValues = matchingRolls.flatMap((r) => r.values);
   const totalDiceCount = allValues.length;
@@ -769,10 +747,7 @@ export class RollSeriesEngine {
       );
     }
 
-    const values = await this.provider.rollRound(
-      this.config.faces,
-      this.config.countPerRoll,
-    );
+    const values = await this.provider.rollRound(this.config.faces, this.config.countPerRoll);
     const round = computeRoundResult(this._rounds.length, values, this.config.faces);
     round.faces = this.config.faces;
     this._rounds.push(round);
@@ -787,13 +762,7 @@ export class RollSeriesEngine {
   }
 
   getSummary(completedAt?: number): SeriesSummary {
-    return computeSeriesSummary(
-      this.id,
-      this.config,
-      this.playerName,
-      this._rounds,
-      completedAt,
-    );
+    return computeSeriesSummary(this.id, this.config, this.playerName, this._rounds, completedAt);
   }
 
   reset(): void {

@@ -1,15 +1,10 @@
 {
   "name": "dices",
-  "private": true,
   "version": "1.0.2",
+  "private": true,
   "license": "MIT",
   "author": "fabogit",
   "type": "module",
-  "packageManager": "pnpm@11.21.0",
-  "engines": {
-    "node": ">=26.13.1",
-    "pnpm": ">=11.21.0"
-  },
   "scripts": {
     "dev": "vite",
     "build": "vite build",
@@ -41,5 +36,10 @@
     "typescript": "^6.0.3",
     "vite": "^6.0.0",
     "vitest": "^2.1.0"
-  }
+  },
+  "engines": {
+    "node": ">=26.13.1",
+    "pnpm": ">=11.21.0"
+  },
+  "packageManager": "pnpm@11.21.0"
 }

@@ -31,8 +31,17 @@ interface ActiveDieAnimation {
  */
 function getLandingSlots(count: number): Array<{ x: number; z: number }> {
   if (count <= 1) return [{ x: 0, z: 0 }];
-  if (count === 2) return [{ x: -2.2, z: 0 }, { x: 2.2, z: 0 }];
-  if (count === 3) return [{ x: -2.8, z: 0 }, { x: 0, z: 0 }, { x: 2.8, z: 0 }];
+  if (count === 2)
+    return [
+      { x: -2.2, z: 0 },
+      { x: 2.2, z: 0 },
+    ];
+  if (count === 3)
+    return [
+      { x: -2.8, z: 0 },
+      { x: 0, z: 0 },
+      { x: 2.8, z: 0 },
+    ];
 
   const cols = count <= 6 ? Math.ceil(count / 2) : Math.ceil(count / 2);
   const spacingX = count <= 6 ? 2.8 : 2.4;
@@ -96,7 +105,7 @@ export class DiceArena3D {
       });
       this.renderer.setSize(width, height, false);
       this.renderer.setPixelRatio(
-        typeof window !== 'undefined' ? Math.min(window.devicePixelRatio || 1, 2) : 1
+        typeof window !== 'undefined' ? Math.min(window.devicePixelRatio || 1, 2) : 1,
       );
 
       if (options.shadows !== false) {
@@ -255,7 +264,7 @@ export class DiceArena3D {
   public rollVisual(
     faces: DieFaces,
     values: number[],
-    options: RollVisualOptions = {}
+    options: RollVisualOptions = {},
   ): Promise<void> {
     if (this.isDisposed) {
       return Promise.reject(new Error('DiceArena3D is disposed'));
@@ -289,15 +298,15 @@ export class DiceArena3D {
       const spinAxis = new THREE.Vector3(
         Math.cos(i * 1.7) * 0.8 + 0.2,
         Math.sin(i * 2.3) * 0.5 + 0.6,
-        Math.sin(i * 0.9) * 0.8 + 0.1
+        Math.sin(i * 0.9) * 0.8 + 0.1,
       ).normalize();
 
       const totalSpinAngle = Math.PI * (6 + (i % 3) * 2);
 
       const anim: ActiveDieAnimation = {
         mesh,
-        startX: slot.x + (Math.sin(i * 1.5) * 1.2),
-        startY: 7.5 + (i * 0.35),
+        startX: slot.x + Math.sin(i * 1.5) * 1.2,
+        startY: 7.5 + i * 0.35,
         startZ: slot.z - 4.5,
         targetX: slot.x,
         targetY: restY,
@@ -356,7 +365,7 @@ export class DiceArena3D {
             curY = anim.targetY + (anim.startY - anim.targetY) * (1 - p * p);
           } else if (progress < 0.75) {
             // Bounce 1
-            const p = (progress - 0.45) / 0.30;
+            const p = (progress - 0.45) / 0.3;
             const bounceH = 1.6;
             curY = anim.targetY + bounceH * 4 * p * (1 - p);
           } else if (progress < 0.92) {

@@ -13,473 +13,499 @@
   aria-labelledby={section === 'analytics' ? 'analytics-heading' : 'scoreboard-heading'}
 >
   {#if section === 'all' || section === 'scoreboard'}
-  <div class="scoreboard-header">
-    <div class="title-with-badge">
-      <h2 id="scoreboard-heading" class="scoreboard-title">Live Series Scoreboard</h2>
-      <span class="series-badge">
-        Round {rollState.rounds.length} of {rollState.seriesLength}
-      </span>
-    </div>
-    <button
-      type="button"
-      class="collapse-toggle-btn"
-      aria-expanded={!isScoreboardCollapsed}
-      onclick={() => (isScoreboardCollapsed = !isScoreboardCollapsed)}
-      aria-label="{isScoreboardCollapsed ? 'Show' : 'Hide'} Live Series Scoreboard"
-    >
-      <span class="chevron" aria-hidden="true">{isScoreboardCollapsed ? '▸' : '▾'}</span>
-      <span>{isScoreboardCollapsed ? 'Show' : 'Hide'}</span>
-    </button>
-  </div>
-
-  <div class="scoreboard-body" class:collapsed={isScoreboardCollapsed}>
-    <!-- Progress Bar -->
-    <div class="progress-container">
-      <div
-        class="progress-bar"
-        role="progressbar"
-        aria-valuenow={rollState.rounds.length}
-        aria-valuemin="0"
-        aria-valuemax={rollState.seriesLength}
-        aria-label="Series round completion progress"
-        style:width="{rollState.progressPercent}%"
-      ></div>
-    </div>
-
-    <!-- Coin Mode Summary (d2) -->
-    {#if rollState.faces === 2}
-      {@const totalCoins = analytics.totalDiceRolled || 1}
-      {@const headsPct = analytics.coinStats
-        ? analytics.coinStats.headsPercentage
-        : (((rollState.summary.totalHeads ?? 0) / totalCoins) * 100)}
-      {@const tailsPct = analytics.coinStats
-        ? analytics.coinStats.tailsPercentage
-        : (((rollState.summary.totalTails ?? 0) / totalCoins) * 100)}
-      <div class="coin-summary-cards">
-        <div class="score-card heads-card">
-          <div class="card-icon" aria-hidden="true">👑</div>
-          <div class="card-content">
-            <span class="card-label">HEADS</span>
-            <span class="card-metric">
-              {rollState.summary.headsRoundsWon ?? 0}
-              <small>rounds won</small>
-            </span>
-            <div class="card-sub-row">
-              <span class="sub-stat-pct" data-testid="heads-pct">{headsPct.toFixed(1)}%</span>
-              <span class="sub-stat-sep">•</span>
-              <span class="sub-stat">{rollState.summary.totalHeads ?? 0} coins</span>
-            </div>
-          </div>
-        </div>
-
-        <div class="score-card tails-card">
-          <div class="card-icon" aria-hidden="true">🛡️</div>
-          <div class="card-content">
-            <span class="card-label">TAILS</span>
-            <span class="card-metric">
-              {rollState.summary.tailsRoundsWon ?? 0}
-              <small>rounds won</small>
-            </span>
-            <div class="card-sub-row">
-              <span class="sub-stat-pct" data-testid="tails-pct">{tailsPct.toFixed(1)}%</span>
-              <span class="sub-stat-sep">•</span>
-              <span class="sub-stat">{rollState.summary.totalTails ?? 0} coins</span>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {#if rollState.isComplete}
-        <div class="winner-banner" role="status">
-          {#if rollState.summary.coinSeriesWinner === 'TIE'}
-            <span class="winner-tie">⚖️ Coin Series Ended in a Tie!</span>
-          {:else}
-            <span class="winner-crown">
-              🏆 {rollState.summary.coinSeriesWinner} Wins the Series!
-            </span>
-          {/if}
-        </div>
-      {/if}
-    {:else}
-      <!-- Polyhedral Dice Summary Cards (d4..d20) -->
-      <div class="dice-metrics-grid">
-        <div class="metric-card">
-          <span class="metric-label">Total Sum (∑)</span>
-          <span class="metric-value">{rollState.summary.totalSum}</span>
-        </div>
-
-        <div class="metric-card">
-          <span class="metric-label">Average (μ)</span>
-          <span class="metric-value">
-            {rollState.rounds.length > 0 ? rollState.summary.average.toFixed(1) : '0.0'}
-          </span>
-        </div>
-
-        <div class="metric-card">
-          <span class="metric-label">Best Round</span>
-          <span class="metric-value highlight-green">
-            {rollState.summary.bestRoundIndex >= 0
-              ? `#${rollState.summary.bestRoundIndex + 1} (${rollState.rounds[rollState.summary.bestRoundIndex]?.sum})`
-              : '—'}
-          </span>
-        </div>
-
-        <div class="metric-card">
-          <span class="metric-label">Worst Round</span>
-          <span class="metric-value highlight-red">
-            {rollState.summary.worstRoundIndex >= 0
-              ? `#${rollState.summary.worstRoundIndex + 1} (${rollState.rounds[rollState.summary.worstRoundIndex]?.sum})`
-              : '—'}
-          </span>
-        </div>
-
-        <div class="metric-card wide-card">
-          <span class="metric-label">Mode (Most Frequent Face)</span>
-          <span class="metric-value">
-            {#if rollState.summary.mode.values.length > 0}
-              {rollState.summary.mode.values.join(', ')}
-              <span class="mode-freq">({rollState.summary.mode.frequency}x)</span>
-              {#if rollState.summary.mode.isTie}
-                <span class="mode-tie-badge">(Tie)</span>
-              {/if}
-            {:else}
-              —
-            {/if}
-          </span>
-        </div>
-      </div>
-    {/if}
-
-    <!-- Round-by-Round Responsive Data Table (Modern Web Guidance responsive-table) -->
-    <!-- svelte-ignore a11y_no_noninteractive_tabindex -->
-    <div
-      class="table-wrapper"
-      tabindex="0"
-      role="region"
-      aria-labelledby="rounds-table-caption"
-    >
-      <table class="rounds-table">
-        <caption id="rounds-table-caption">
-          Round results for active series ({rollState.activePlayer.name})
-        </caption>
-        <thead>
-          <tr>
-            <th scope="col">Round</th>
-            <th scope="col">{rollState.faces === 2 ? 'Coins' : 'Dice Values'}</th>
-            <th scope="col">{rollState.faces === 2 ? 'Winner' : 'Sum'}</th>
-            <th scope="col">{rollState.faces === 2 ? 'Score' : 'Max / Min'}</th>
-          </tr>
-        </thead>
-        <tbody>
-          {#if rollState.rounds.length === 0}
-            <tr>
-              <td colspan="4" class="empty-table-cell">
-                No rounds rolled yet. Press "Roll Round" to begin.
-              </td>
-            </tr>
-          {:else}
-            {#each rollState.rounds as r (r.roundIndex)}
-              <tr>
-                <th scope="row" class="round-index-cell">
-                  #{r.roundIndex + 1}
-                </th>
-                <td class="values-cell">
-                  {#if rollState.faces === 2}
-                    <span class="coin-pills">
-                      {#each r.values as v, i (i)}
-                        <span class="mini-coin" class:heads={v === 1} class:tails={v === 2}>
-                          {v === 1 ? 'H' : 'T'}
-                        </span>
-                      {/each}
-                    </span>
-                  {:else}
-                    <span class="dice-values-text">{r.values.join(', ')}</span>
-                  {/if}
-                </td>
-                <td class="result-cell">
-                  {#if rollState.faces === 2}
-                    <span class="outcome-pill" class:tie={r.roundWinnerSide === 'TIE'}>
-                      {r.roundWinnerSide}
-                    </span>
-                  {:else}
-                    <strong class="sum-value">{r.sum}</strong>
-                  {/if}
-                </td>
-                <td class="stat-cell">
-                  {#if rollState.faces === 2}
-                    <span class="coin-split">
-                      {r.headsCount ?? 0}H / {r.tailsCount ?? 0}T
-                    </span>
-                  {:else}
-                    <span class="minmax-text">
-                      ▲{r.max} ▼{r.min}
-                    </span>
-                  {/if}
-                </td>
-              </tr>
-            {/each}
-          {/if}
-        </tbody>
-      </table>
-    </div>
-  </div>
-  {/if}
-
-  {#if section === 'all' || section === 'analytics'}
-  <!-- Advanced Statistical Breakdown (Issue #7 & #12) -->
-  <div class="analytics-section" class:analytics-standalone={section === 'analytics'}>
-    <div class="section-title-row">
+    <div class="scoreboard-header">
       <div class="title-with-badge">
-        <svelte:element
-          this={section === 'analytics' ? 'h2' : 'h3'}
-          id={section === 'analytics' ? 'analytics-heading' : undefined}
-          class="section-subtitle"
-          class:scoreboard-title={section === 'analytics'}
-        >
-          Statistical Breakdown ({rollState.faces === 2 ? 'Coin d2' : `d${rollState.faces}`})
-        </svelte:element>
-        <span class="dice-count-tag">
-          {analytics.totalDiceRolled} {analytics.totalDiceRolled === 1 ? 'die rolled' : 'dice rolled'}
+        <h2 id="scoreboard-heading" class="scoreboard-title">Live Series Scoreboard</h2>
+        <span class="series-badge">
+          Round {rollState.rounds.length} of {rollState.seriesLength}
         </span>
       </div>
       <button
         type="button"
         class="collapse-toggle-btn"
-        aria-expanded={!isAnalyticsCollapsed}
-        onclick={() => (isAnalyticsCollapsed = !isAnalyticsCollapsed)}
-        aria-label="{isAnalyticsCollapsed ? 'Show' : 'Hide'} Statistical Breakdown & Distribution"
+        aria-expanded={!isScoreboardCollapsed}
+        onclick={() => (isScoreboardCollapsed = !isScoreboardCollapsed)}
+        aria-label="{isScoreboardCollapsed ? 'Show' : 'Hide'} Live Series Scoreboard"
       >
-        <span class="chevron" aria-hidden="true">{isAnalyticsCollapsed ? '▸' : '▾'}</span>
-        <span>{isAnalyticsCollapsed ? 'Show' : 'Hide'}</span>
+        <span class="chevron" aria-hidden="true">{isScoreboardCollapsed ? '▸' : '▾'}</span>
+        <span>{isScoreboardCollapsed ? 'Show' : 'Hide'}</span>
       </button>
     </div>
 
-    <div class="analytics-body" class:collapsed={isAnalyticsCollapsed} data-testid="analytics-body">
-      <!-- Statistical Insight Banner -->
-      <div class="insight-banner">
-        <div class="insight-header">
-          <div class="insight-title-group">
-            <span class="insight-icon" aria-hidden="true">💡</span>
-            <h4 class="insight-title">Statistical Verdict</h4>
-          </div>
-          <span class="reliability-chip reliability-{analytics.sampleReliability}" data-testid="sample-reliability">
-            {#if analytics.sampleReliability === 'empty'}
-              No Rolls
-            {:else if analytics.sampleReliability === 'small'}
-              Small sample (&lt;10)
-            {:else if analytics.sampleReliability === 'moderate'}
-              Moderate sample (10–29)
-            {:else}
-              Solid sample (30+)
-            {/if}
-          </span>
-        </div>
-        <p class="insight-text" data-testid="insight-text">{analytics.insightSummary}</p>
+    <div class="scoreboard-body" class:collapsed={isScoreboardCollapsed}>
+      <!-- Progress Bar -->
+      <div class="progress-container">
+        <div
+          class="progress-bar"
+          role="progressbar"
+          aria-valuenow={rollState.rounds.length}
+          aria-valuemin="0"
+          aria-valuemax={rollState.seriesLength}
+          aria-label="Series round completion progress"
+          style:width="{rollState.progressPercent}%"
+        ></div>
       </div>
 
-      <!-- Analytics Key Metrics Grid -->
+      <!-- Coin Mode Summary (d2) -->
       {#if rollState.faces === 2}
-        {@const coinStats = analytics.coinStats}
-        {@const headsPct = coinStats?.headsPercentage ?? 0}
-        {@const tailsPct = coinStats?.tailsPercentage ?? 0}
-        {@const headsDelta = coinStats?.headsDeltaPercentage ?? 0}
-        {@const tailsDelta = coinStats?.tailsDeltaPercentage ?? 0}
-        {@const zQualitative =
-          analytics.sampleReliability === 'empty'
-            ? 'No data'
-            : Math.abs(analytics.zScore) < 1.0
-              ? 'Within normal variance'
-              : analytics.zScore > 0
-                ? 'Heads-leaning'
-                : 'Tails-leaning'}
-
-        <div class="analytics-metrics-grid coin-analytics-grid" data-testid="analytics-metrics" data-variant="coin">
-          <!-- Heads Share -->
-          <div class="stat-box">
-            <span class="stat-box-label">Heads Share</span>
-            <div class="stat-box-value-row">
-              <span class="stat-main-num highlight-heads">{headsPct.toFixed(1)}%</span>
-              {#if analytics.totalDiceRolled > 0}
-                <span
-                  class="delta-tag"
-                  class:positive={headsDelta >= 0}
-                  class:negative={headsDelta < 0}
-                >
-                  {headsDelta >= 0 ? '+' : ''}{headsDelta.toFixed(1)}% vs 50%
-                </span>
-              {/if}
-            </div>
-          </div>
-
-          <!-- Tails Share -->
-          <div class="stat-box">
-            <span class="stat-box-label">Tails Share</span>
-            <div class="stat-box-value-row">
-              <span class="stat-main-num highlight-tails">{tailsPct.toFixed(1)}%</span>
-              {#if analytics.totalDiceRolled > 0}
-                <span
-                  class="delta-tag"
-                  class:positive={tailsDelta >= 0}
-                  class:negative={tailsDelta < 0}
-                >
-                  {tailsDelta >= 0 ? '+' : ''}{tailsDelta.toFixed(1)}% vs 50%
-                </span>
-              {/if}
-            </div>
-          </div>
-
-          <!-- Balance Deviation (z) -->
-          <div class="stat-box">
-            <span class="stat-box-label">Balance Deviation (z)</span>
-            <div class="stat-box-value-row">
-              <span class="stat-main-num">
-                {analytics.totalDiceRolled > 0
-                  ? `${analytics.zScore >= 0 ? '+' : ''}${analytics.zScore.toFixed(2)}`
-                  : '0.00'}
+        {@const totalCoins = analytics.totalDiceRolled || 1}
+        {@const headsPct = analytics.coinStats
+          ? analytics.coinStats.headsPercentage
+          : ((rollState.summary.totalHeads ?? 0) / totalCoins) * 100}
+        {@const tailsPct = analytics.coinStats
+          ? analytics.coinStats.tailsPercentage
+          : ((rollState.summary.totalTails ?? 0) / totalCoins) * 100}
+        <div class="coin-summary-cards">
+          <div class="score-card heads-card">
+            <div class="card-icon" aria-hidden="true">👑</div>
+            <div class="card-content">
+              <span class="card-label">HEADS</span>
+              <span class="card-metric">
+                {rollState.summary.headsRoundsWon ?? 0}
+                <small>rounds won</small>
               </span>
-              <span class="sub-label">{zQualitative}</span>
+              <div class="card-sub-row">
+                <span class="sub-stat-pct" data-testid="heads-pct">{headsPct.toFixed(1)}%</span>
+                <span class="sub-stat-sep">•</span>
+                <span class="sub-stat">{rollState.summary.totalHeads ?? 0} coins</span>
+              </div>
             </div>
           </div>
 
-          <!-- Round Split -->
-          <div class="stat-box">
-            <span class="stat-box-label">Round Split</span>
-            <div class="stat-box-value-row">
-              <span class="stat-main-num">
-                {coinStats?.headsRoundsWon ?? 0}H / {coinStats?.tailsRoundsWon ?? 0}T
-                {#if (coinStats?.tieRounds ?? 0) > 0}
-                  / {coinStats?.tieRounds} Tie
-                {/if}
+          <div class="score-card tails-card">
+            <div class="card-icon" aria-hidden="true">🛡️</div>
+            <div class="card-content">
+              <span class="card-label">TAILS</span>
+              <span class="card-metric">
+                {rollState.summary.tailsRoundsWon ?? 0}
+                <small>rounds won</small>
               </span>
-              <span class="sub-label">across {rollState.rounds.length} rounds</span>
+              <div class="card-sub-row">
+                <span class="sub-stat-pct" data-testid="tails-pct">{tailsPct.toFixed(1)}%</span>
+                <span class="sub-stat-sep">•</span>
+                <span class="sub-stat">{rollState.summary.totalTails ?? 0} coins</span>
+              </div>
             </div>
           </div>
         </div>
-      {:else}
-        <!-- Polyhedral d4..d20 Analytics Grid -->
-        <div class="analytics-metrics-grid" data-testid="analytics-metrics" data-variant="polyhedral">
-          <!-- Expected vs Actual Round Average -->
-          <div class="stat-box">
-            <span class="stat-box-label">Expected Avg (E[X])</span>
-            <div class="stat-box-value-row">
-              <span class="stat-main-num">{analytics.expectedRoundAverage.toFixed(1)}</span>
-              {#if rollState.rounds.length > 0}
-                <span
-                  class="delta-tag"
-                  class:positive={analytics.averageDelta >= 0}
-                  class:negative={analytics.averageDelta < 0}
-                >
-                  {analytics.averageDelta >= 0 ? '+' : ''}{analytics.averageDelta.toFixed(1)} Δ
-                </span>
-                <span class="zscore-tag">
-                  (z: {analytics.zScore >= 0 ? '+' : ''}{analytics.zScore.toFixed(2)})
-                </span>
-              {/if}
-            </div>
-          </div>
 
-          <!-- Population Standard Deviation of Round Sums -->
-          <div class="stat-box">
-            <span class="stat-box-label">Std Deviation (σ)</span>
-            <div class="stat-box-value-row">
-              <span class="stat-main-num">
-                {rollState.rounds.length > 0 ? analytics.standardDeviation.toFixed(2) : '0.00'}
+        {#if rollState.isComplete}
+          <div class="winner-banner" role="status">
+            {#if rollState.summary.coinSeriesWinner === 'TIE'}
+              <span class="winner-tie">⚖️ Coin Series Ended in a Tie!</span>
+            {:else}
+              <span class="winner-crown">
+                🏆 {rollState.summary.coinSeriesWinner} Wins the Series!
               </span>
-              <span class="sub-label">across round sums (σ)</span>
-            </div>
+            {/if}
+          </div>
+        {/if}
+      {:else}
+        <!-- Polyhedral Dice Summary Cards (d4..d20) -->
+        <div class="dice-metrics-grid">
+          <div class="metric-card">
+            <span class="metric-label">Total Sum (∑)</span>
+            <span class="metric-value">{rollState.summary.totalSum}</span>
           </div>
 
-          <!-- Critical Max Rate (= N) -->
-          <div class="stat-box">
-            <span class="stat-box-label">Crit Max (= {rollState.faces})</span>
-            <div class="stat-box-value-row">
-              <span class="stat-main-num highlight-crit">{analytics.criticalMaxRate.toFixed(1)}%</span>
-              <span class="sub-label">({analytics.criticalMaxCount}/{analytics.totalDiceRolled})</span>
-            </div>
+          <div class="metric-card">
+            <span class="metric-label">Average (μ)</span>
+            <span class="metric-value">
+              {rollState.rounds.length > 0 ? rollState.summary.average.toFixed(1) : '0.0'}
+            </span>
           </div>
 
-          <!-- Critical Min Rate (= 1) -->
-          <div class="stat-box">
-            <span class="stat-box-label">Crit Min (= 1)</span>
-            <div class="stat-box-value-row">
-              <span class="stat-main-num highlight-min">{analytics.criticalMinRate.toFixed(1)}%</span>
-              <span class="sub-label">({analytics.criticalMinCount}/{analytics.totalDiceRolled})</span>
-            </div>
+          <div class="metric-card">
+            <span class="metric-label">Best Round</span>
+            <span class="metric-value highlight-green">
+              {rollState.summary.bestRoundIndex >= 0
+                ? `#${rollState.summary.bestRoundIndex + 1} (${rollState.rounds[rollState.summary.bestRoundIndex]?.sum})`
+                : '—'}
+            </span>
+          </div>
+
+          <div class="metric-card">
+            <span class="metric-label">Worst Round</span>
+            <span class="metric-value highlight-red">
+              {rollState.summary.worstRoundIndex >= 0
+                ? `#${rollState.summary.worstRoundIndex + 1} (${rollState.rounds[rollState.summary.worstRoundIndex]?.sum})`
+                : '—'}
+            </span>
+          </div>
+
+          <div class="metric-card wide-card">
+            <span class="metric-label">Mode (Most Frequent Face)</span>
+            <span class="metric-value">
+              {#if rollState.summary.mode.values.length > 0}
+                {rollState.summary.mode.values.join(', ')}
+                <span class="mode-freq">({rollState.summary.mode.frequency}x)</span>
+                {#if rollState.summary.mode.isTie}
+                  <span class="mode-tie-badge">(Tie)</span>
+                {/if}
+              {:else}
+                —
+              {/if}
+            </span>
           </div>
         </div>
       {/if}
 
-      <!-- Face Frequency Distribution (Bar Chart vs Theoretical Line) wrapped in semantic figure -->
-      <figure class="distribution-card">
-        <figcaption class="dist-header">
-          <span class="dist-title">Empirical vs Expected Distribution</span>
-          <span class="expected-legend">
-            <span class="legend-line" aria-hidden="true"></span>
-            <span>Expected: {analytics.distribution[0]?.expectedPercentage.toFixed(1)}%</span>
+      <!-- Round-by-Round Responsive Data Table (Modern Web Guidance responsive-table) -->
+      <!-- svelte-ignore a11y_no_noninteractive_tabindex -->
+      <div class="table-wrapper" tabindex="0" role="region" aria-labelledby="rounds-table-caption">
+        <table class="rounds-table">
+          <caption id="rounds-table-caption">
+            Round results for active series ({rollState.activePlayer.name})
+          </caption>
+          <thead>
+            <tr>
+              <th scope="col">Round</th>
+              <th scope="col">{rollState.faces === 2 ? 'Coins' : 'Dice Values'}</th>
+              <th scope="col">{rollState.faces === 2 ? 'Winner' : 'Sum'}</th>
+              <th scope="col">{rollState.faces === 2 ? 'Score' : 'Max / Min'}</th>
+            </tr>
+          </thead>
+          <tbody>
+            {#if rollState.rounds.length === 0}
+              <tr>
+                <td colspan="4" class="empty-table-cell">
+                  No rounds rolled yet. Press "Roll Round" to begin.
+                </td>
+              </tr>
+            {:else}
+              {#each rollState.rounds as r (r.roundIndex)}
+                <tr>
+                  <th scope="row" class="round-index-cell">
+                    #{r.roundIndex + 1}
+                  </th>
+                  <td class="values-cell">
+                    {#if rollState.faces === 2}
+                      <span class="coin-pills">
+                        {#each r.values as v, i (i)}
+                          <span class="mini-coin" class:heads={v === 1} class:tails={v === 2}>
+                            {v === 1 ? 'H' : 'T'}
+                          </span>
+                        {/each}
+                      </span>
+                    {:else}
+                      <span class="dice-values-text">{r.values.join(', ')}</span>
+                    {/if}
+                  </td>
+                  <td class="result-cell">
+                    {#if rollState.faces === 2}
+                      <span class="outcome-pill" class:tie={r.roundWinnerSide === 'TIE'}>
+                        {r.roundWinnerSide}
+                      </span>
+                    {:else}
+                      <strong class="sum-value">{r.sum}</strong>
+                    {/if}
+                  </td>
+                  <td class="stat-cell">
+                    {#if rollState.faces === 2}
+                      <span class="coin-split">
+                        {r.headsCount ?? 0}H / {r.tailsCount ?? 0}T
+                      </span>
+                    {:else}
+                      <span class="minmax-text">
+                        ▲{r.max} ▼{r.min}
+                      </span>
+                    {/if}
+                  </td>
+                </tr>
+              {/each}
+            {/if}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  {/if}
+
+  {#if section === 'all' || section === 'analytics'}
+    <!-- Advanced Statistical Breakdown (Issue #7 & #12) -->
+    <div class="analytics-section" class:analytics-standalone={section === 'analytics'}>
+      <div class="section-title-row">
+        <div class="title-with-badge">
+          <svelte:element
+            this={section === 'analytics' ? 'h2' : 'h3'}
+            id={section === 'analytics' ? 'analytics-heading' : undefined}
+            class="section-subtitle"
+            class:scoreboard-title={section === 'analytics'}
+          >
+            Statistical Breakdown ({rollState.faces === 2 ? 'Coin d2' : `d${rollState.faces}`})
+          </svelte:element>
+          <span class="dice-count-tag">
+            {analytics.totalDiceRolled}
+            {analytics.totalDiceRolled === 1 ? 'die rolled' : 'dice rolled'}
           </span>
-        </figcaption>
+        </div>
+        <button
+          type="button"
+          class="collapse-toggle-btn"
+          aria-expanded={!isAnalyticsCollapsed}
+          onclick={() => (isAnalyticsCollapsed = !isAnalyticsCollapsed)}
+          aria-label="{isAnalyticsCollapsed ? 'Show' : 'Hide'} Statistical Breakdown & Distribution"
+        >
+          <span class="chevron" aria-hidden="true">{isAnalyticsCollapsed ? '▸' : '▾'}</span>
+          <span>{isAnalyticsCollapsed ? 'Show' : 'Hide'}</span>
+        </button>
+      </div>
 
-        <div class="bars-container" role="group" aria-label="Face frequency distribution bars">
-          {#each analytics.distribution as item (item.face)}
-            {@const barWidthPct = Math.min(
-              100,
-              (item.percentage / analytics.distributionPeakPercentage) * 100,
-            )}
-            {@const expectedLeftPct = Math.min(
-              100,
-              (item.expectedPercentage / analytics.distributionPeakPercentage) * 100,
-            )}
-            {@const isHot = analytics.hottestFaces.includes(item.face)}
-            <div class="dist-row" data-testid="dist-row">
-              <span
-                class="face-label"
-                class:coin-label={rollState.faces === 2}
-                class:hot-face-label={isHot && rollState.faces > 2}
-                data-testid={isHot && rollState.faces > 2 ? 'hot-face' : undefined}
-              >
-                {item.label}
-                {#if isHot && rollState.faces > 2}
-                  <span class="hot-badge" data-testid="hot-badge" aria-hidden="true" title="Hot face">🔥</span>
+      <div
+        class="analytics-body"
+        class:collapsed={isAnalyticsCollapsed}
+        data-testid="analytics-body"
+      >
+        <!-- Statistical Insight Banner -->
+        <div class="insight-banner">
+          <div class="insight-header">
+            <div class="insight-title-group">
+              <span class="insight-icon" aria-hidden="true">💡</span>
+              <h4 class="insight-title">Statistical Verdict</h4>
+            </div>
+            <span
+              class="reliability-chip reliability-{analytics.sampleReliability}"
+              data-testid="sample-reliability"
+            >
+              {#if analytics.sampleReliability === 'empty'}
+                No Rolls
+              {:else if analytics.sampleReliability === 'small'}
+                Small sample (&lt;10)
+              {:else if analytics.sampleReliability === 'moderate'}
+                Moderate sample (10–29)
+              {:else}
+                Solid sample (30+)
+              {/if}
+            </span>
+          </div>
+          <p class="insight-text" data-testid="insight-text">{analytics.insightSummary}</p>
+        </div>
+
+        <!-- Analytics Key Metrics Grid -->
+        {#if rollState.faces === 2}
+          {@const coinStats = analytics.coinStats}
+          {@const headsPct = coinStats?.headsPercentage ?? 0}
+          {@const tailsPct = coinStats?.tailsPercentage ?? 0}
+          {@const headsDelta = coinStats?.headsDeltaPercentage ?? 0}
+          {@const tailsDelta = coinStats?.tailsDeltaPercentage ?? 0}
+          {@const zQualitative =
+            analytics.sampleReliability === 'empty'
+              ? 'No data'
+              : Math.abs(analytics.zScore) < 1.0
+                ? 'Within normal variance'
+                : analytics.zScore > 0
+                  ? 'Heads-leaning'
+                  : 'Tails-leaning'}
+
+          <div
+            class="analytics-metrics-grid coin-analytics-grid"
+            data-testid="analytics-metrics"
+            data-variant="coin"
+          >
+            <!-- Heads Share -->
+            <div class="stat-box">
+              <span class="stat-box-label">Heads Share</span>
+              <div class="stat-box-value-row">
+                <span class="stat-main-num highlight-heads">{headsPct.toFixed(1)}%</span>
+                {#if analytics.totalDiceRolled > 0}
+                  <span
+                    class="delta-tag"
+                    class:positive={headsDelta >= 0}
+                    class:negative={headsDelta < 0}
+                  >
+                    {headsDelta >= 0 ? '+' : ''}{headsDelta.toFixed(1)}% vs 50%
+                  </span>
                 {/if}
-              </span>
-
-              <div class="bar-track">
-                <!-- Theoretical Expected Line Marker scaled relative to distributionPeakPercentage -->
-                <div
-                  class="expected-marker"
-                  style:left="{expectedLeftPct}%"
-                  aria-hidden="true"
-                ></div>
-
-                <!-- Actual Measured Bar scaled relative to distributionPeakPercentage -->
-                <div
-                  class="empirical-bar"
-                  class:coin-heads={rollState.faces === 2 && item.face === 1}
-                  class:coin-tails={rollState.faces === 2 && item.face === 2}
-                  class:hot-bar={isHot && rollState.faces > 2}
-                  style:width="{barWidthPct}%"
-                  role="img"
-                  aria-label="Face {item.label}: {item.count} rolls, {item.percentage.toFixed(1)}% (expected {item.expectedPercentage.toFixed(1)}%)"
-                ></div>
-              </div>
-
-              <div class="dist-stats">
-                <span class="count-text" data-testid="dist-count">{item.count}</span>
-                <span class="pct-text" data-testid="dist-pct">{item.percentage.toFixed(1)}%</span>
-                <span
-                  class="delta-pct"
-                  class:delta-pos={item.deltaPercentage > 0.05}
-                  class:delta-neg={item.deltaPercentage < -0.05}
-                >
-                  {item.deltaPercentage >= 0 ? '+' : ''}{item.deltaPercentage.toFixed(1)}%
-                </span>
               </div>
             </div>
-          {/each}
-        </div>
-      </figure>
+
+            <!-- Tails Share -->
+            <div class="stat-box">
+              <span class="stat-box-label">Tails Share</span>
+              <div class="stat-box-value-row">
+                <span class="stat-main-num highlight-tails">{tailsPct.toFixed(1)}%</span>
+                {#if analytics.totalDiceRolled > 0}
+                  <span
+                    class="delta-tag"
+                    class:positive={tailsDelta >= 0}
+                    class:negative={tailsDelta < 0}
+                  >
+                    {tailsDelta >= 0 ? '+' : ''}{tailsDelta.toFixed(1)}% vs 50%
+                  </span>
+                {/if}
+              </div>
+            </div>
+
+            <!-- Balance Deviation (z) -->
+            <div class="stat-box">
+              <span class="stat-box-label">Balance Deviation (z)</span>
+              <div class="stat-box-value-row">
+                <span class="stat-main-num">
+                  {analytics.totalDiceRolled > 0
+                    ? `${analytics.zScore >= 0 ? '+' : ''}${analytics.zScore.toFixed(2)}`
+                    : '0.00'}
+                </span>
+                <span class="sub-label">{zQualitative}</span>
+              </div>
+            </div>
+
+            <!-- Round Split -->
+            <div class="stat-box">
+              <span class="stat-box-label">Round Split</span>
+              <div class="stat-box-value-row">
+                <span class="stat-main-num">
+                  {coinStats?.headsRoundsWon ?? 0}H / {coinStats?.tailsRoundsWon ?? 0}T
+                  {#if (coinStats?.tieRounds ?? 0) > 0}
+                    / {coinStats?.tieRounds} Tie
+                  {/if}
+                </span>
+                <span class="sub-label">across {rollState.rounds.length} rounds</span>
+              </div>
+            </div>
+          </div>
+        {:else}
+          <!-- Polyhedral d4..d20 Analytics Grid -->
+          <div
+            class="analytics-metrics-grid"
+            data-testid="analytics-metrics"
+            data-variant="polyhedral"
+          >
+            <!-- Expected vs Actual Round Average -->
+            <div class="stat-box">
+              <span class="stat-box-label">Expected Avg (E[X])</span>
+              <div class="stat-box-value-row">
+                <span class="stat-main-num">{analytics.expectedRoundAverage.toFixed(1)}</span>
+                {#if rollState.rounds.length > 0}
+                  <span
+                    class="delta-tag"
+                    class:positive={analytics.averageDelta >= 0}
+                    class:negative={analytics.averageDelta < 0}
+                  >
+                    {analytics.averageDelta >= 0 ? '+' : ''}{analytics.averageDelta.toFixed(1)} Δ
+                  </span>
+                  <span class="zscore-tag">
+                    (z: {analytics.zScore >= 0 ? '+' : ''}{analytics.zScore.toFixed(2)})
+                  </span>
+                {/if}
+              </div>
+            </div>
+
+            <!-- Population Standard Deviation of Round Sums -->
+            <div class="stat-box">
+              <span class="stat-box-label">Std Deviation (σ)</span>
+              <div class="stat-box-value-row">
+                <span class="stat-main-num">
+                  {rollState.rounds.length > 0 ? analytics.standardDeviation.toFixed(2) : '0.00'}
+                </span>
+                <span class="sub-label">across round sums (σ)</span>
+              </div>
+            </div>
+
+            <!-- Critical Max Rate (= N) -->
+            <div class="stat-box">
+              <span class="stat-box-label">Crit Max (= {rollState.faces})</span>
+              <div class="stat-box-value-row">
+                <span class="stat-main-num highlight-crit"
+                  >{analytics.criticalMaxRate.toFixed(1)}%</span
+                >
+                <span class="sub-label"
+                  >({analytics.criticalMaxCount}/{analytics.totalDiceRolled})</span
+                >
+              </div>
+            </div>
+
+            <!-- Critical Min Rate (= 1) -->
+            <div class="stat-box">
+              <span class="stat-box-label">Crit Min (= 1)</span>
+              <div class="stat-box-value-row">
+                <span class="stat-main-num highlight-min"
+                  >{analytics.criticalMinRate.toFixed(1)}%</span
+                >
+                <span class="sub-label"
+                  >({analytics.criticalMinCount}/{analytics.totalDiceRolled})</span
+                >
+              </div>
+            </div>
+          </div>
+        {/if}
+
+        <!-- Face Frequency Distribution (Bar Chart vs Theoretical Line) wrapped in semantic figure -->
+        <figure class="distribution-card">
+          <figcaption class="dist-header">
+            <span class="dist-title">Empirical vs Expected Distribution</span>
+            <span class="expected-legend">
+              <span class="legend-line" aria-hidden="true"></span>
+              <span>Expected: {analytics.distribution[0]?.expectedPercentage.toFixed(1)}%</span>
+            </span>
+          </figcaption>
+
+          <div class="bars-container" role="group" aria-label="Face frequency distribution bars">
+            {#each analytics.distribution as item (item.face)}
+              {@const barWidthPct = Math.min(
+                100,
+                (item.percentage / analytics.distributionPeakPercentage) * 100,
+              )}
+              {@const expectedLeftPct = Math.min(
+                100,
+                (item.expectedPercentage / analytics.distributionPeakPercentage) * 100,
+              )}
+              {@const isHot = analytics.hottestFaces.includes(item.face)}
+              <div class="dist-row" data-testid="dist-row">
+                <span
+                  class="face-label"
+                  class:coin-label={rollState.faces === 2}
+                  class:hot-face-label={isHot && rollState.faces > 2}
+                  data-testid={isHot && rollState.faces > 2 ? 'hot-face' : undefined}
+                >
+                  {item.label}
+                  {#if isHot && rollState.faces > 2}
+                    <span
+                      class="hot-badge"
+                      data-testid="hot-badge"
+                      aria-hidden="true"
+                      title="Hot face">🔥</span
+                    >
+                  {/if}
+                </span>
+
+                <div class="bar-track">
+                  <!-- Theoretical Expected Line Marker scaled relative to distributionPeakPercentage -->
+                  <div
+                    class="expected-marker"
+                    style:left="{expectedLeftPct}%"
+                    aria-hidden="true"
+                  ></div>
+
+                  <!-- Actual Measured Bar scaled relative to distributionPeakPercentage -->
+                  <div
+                    class="empirical-bar"
+                    class:coin-heads={rollState.faces === 2 && item.face === 1}
+                    class:coin-tails={rollState.faces === 2 && item.face === 2}
+                    class:hot-bar={isHot && rollState.faces > 2}
+                    style:width="{barWidthPct}%"
+                    role="img"
+                    aria-label="Face {item.label}: {item.count} rolls, {item.percentage.toFixed(
+                      1,
+                    )}% (expected {item.expectedPercentage.toFixed(1)}%)"
+                  ></div>
+                </div>
+
+                <div class="dist-stats">
+                  <span class="count-text" data-testid="dist-count">{item.count}</span>
+                  <span class="pct-text" data-testid="dist-pct">{item.percentage.toFixed(1)}%</span>
+                  <span
+                    class="delta-pct"
+                    class:delta-pos={item.deltaPercentage > 0.05}
+                    class:delta-neg={item.deltaPercentage < -0.05}
+                  >
+                    {item.deltaPercentage >= 0 ? '+' : ''}{item.deltaPercentage.toFixed(1)}%
+                  </span>
+                </div>
+              </div>
+            {/each}
+          </div>
+        </figure>
+      </div>
     </div>
-  </div>
   {/if}
 </section>
 
@@ -644,8 +670,12 @@
     font-weight: 700;
   }
 
-  .winner-crown { color: #fde047; }
-  .winner-tie { color: #94a3b8; }
+  .winner-crown {
+    color: #fde047;
+  }
+  .winner-tie {
+    color: #94a3b8;
+  }
 
   /* Dice Metrics Grid */
   .dice-metrics-grid {
@@ -680,8 +710,12 @@
     color: #f3f4f6;
   }
 
-  .highlight-green { color: #34d399; }
-  .highlight-red { color: #f87171; }
+  .highlight-green {
+    color: #34d399;
+  }
+  .highlight-red {
+    color: #f87171;
+  }
 
   .mode-freq {
     font-size: 0.8rem;

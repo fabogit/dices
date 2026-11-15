@@ -1,7 +1,9 @@
 import { test, expect } from '@playwright/test';
 
 test.describe('Series Mode & Custom 1..21 Slider Flow', () => {
-  test('verifies presets (Single, Bo3, Bo5, no Bo7), adjusts 1..21 slider, tracks rounds, and resets cleanly', async ({ page }) => {
+  test('verifies presets (Single, Bo3, Bo5, no Bo7), adjusts 1..21 slider, tracks rounds, and resets cleanly', async ({
+    page,
+  }) => {
     await page.goto('/');
 
     // Verify preset buttons exist for Single (1), Bo3 (3), Bo5 (5)
@@ -38,7 +40,7 @@ test.describe('Series Mode & Custom 1..21 Slider Flow', () => {
 
     // Enable Fast mode for deterministic, instant execution
     const fastModeBtn = page.getByRole('button', { name: /Fast: (ON|OFF)/ });
-    if (!(await fastModeBtn.getAttribute('aria-pressed') === 'true')) {
+    if (!((await fastModeBtn.getAttribute('aria-pressed')) === 'true')) {
       await fastModeBtn.click();
     }
 
