@@ -188,4 +188,50 @@ test.describe('Player Management, Leaderboard, & History Persistence (Issue #13)
     await expect(clearBtn).not.toBeVisible();
     await expect(historyItems).toHaveCount(0);
   });
+
+  test('Add Local Player dialog supports Escape close, Tab focus trap, focus restoration, and re-open', async ({
+    page,
+  }) => {
+    await page.goto('/');
+
+    const addPlayerBtn = page.getByRole('button', { name: 'Add new local player' });
+    await addPlayerBtn.click();
+
+    const modal = page.getByRole('dialog', { name: 'Add Local Player' });
+    const nameInput = modal.getByLabel('Player Name:');
+    const cancelBtn = modal.getByRole('button', { name: 'Cancel' });
+    const submitBtn = modal.getByRole('button', { name: 'Add Player' });
+
+    await expect(modal).toBeVisible();
+    await expect(nameInput).toBeFocused();
+
+    // Type a partial name so re-open verifies input reset on Escape close
+    await nameInput.fill('TempPlayer');
+
+    // Tab cycles through focusable controls inside the native modal; the background page is inert,
+    // so tabbing past the last control steps to the browser chrome (document.body) and wraps to input.
+    await page.keyboard.press('Tab');
+    await expect(cancelBtn).toBeFocused();
+
+    await page.keyboard.press('Tab');
+    await expect(submitBtn).toBeFocused();
+
+    await page.keyboard.press('Tab');
+    const activeTagAfterLast = await page.evaluate(() => document.activeElement?.tagName ?? null);
+    expect(activeTagAfterLast).toBe('BODY');
+
+    await page.keyboard.press('Tab');
+    await expect(nameInput).toBeFocused();
+
+    // Escape closes modal and restores focus to trigger button
+    await page.keyboard.press('Escape');
+    await expect(modal).not.toBeVisible();
+    await expect(addPlayerBtn).toBeFocused();
+
+    // Clicking + Player again re-opens cleanly with empty input
+    await addPlayerBtn.click();
+    await expect(modal).toBeVisible();
+    await expect(nameInput).toHaveValue('');
+    await expect(nameInput).toBeFocused();
+  });
 });
