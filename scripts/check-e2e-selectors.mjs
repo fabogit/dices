@@ -14,8 +14,8 @@ const E2E_DIR = join(ROOT_DIR, 'e2e');
  */
 const BASELINE_MAX_COUNTS = Object.freeze({
   'stats-analytics.spec.ts': 0,
-  'players-history.spec.ts': 28,
-  'arena-workflows.spec.ts': 22,
+  'players-history.spec.ts': 0,
+  'arena-workflows.spec.ts': 0,
   'quick-roll.spec.ts': 11,
   'accessibility-toolbar.spec.ts': 6,
   'mobile-viewport.spec.ts': 6,
