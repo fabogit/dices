@@ -247,19 +247,28 @@
                   <div class="feed-values">
                     {#if itemFaces === 2}
                       {#each item.values as v, i (i)}
-                        <span class="mini-coin" class:heads={v === 1} class:tails={v === 2}>
+                        <span
+                          class="mini-coin"
+                          data-testid="mini-coin"
+                          class:heads={v === 1}
+                          class:tails={v === 2}
+                        >
                           {v === 1 ? 'H' : 'T'}
                         </span>
                       {/each}
                     {:else}
-                      <span class="dice-values-string">{item.values.join(', ')}</span>
+                      <span class="dice-values-string" data-testid="dice-values">{item.values.join(', ')}</span>
                     {/if}
                   </div>
                 </div>
 
                 <div class="feed-item-right">
                   {#if itemFaces === 2}
-                    <span class="feed-outcome" class:tie={item.roundWinnerSide === 'TIE'}>
+                    <span
+                      class="feed-outcome"
+                      data-testid="feed-outcome"
+                      class:tie={item.roundWinnerSide === 'TIE'}
+                    >
                       {item.roundWinnerSide}
                     </span>
                   {:else}

@@ -26,44 +26,47 @@ test.describe('Player Management, Leaderboard, & History Persistence (Issue #13)
 
     await page.goto('/');
 
-    const fastModeBtn = page.locator('.instant-toggle-btn');
+    const fastModeBtn = page.getByRole('button', { name: /Fast: (ON|OFF)/ });
     if ((await fastModeBtn.getAttribute('aria-pressed')) !== 'true') {
       await fastModeBtn.click();
     }
 
     // Step 1: Open Add Local Player modal, test Cancel
     await page.getByRole('button', { name: 'Add new local player' }).click();
-    const modal = page.locator('.modal-backdrop');
+    const modal = page.getByRole('dialog', { name: 'Add Local Player' });
     await expect(modal).toBeVisible();
-    await expect(page.locator('#add-player-title')).toHaveText('Add Local Player');
+    await expect(modal.getByRole('heading', { name: 'Add Local Player' })).toHaveText('Add Local Player');
 
-    await page.fill('#new-player-input', 'CancelledPlayer');
-    await page.locator('.modal-btn.cancel').click();
+    await modal.getByLabel('Player Name:').fill('CancelledPlayer');
+    await modal.getByRole('button', { name: 'Cancel' }).click();
     await expect(modal).not.toBeVisible();
 
-    const playerSelect = page.locator('#player-select');
-    await expect(playerSelect.locator('option')).toHaveCount(1);
+    const playerSelect = page.getByLabel('Player:');
+    await expect(playerSelect.getByRole('option')).toHaveCount(1);
     await expect(playerSelect).toHaveValue('player-1');
 
     // Step 2: Add player 'Alice'
     await page.getByRole('button', { name: 'Add new local player' }).click();
-    await page.fill('#new-player-input', 'Alice');
-    await page.locator('.modal-btn.confirm').click();
+    await expect(modal).toBeVisible();
+    await modal.getByLabel('Player Name:').fill('Alice');
+    await modal.getByRole('button', { name: 'Add Player' }).click();
     await expect(modal).not.toBeVisible();
 
     // Verify option exists and Alice is auto-selected
-    await expect(playerSelect.locator('option')).toHaveCount(2);
-    const selectedText = await playerSelect.locator('option:checked').textContent();
-    expect(selectedText).toBe('Alice');
+    await expect(playerSelect.getByRole('option')).toHaveCount(2);
+    const getSelectedPlayerName = () =>
+      playerSelect.evaluate((el: HTMLSelectElement) => el.selectedOptions[0]?.textContent?.trim());
+
+    expect(await getSelectedPlayerName()).toBe('Alice');
 
     // Verify switching between Player 1 and Alice
     await playerSelect.selectOption({ label: 'Player 1' });
-    expect(await playerSelect.locator('option:checked').textContent()).toBe('Player 1');
+    expect(await getSelectedPlayerName()).toBe('Player 1');
     await playerSelect.selectOption({ label: 'Alice' });
-    expect(await playerSelect.locator('option:checked').textContent()).toBe('Alice');
+    expect(await getSelectedPlayerName()).toBe('Alice');
 
     const toolbar = page.getByRole('toolbar', { name: 'Roll controls' });
-    const rollBtn = toolbar.locator('.primary-btn');
+    const rollBtn = toolbar.getByRole('button', { name: /Roll Round|Roll \d+d\d+|Flip|Series Complete/ });
 
     // Step 3: Alice executes 2d6 Single series (values [6, 6] -> Luck > 170%)
     // (5 % 6) + 1 = 6
@@ -90,7 +93,7 @@ test.describe('Player Management, Leaderboard, & History Persistence (Issue #13)
     await page.getByRole('button', { name: 'Single (1)' }).click();
     // Decrease quantity back to 1 coin
     await page.getByRole('button', { name: 'Decrease quantity' }).click();
-    await expect(page.locator('.count-value').first()).toHaveText('1');
+    await expect(page.getByRole('slider', { name: /Quantity Per Roll/ })).toHaveValue('1');
 
     await page.evaluate((vals) => (window as any).__setRandomQueue(vals), [0]);
     await rollBtn.click();
@@ -98,27 +101,29 @@ test.describe('Player Management, Leaderboard, & History Persistence (Issue #13)
 
     // Step 6: Switch to History tab and verify Leaderboard rankings & metrics
     await page.getByRole('tab', { name: /History/i }).click();
-    const playerCards = page.locator('.leaderboard-grid .player-card');
+    const playerCards = page.getByRole('list', { name: /Leaderboard/i }).getByRole('listitem');
     await expect(playerCards).toHaveCount(2);
 
     // Alice should be ranked #1 with hot flame icon (🔥)
     const firstPlayerCard = playerCards.nth(0);
-    await expect(firstPlayerCard.locator('.player-name')).toHaveText('Alice');
-    const firstLuckBadge = firstPlayerCard.locator('.luck-badge');
+    await expect(firstPlayerCard.getByTestId('player-name')).toHaveText('Alice');
+    const firstLuckBadge = firstPlayerCard.getByRole('img', { name: /Luck Index/ });
     await expect(firstLuckBadge).toContainText('🔥');
     await expect(firstPlayerCard).toContainText('Coins Won');
-    await expect(firstPlayerCard.locator('.highlight-gold').first()).toHaveText('1');
+    await expect(firstPlayerCard.getByTestId('coin-series-won')).toHaveText('1');
     await expect(firstPlayerCard).toContainText('Heads Rate');
     await expect(firstPlayerCard).toContainText('100.0%');
 
     // Player 1 should be ranked #2 with cold ice icon (❄️)
     const secondPlayerCard = playerCards.nth(1);
-    await expect(secondPlayerCard.locator('.player-name')).toHaveText('Player 1');
-    const secondLuckBadge = secondPlayerCard.locator('.luck-badge');
+    await expect(secondPlayerCard.getByTestId('player-name')).toHaveText('Player 1');
+    const secondLuckBadge = secondPlayerCard.getByRole('img', { name: /Luck Index/ });
     await expect(secondLuckBadge).toContainText('❄️');
 
     // Verify Past Completed Series log has 3 entries
-    const historyItems = page.locator('.history-list .history-item');
+    const historyItems = page
+      .getByRole('region', { name: 'Scrollable list of past series' })
+      .getByRole('listitem');
     await expect(historyItems).toHaveCount(3);
     await expect(historyItems.nth(0)).toContainText('Alice');
     await expect(historyItems.nth(0)).toContainText('Coin d2');
@@ -131,31 +136,33 @@ test.describe('Player Management, Leaderboard, & History Persistence (Issue #13)
     await page.reload();
     await page.getByRole('tab', { name: /History/i }).click();
 
-    const reloadedPlayerCards = page.locator('.leaderboard-grid .player-card');
+    const reloadedPlayerCards = page.getByRole('list', { name: /Leaderboard/i }).getByRole('listitem');
     await expect(reloadedPlayerCards).toHaveCount(2);
-    await expect(reloadedPlayerCards.nth(0).locator('.player-name')).toHaveText('Alice');
-    await expect(reloadedPlayerCards.nth(0).locator('.luck-badge')).toContainText('🔥');
+    await expect(reloadedPlayerCards.nth(0).getByTestId('player-name')).toHaveText('Alice');
+    await expect(reloadedPlayerCards.nth(0).getByRole('img', { name: /Luck Index/ })).toContainText('🔥');
     await expect(reloadedPlayerCards.nth(0)).toContainText('Coins Won');
-    await expect(reloadedPlayerCards.nth(1).locator('.player-name')).toHaveText('Player 1');
-    await expect(reloadedPlayerCards.nth(1).locator('.luck-badge')).toContainText('❄️');
+    await expect(reloadedPlayerCards.nth(1).getByTestId('player-name')).toHaveText('Player 1');
+    await expect(reloadedPlayerCards.nth(1).getByRole('img', { name: /Luck Index/ })).toContainText('❄️');
 
-    const reloadedHistoryItems = page.locator('.history-list .history-item');
+    const reloadedHistoryItems = page
+      .getByRole('region', { name: 'Scrollable list of past series' })
+      .getByRole('listitem');
     await expect(reloadedHistoryItems).toHaveCount(3);
 
     // Step 8: Clear history and verify empty state across reload
-    const clearBtn = page.locator('.clear-btn');
+    const clearBtn = page.getByRole('button', { name: 'Clear all completed series history' });
     await expect(clearBtn).toBeVisible();
     await clearBtn.click();
 
-    await expect(page.locator('.empty-history')).toBeVisible();
-    await expect(page.locator('.clear-btn')).not.toBeVisible();
-    await expect(page.locator('.history-item')).toHaveCount(0);
+    await expect(page.getByText(/No completed series/i)).toBeVisible();
+    await expect(clearBtn).not.toBeVisible();
+    await expect(historyItems).toHaveCount(0);
 
     // Persist empty history across reload
     await page.reload();
     await page.getByRole('tab', { name: /History/i }).click();
-    await expect(page.locator('.empty-history')).toBeVisible();
-    await expect(page.locator('.clear-btn')).not.toBeVisible();
-    await expect(page.locator('.history-item')).toHaveCount(0);
+    await expect(page.getByText(/No completed series/i)).toBeVisible();
+    await expect(clearBtn).not.toBeVisible();
+    await expect(historyItems).toHaveCount(0);
   });
 });
