@@ -351,4 +351,33 @@ describe('RollState Controller', () => {
       vi.unstubAllGlobals();
     }
   });
+
+  it('reacts to prefers-reduced-motion media query change events via addEventListener', () => {
+    let changeHandler: ((event: MediaQueryListEvent) => void) | undefined;
+    vi.stubGlobal('window', {
+      matchMedia: vi
+        .fn<
+          (query: string) => {
+            matches: boolean;
+            addEventListener: (event: string, cb: (event: MediaQueryListEvent) => void) => void;
+          }
+        >()
+        .mockReturnValue({
+          matches: false,
+          addEventListener: (_event: string, cb: (event: MediaQueryListEvent) => void) => {
+            changeHandler = cb;
+          },
+        }),
+    });
+
+    try {
+      const motionState = new RollState();
+      expect(motionState.instantMode).toBe(false);
+      expect(changeHandler).toBeDefined();
+      changeHandler?.({ matches: true } as MediaQueryListEvent);
+      expect(motionState.instantMode).toBe(true);
+    } finally {
+      vi.unstubAllGlobals();
+    }
+  });
 });

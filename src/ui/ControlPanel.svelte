@@ -1,5 +1,6 @@
 <script lang="ts">
-  import { ALLOWED_FACES, type DieFaces } from '../core/types';
+  import { ALLOWED_FACES } from '../core/types';
+  import { dieLabel } from '../lib/format';
   import { DIE_THEMES } from '../three/geometries';
   import { rollState } from './rollState.svelte';
 
@@ -8,10 +9,6 @@
     { label: 'Bo3 (3)', length: 3 },
     { label: 'Bo5 (5)', length: 5 },
   ];
-
-  function getFaceLabel(f: DieFaces): string {
-    return f === 2 ? 'Coin (d2)' : `d${f}`;
-  }
 
   let isCollapsed = $state(false);
 </script>
@@ -51,7 +48,7 @@
             disabled={rollState.isRolling}
           >
             <span class="badge-dot" style:background-color={theme.accentColor}></span>
-            <span class="badge-text">{getFaceLabel(f)}</span>
+            <span class="badge-text">{dieLabel(f, 'parens')}</span>
           </button>
         {/each}
       </div>
@@ -190,8 +187,8 @@
     flex-direction: column;
     gap: 1rem;
     padding: 1.25rem;
-    background: rgba(17, 24, 39, 0.75);
-    border: 1px solid rgba(75, 85, 99, 0.4);
+    background: var(--surface-panel);
+    border: 1px solid var(--border-color);
     border-radius: 0.75rem;
     backdrop-filter: blur(8px);
   }
@@ -206,7 +203,7 @@
     margin: 0;
     font-size: 1.15rem;
     font-weight: 700;
-    color: #f3f4f6;
+    color: var(--text-heading);
     letter-spacing: -0.01em;
   }
 
@@ -238,16 +235,16 @@
   .field-label {
     font-size: 0.875rem;
     font-weight: 600;
-    color: #e5e7eb;
+    color: var(--text-body);
   }
 
   .field-hint {
     font-size: 0.75rem;
-    color: #9ca3af;
+    color: var(--text-secondary);
   }
 
   .count-value {
-    color: #38bdf8;
+    color: var(--accent-blue);
     margin-left: 0.25rem;
   }
 
@@ -263,10 +260,10 @@
     gap: 0.4rem;
     padding: 0.5rem 0.65rem;
     min-block-size: 38px;
-    background: #1f2937;
+    background: var(--surface-elevated);
     border: 1px solid rgba(156, 163, 175, 0.25);
     border-radius: 0.5rem;
-    color: #d1d5db;
+    color: var(--text-light);
     font-size: 0.825rem;
     font-weight: 600;
     cursor: pointer;
@@ -274,16 +271,16 @@
   }
 
   .face-badge-button:hover:not(:disabled) {
-    background: #374151;
-    border-color: var(--badge-accent, #60a5fa);
-    color: #ffffff;
+    background: var(--surface-hover);
+    border-color: var(--badge-accent, var(--accent-blue-soft));
+    color: var(--text-white);
   }
 
   .face-badge-button.selected {
     background: rgba(30, 41, 59, 0.9);
-    border-color: var(--badge-accent, #38bdf8);
-    box-shadow: 0 0 0 1px var(--badge-accent, #38bdf8);
-    color: #ffffff;
+    border-color: var(--badge-accent, var(--accent-blue));
+    box-shadow: 0 0 0 1px var(--badge-accent, var(--accent-blue));
+    color: var(--text-white);
   }
 
   .badge-dot {
@@ -305,23 +302,23 @@
     justify-content: center;
     min-inline-size: 32px;
     min-block-size: 32px;
-    background: #374151;
-    border: 1px solid #4b5563;
+    background: var(--surface-hover);
+    border: 1px solid var(--border-muted);
     border-radius: 0.375rem;
-    color: #f3f4f6;
+    color: var(--text-heading);
     font-size: 1.1rem;
     font-weight: bold;
     cursor: pointer;
   }
 
   .stepper-btn:hover:not(:disabled) {
-    background: #4b5563;
+    background: var(--border-muted);
   }
 
   .range-slider {
     flex: 1;
     min-block-size: 24px;
-    accent-color: #38bdf8;
+    accent-color: var(--accent-blue);
     cursor: pointer;
   }
 
@@ -338,23 +335,23 @@
     padding: 0.35rem 0.5rem;
     font-size: 0.75rem;
     font-weight: 600;
-    background: #1f2937;
-    border: 1px solid #374151;
+    background: var(--surface-elevated);
+    border: 1px solid var(--border-subtle);
     border-radius: 0.375rem;
-    color: #9ca3af;
+    color: var(--text-secondary);
     cursor: pointer;
     transition: all 0.15s ease;
   }
 
   .preset-btn:hover:not(:disabled) {
-    background: #374151;
-    color: #e5e7eb;
+    background: var(--surface-hover);
+    color: var(--text-body);
   }
 
   .preset-btn.active {
-    background: var(--primary-blue, #0369a1);
-    border-color: var(--accent-blue, #38bdf8);
-    color: #ffffff;
+    background: var(--primary-blue);
+    border-color: var(--accent-blue);
+    color: var(--text-white);
   }
 
   .stepper-row {
@@ -368,22 +365,22 @@
     width: 70px;
     min-block-size: 34px;
     padding: 0.35rem 0.5rem;
-    background: #111827;
-    border: 1px solid #4b5563;
+    background: var(--surface-dark);
+    border: 1px solid var(--border-muted);
     border-radius: 0.375rem;
-    color: #f9fafb;
+    color: var(--text-primary);
     font-size: 0.875rem;
     font-weight: 600;
   }
 
   .unit-text {
     font-size: 0.8rem;
-    color: #9ca3af;
+    color: var(--text-secondary);
   }
 
   button:focus-visible,
   input:focus-visible {
-    outline: 2px solid #38bdf8;
+    outline: 2px solid var(--accent-blue);
     outline-offset: 2px;
   }
 

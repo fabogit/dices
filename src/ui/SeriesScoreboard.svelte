@@ -1,4 +1,6 @@
 <script lang="ts">
+  import { getCoinSplitPercentages } from '../core/engine';
+  import { dieLabel, formatSigned } from '../lib/format';
   import { rollState } from './rollState.svelte';
 
   let { section = 'all' }: { section?: 'all' | 'scoreboard' | 'analytics' } = $props();
@@ -48,13 +50,7 @@
 
       <!-- Coin Mode Summary (d2) -->
       {#if rollState.faces === 2}
-        {@const totalCoins = analytics.totalDiceRolled || 1}
-        {@const headsPct = analytics.coinStats
-          ? analytics.coinStats.headsPercentage
-          : ((rollState.summary.totalHeads ?? 0) / totalCoins) * 100}
-        {@const tailsPct = analytics.coinStats
-          ? analytics.coinStats.tailsPercentage
-          : ((rollState.summary.totalTails ?? 0) / totalCoins) * 100}
+        {@const { headsPct, tailsPct } = getCoinSplitPercentages(rollState.summary)}
         <div class="coin-summary-cards">
           <div class="score-card heads-card">
             <div class="card-icon" aria-hidden="true">👑</div>
@@ -231,7 +227,7 @@
             class="section-subtitle"
             class:scoreboard-title={section === 'analytics'}
           >
-            Statistical Breakdown ({rollState.faces === 2 ? 'Coin d2' : `d${rollState.faces}`})
+            Statistical Breakdown ({dieLabel(rollState.faces)})
           </svelte:element>
           <span class="dice-count-tag">
             {`${analytics.totalDiceRolled} ${analytics.totalDiceRolled === 1 ? 'die' : 'dice'} rolled`}
@@ -265,15 +261,7 @@
               class="reliability-chip reliability-{analytics.sampleReliability}"
               data-testid="sample-reliability"
             >
-              {#if analytics.sampleReliability === 'empty'}
-                No Rolls
-              {:else if analytics.sampleReliability === 'small'}
-                Small sample (&lt;10)
-              {:else if analytics.sampleReliability === 'moderate'}
-                Moderate sample (10–29)
-              {:else}
-                Solid sample (30+)
-              {/if}
+              {analytics.sampleReliabilityLabel}
             </span>
           </div>
           <p class="insight-text" data-testid="insight-text">{analytics.insightSummary}</p>
@@ -286,14 +274,7 @@
           {@const tailsPct = coinStats?.tailsPercentage ?? 0}
           {@const headsDelta = coinStats?.headsDeltaPercentage ?? 0}
           {@const tailsDelta = coinStats?.tailsDeltaPercentage ?? 0}
-          {@const zQualitative =
-            analytics.sampleReliability === 'empty'
-              ? 'No data'
-              : Math.abs(analytics.zScore) < 1.0
-                ? 'Within normal variance'
-                : analytics.zScore > 0
-                  ? 'Heads-leaning'
-                  : 'Tails-leaning'}
+          {@const zQualitative = coinStats?.zQualitative ?? 'No data'}
 
           <div
             class="analytics-metrics-grid coin-analytics-grid"
@@ -311,7 +292,7 @@
                     class:positive={headsDelta >= 0}
                     class:negative={headsDelta < 0}
                   >
-                    {headsDelta >= 0 ? '+' : ''}{headsDelta.toFixed(1)}% vs 50%
+                    {formatSigned(headsDelta, 1)}% vs 50%
                   </span>
                 {/if}
               </div>
@@ -328,7 +309,7 @@
                     class:positive={tailsDelta >= 0}
                     class:negative={tailsDelta < 0}
                   >
-                    {tailsDelta >= 0 ? '+' : ''}{tailsDelta.toFixed(1)}% vs 50%
+                    {formatSigned(tailsDelta, 1)}% vs 50%
                   </span>
                 {/if}
               </div>
@@ -339,9 +320,7 @@
               <span class="stat-box-label">Balance Deviation (z)</span>
               <div class="stat-box-value-row">
                 <span class="stat-main-num">
-                  {analytics.totalDiceRolled > 0
-                    ? `${analytics.zScore >= 0 ? '+' : ''}${analytics.zScore.toFixed(2)}`
-                    : '0.00'}
+                  {analytics.totalDiceRolled > 0 ? formatSigned(analytics.zScore, 2) : '0.00'}
                 </span>
                 <span class="sub-label">{zQualitative}</span>
               </div>
@@ -379,10 +358,10 @@
                     class:positive={analytics.averageDelta >= 0}
                     class:negative={analytics.averageDelta < 0}
                   >
-                    {analytics.averageDelta >= 0 ? '+' : ''}{analytics.averageDelta.toFixed(1)} Δ
+                    {formatSigned(analytics.averageDelta, 1)} Δ
                   </span>
                   <span class="zscore-tag">
-                    (z: {analytics.zScore >= 0 ? '+' : ''}{analytics.zScore.toFixed(2)})
+                    (z: {formatSigned(analytics.zScore, 2)})
                   </span>
                 {/if}
               </div>
@@ -439,24 +418,16 @@
 
           <div class="bars-container" role="group" aria-label="Face frequency distribution bars">
             {#each analytics.distribution as item (item.face)}
-              {@const barWidthPct = Math.min(
-                100,
-                (item.percentage / analytics.distributionPeakPercentage) * 100,
-              )}
-              {@const expectedLeftPct = Math.min(
-                100,
-                (item.expectedPercentage / analytics.distributionPeakPercentage) * 100,
-              )}
-              {@const isHot = analytics.hottestFaces.includes(item.face)}
+              {@const showHot = item.isHot && rollState.faces > 2}
               <div class="dist-row" data-testid="dist-row">
                 <span
                   class="face-label"
                   class:coin-label={rollState.faces === 2}
-                  class:hot-face-label={isHot && rollState.faces > 2}
-                  data-testid={isHot && rollState.faces > 2 ? 'hot-face' : undefined}
+                  class:hot-face-label={showHot}
+                  data-testid={showHot ? 'hot-face' : undefined}
                 >
                   {item.label}
-                  {#if isHot && rollState.faces > 2}
+                  {#if showHot}
                     <span
                       class="hot-badge"
                       data-testid="hot-badge"
@@ -470,7 +441,7 @@
                   <!-- Theoretical Expected Line Marker scaled relative to distributionPeakPercentage -->
                   <div
                     class="expected-marker"
-                    style:left="{expectedLeftPct}%"
+                    style:left="{item.expectedMarkerPercentage}%"
                     aria-hidden="true"
                   ></div>
 
@@ -479,8 +450,8 @@
                     class="empirical-bar"
                     class:coin-heads={rollState.faces === 2 && item.face === 1}
                     class:coin-tails={rollState.faces === 2 && item.face === 2}
-                    class:hot-bar={isHot && rollState.faces > 2}
-                    style:width="{barWidthPct}%"
+                    class:hot-bar={showHot}
+                    style:width="{item.barWidthPercentage}%"
                     role="img"
                     aria-label="Face {item.label}: {item.count} rolls, {item.percentage.toFixed(
                       1,
@@ -493,10 +464,10 @@
                   <span class="pct-text" data-testid="dist-pct">{item.percentage.toFixed(1)}%</span>
                   <span
                     class="delta-pct"
-                    class:delta-pos={item.deltaPercentage > 0.05}
-                    class:delta-neg={item.deltaPercentage < -0.05}
+                    class:delta-pos={item.deltaDirection === 'positive'}
+                    class:delta-neg={item.deltaDirection === 'negative'}
                   >
-                    {item.deltaPercentage >= 0 ? '+' : ''}{item.deltaPercentage.toFixed(1)}%
+                    {formatSigned(item.deltaPercentage, 1)}%
                   </span>
                 </div>
               </div>
@@ -514,8 +485,8 @@
     flex-direction: column;
     gap: 1rem;
     padding: 1.25rem;
-    background: rgba(17, 24, 39, 0.75);
-    border: 1px solid rgba(75, 85, 99, 0.4);
+    background: var(--surface-panel);
+    border: 1px solid var(--border-color);
     border-radius: 0.75rem;
     backdrop-filter: blur(8px);
   }
@@ -537,7 +508,7 @@
     margin: 0;
     font-size: 1.15rem;
     font-weight: 700;
-    color: #f3f4f6;
+    color: var(--text-heading);
   }
 
   .scoreboard-body {
@@ -562,25 +533,25 @@
 
   .series-badge {
     padding: 0.25rem 0.6rem;
-    background: #1f2937;
-    border: 1px solid #374151;
+    background: var(--surface-elevated);
+    border: 1px solid var(--border-subtle);
     border-radius: 9999px;
     font-size: 0.75rem;
     font-weight: 600;
-    color: #9ca3af;
+    color: var(--text-secondary);
   }
 
   .progress-container {
     width: 100%;
     height: 6px;
-    background: #1f2937;
+    background: var(--surface-elevated);
     border-radius: 9999px;
     overflow: hidden;
   }
 
   .progress-bar {
     height: 100%;
-    background: linear-gradient(90deg, #0284c7 0%, #38bdf8 100%);
+    background: linear-gradient(90deg, var(--accent-sky) 0%, var(--accent-blue) 100%);
     transition: width 0.3s ease;
   }
 
@@ -624,19 +595,19 @@
     font-size: 0.75rem;
     font-weight: 700;
     letter-spacing: 0.05em;
-    color: #9ca3af;
+    color: var(--text-secondary);
   }
 
   .card-metric {
     font-size: 1.25rem;
     font-weight: 800;
-    color: #f9fafb;
+    color: var(--text-primary);
   }
 
   .card-metric small {
     font-size: 0.75rem;
     font-weight: 500;
-    color: #9ca3af;
+    color: var(--text-secondary);
     margin-left: 0.25rem;
   }
 
@@ -649,31 +620,31 @@
 
   .sub-stat-pct {
     font-weight: 700;
-    color: #f3f4f6;
+    color: var(--text-heading);
   }
 
   .sub-stat-sep {
-    color: var(--text-secondary, #9ca3af);
+    color: var(--text-secondary);
   }
 
   .sub-stat {
-    color: #9ca3af;
+    color: var(--text-secondary);
   }
 
   .winner-banner {
     padding: 0.65rem;
     background: rgba(30, 41, 59, 0.9);
-    border: 1px solid #38bdf8;
+    border: 1px solid var(--accent-blue);
     border-radius: 0.5rem;
     text-align: center;
     font-weight: 700;
   }
 
   .winner-crown {
-    color: #fde047;
+    color: var(--color-gold-light);
   }
   .winner-tie {
-    color: #94a3b8;
+    color: var(--text-muted);
   }
 
   /* Dice Metrics Grid */
@@ -687,8 +658,8 @@
     display: flex;
     flex-direction: column;
     padding: 0.5rem 0.65rem;
-    background: #1f2937;
-    border: 1px solid #374151;
+    background: var(--surface-elevated);
+    border: 1px solid var(--border-subtle);
     border-radius: 0.375rem;
   }
 
@@ -699,33 +670,33 @@
   .metric-label {
     font-size: 0.72rem;
     font-weight: 600;
-    color: #9ca3af;
+    color: var(--text-secondary);
     text-transform: uppercase;
   }
 
   .metric-value {
     font-size: 1.05rem;
     font-weight: 700;
-    color: #f3f4f6;
+    color: var(--text-heading);
   }
 
   .highlight-green {
-    color: #34d399;
+    color: var(--color-emerald);
   }
   .highlight-red {
-    color: #f87171;
+    color: var(--color-danger);
   }
 
   .mode-freq {
     font-size: 0.8rem;
     font-weight: 500;
-    color: #9ca3af;
+    color: var(--text-secondary);
   }
 
   .mode-tie-badge {
     font-size: 0.75rem;
     font-weight: 700;
-    color: #facc15;
+    color: var(--color-gold);
     margin-left: 0.25rem;
   }
 
@@ -753,18 +724,18 @@
     margin: 0;
     font-size: 0.95rem;
     font-weight: 700;
-    color: #e5e7eb;
+    color: var(--text-body);
     letter-spacing: -0.01em;
   }
 
   .section-subtitle.scoreboard-title {
     font-size: 1.15rem;
-    color: #f3f4f6;
+    color: var(--text-heading);
   }
 
   .dice-count-tag {
     font-size: 0.75rem;
-    color: #9ca3af;
+    color: var(--text-secondary);
   }
 
   /* Insight Banner */
@@ -799,7 +770,7 @@
     margin: 0;
     font-size: 0.85rem;
     font-weight: 700;
-    color: #38bdf8;
+    color: var(--accent-blue);
     text-transform: uppercase;
     letter-spacing: 0.05em;
   }
@@ -813,25 +784,25 @@
 
   .reliability-solid {
     background: rgba(16, 185, 129, 0.2);
-    color: #34d399;
+    color: var(--color-emerald);
     border: 1px solid rgba(16, 185, 129, 0.4);
   }
 
   .reliability-moderate {
     background: rgba(245, 158, 11, 0.2);
-    color: #fbbf24;
+    color: var(--color-amber);
     border: 1px solid rgba(245, 158, 11, 0.4);
   }
 
   .reliability-small {
     background: rgba(239, 68, 68, 0.15);
-    color: #fca5a5;
+    color: var(--color-danger-light);
     border: 1px solid rgba(239, 68, 68, 0.3);
   }
 
   .reliability-empty {
     background: rgba(107, 114, 128, 0.2);
-    color: #9ca3af;
+    color: var(--text-secondary);
     border: 1px solid rgba(107, 114, 128, 0.4);
   }
 
@@ -839,7 +810,7 @@
     margin: 0;
     font-size: 0.825rem;
     line-height: 1.4;
-    color: #e5e7eb;
+    color: var(--text-body);
   }
 
   .analytics-metrics-grid {
@@ -853,15 +824,15 @@
     flex-direction: column;
     gap: 0.2rem;
     padding: 0.5rem 0.65rem;
-    background: #111827;
-    border: 1px solid #374151;
+    background: var(--surface-dark);
+    border: 1px solid var(--border-subtle);
     border-radius: 0.375rem;
   }
 
   .stat-box-label {
     font-size: 0.7rem;
     font-weight: 600;
-    color: #9ca3af;
+    color: var(--text-secondary);
     text-transform: uppercase;
   }
 
@@ -875,23 +846,23 @@
   .stat-main-num {
     font-size: 1rem;
     font-weight: 700;
-    color: #f3f4f6;
+    color: var(--text-heading);
   }
 
   .highlight-heads {
-    color: #facc15;
+    color: var(--color-gold);
   }
 
   .highlight-tails {
-    color: #94a3b8;
+    color: var(--text-muted);
   }
 
   .highlight-crit {
-    color: #facc15;
+    color: var(--color-gold);
   }
 
   .highlight-min {
-    color: #f87171;
+    color: var(--color-danger);
   }
 
   .delta-tag {
@@ -903,22 +874,22 @@
 
   .delta-tag.positive {
     background: rgba(16, 185, 129, 0.2);
-    color: #34d399;
+    color: var(--color-emerald);
   }
 
   .delta-tag.negative {
     background: rgba(239, 68, 68, 0.2);
-    color: #f87171;
+    color: var(--color-danger);
   }
 
   .zscore-tag {
     font-size: 0.7rem;
-    color: #9ca3af;
+    color: var(--text-secondary);
   }
 
   .sub-label {
     font-size: 0.72rem;
-    color: var(--text-secondary, #9ca3af);
+    color: var(--text-secondary);
   }
 
   /* Distribution Chart */
@@ -928,8 +899,8 @@
     gap: 0.5rem;
     margin: 0;
     padding: 0.75rem;
-    background: #111827;
-    border: 1px solid #374151;
+    background: var(--surface-dark);
+    border: 1px solid var(--border-subtle);
     border-radius: 0.5rem;
   }
 
@@ -938,12 +909,12 @@
     justify-content: space-between;
     align-items: center;
     font-size: 0.75rem;
-    color: #9ca3af;
+    color: var(--text-secondary);
   }
 
   .dist-title {
     font-weight: 600;
-    color: #d1d5db;
+    color: var(--text-light);
   }
 
   .expected-legend {
@@ -956,7 +927,7 @@
     display: inline-block;
     width: 12px;
     height: 2px;
-    background: #f59e0b;
+    background: var(--color-amber-500);
   }
 
   .bars-container {
@@ -978,7 +949,7 @@
 
   .face-label {
     font-weight: 700;
-    color: #9ca3af;
+    color: var(--text-secondary);
     text-align: right;
     display: flex;
     align-items: center;
@@ -991,7 +962,7 @@
   }
 
   .hot-face-label {
-    color: #fbbf24;
+    color: var(--color-amber);
   }
 
   .hot-badge {
@@ -1001,28 +972,28 @@
   .bar-track {
     position: relative;
     height: 14px;
-    background: #1f2937;
+    background: var(--surface-elevated);
     border-radius: 4px;
     overflow: hidden;
   }
 
   .empirical-bar {
     height: 100%;
-    background: linear-gradient(90deg, #0284c7 0%, #38bdf8 100%);
+    background: linear-gradient(90deg, var(--accent-sky) 0%, var(--accent-blue) 100%);
     border-radius: 4px;
     transition: width 0.3s ease;
   }
 
   .empirical-bar.coin-heads {
-    background: linear-gradient(90deg, #ca8a04 0%, #facc15 100%);
+    background: linear-gradient(90deg, var(--color-yellow-600) 0%, var(--color-gold) 100%);
   }
 
   .empirical-bar.coin-tails {
-    background: linear-gradient(90deg, #475569 0%, #94a3b8 100%);
+    background: linear-gradient(90deg, var(--border-slate) 0%, var(--text-muted) 100%);
   }
 
   .empirical-bar.hot-bar {
-    background: linear-gradient(90deg, #d97706 0%, #f59e0b 100%);
+    background: linear-gradient(90deg, var(--color-amber-600) 0%, var(--color-amber-500) 100%);
   }
 
   .expected-marker {
@@ -1030,7 +1001,7 @@
     top: 0;
     bottom: 0;
     width: 2px;
-    background: #f59e0b;
+    background: var(--color-amber-500);
     z-index: 2;
     transform: translateX(-50%);
     box-shadow: 0 0 4px rgba(245, 158, 11, 0.8);
@@ -1046,24 +1017,24 @@
 
   .count-text {
     font-weight: 700;
-    color: #f3f4f6;
+    color: var(--text-heading);
   }
 
   .pct-text {
-    color: #9ca3af;
+    color: var(--text-secondary);
   }
 
   .delta-pct {
     font-size: 0.68rem;
-    color: var(--text-secondary, #9ca3af);
+    color: var(--text-secondary);
   }
 
   .delta-pct.delta-pos {
-    color: #34d399;
+    color: var(--color-emerald);
   }
 
   .delta-pct.delta-neg {
-    color: #f87171;
+    color: var(--color-danger);
   }
 
   /* Responsive Table - Modern Web Guidance */
@@ -1071,13 +1042,13 @@
     overflow-x: auto;
     max-inline-size: 100%;
     max-block-size: 260px;
-    border: 1px solid #374151;
+    border: 1px solid var(--border-subtle);
     border-radius: 0.5rem;
-    background: #111827;
+    background: var(--surface-dark);
   }
 
   .table-wrapper:focus-visible {
-    outline: 2px solid #38bdf8;
+    outline: 2px solid var(--accent-blue);
     outline-offset: 1px;
   }
 
@@ -1104,37 +1075,37 @@
     position: sticky;
     inset-block-start: 0;
     z-index: 2;
-    background: #1e293b;
+    background: var(--surface-slate);
   }
 
   .rounds-table th {
     padding: 0.5rem 0.65rem;
     text-align: left;
     font-weight: 600;
-    color: #9ca3af;
-    border-bottom: 1px solid #374151;
+    color: var(--text-secondary);
+    border-bottom: 1px solid var(--border-subtle);
   }
 
   .rounds-table td {
     padding: 0.45rem 0.65rem;
     border-bottom: 1px solid rgba(55, 65, 81, 0.4);
-    color: #e5e7eb;
+    color: var(--text-body);
   }
 
   .rounds-table tbody th {
     position: sticky;
     inset-inline-start: 0;
-    background: #111827;
+    background: var(--surface-dark);
     z-index: 1;
     font-weight: 600;
-    color: #38bdf8;
+    color: var(--accent-blue);
     border-bottom: 1px solid rgba(55, 65, 81, 0.4);
   }
 
   .empty-table-cell {
     text-align: center;
     padding: 1.5rem !important;
-    color: var(--text-secondary, #9ca3af);
+    color: var(--text-secondary);
     font-style: italic;
   }
 
@@ -1151,13 +1122,13 @@
   }
 
   .mini-coin.heads {
-    background: #eab308;
-    color: #422006;
+    background: var(--color-yellow-500);
+    color: var(--color-brown-deep);
   }
 
   .mini-coin.tails {
-    background: #94a3b8;
-    color: #0f172a;
+    background: var(--text-muted);
+    color: var(--surface-deep);
   }
 
   .outcome-pill {
@@ -1166,20 +1137,20 @@
     font-size: 0.75rem;
     font-weight: 700;
     background: rgba(56, 189, 248, 0.2);
-    color: #38bdf8;
+    color: var(--accent-blue);
   }
 
   .outcome-pill.tie {
     background: rgba(156, 163, 175, 0.2);
-    color: #9ca3af;
+    color: var(--text-secondary);
   }
 
   .sum-value {
-    color: #f3f4f6;
+    color: var(--text-heading);
   }
 
   .minmax-text {
     font-size: 0.75rem;
-    color: #9ca3af;
+    color: var(--text-secondary);
   }
 </style>

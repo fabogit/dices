@@ -1,16 +1,9 @@
 <script lang="ts">
   import { rollState } from './rollState.svelte';
   import { computeQuickRollSessionStats, computeQuickRollStats } from '../core/engine';
+  import { dieLabel, formatSigned, formatTime } from '../lib/format';
 
   let isCollapsed = $state(false);
-
-  function formatTime(timestamp: number): string {
-    return new Date(timestamp).toLocaleTimeString([], {
-      hour: '2-digit',
-      minute: '2-digit',
-      second: '2-digit',
-    });
-  }
 
   const sessionStats = $derived(
     computeQuickRollSessionStats(rollState.quickRolls, rollState.faces),
@@ -45,13 +38,15 @@
       <div class="latest-hero-card" role="region" aria-label="Latest Quick Roll Result">
         <div class="hero-top-row">
           <span class="hero-instrument">
-            {heroFaces === 2 ? 'Coin d2' : `d${heroFaces}`}
+            {dieLabel(heroFaces)}
             × {latest.values.length}
           </span>
           <span class="hero-time">{formatTime(latest.timestamp)}</span>
         </div>
 
         {#if heroFaces === 2}
+          {@const headsPct = stats.headsPercentage ?? 0}
+          {@const tailsPct = stats.tailsPercentage ?? 0}
           <!-- Coin d2 Hero Display -->
           <div class="coin-hero-display">
             <div class="coin-winner-title">
@@ -74,25 +69,19 @@
             <div
               class="coin-bar-track"
               role="img"
-              aria-label="Split: {stats.headsPercentage?.toFixed(
-                0,
-              )}% Heads, {stats.tailsPercentage?.toFixed(0)}% Tails"
+              aria-label="Split: {headsPct.toFixed(0)}% Heads, {tailsPct.toFixed(0)}% Tails"
             >
-              <div class="coin-bar-heads" style:width="{stats.headsPercentage ?? 0}%"></div>
-              <div class="coin-bar-tails" style:width="{stats.tailsPercentage ?? 0}%"></div>
+              <div class="coin-bar-heads" style:width="{headsPct}%"></div>
+              <div class="coin-bar-tails" style:width="{tailsPct}%"></div>
             </div>
 
             <div class="coin-counts-row">
               <span class="coin-count-stat heads-color">
-                Heads: <strong>{stats.headsCount ?? 0}</strong> ({stats.headsPercentage?.toFixed(
-                  0,
-                )}%)
+                Heads: <strong>{stats.headsCount ?? 0}</strong> ({headsPct.toFixed(0)}%)
               </span>
               <span class="stat-bullet">•</span>
               <span class="coin-count-stat tails-color">
-                Tails: <strong>{stats.tailsCount ?? 0}</strong> ({stats.tailsPercentage?.toFixed(
-                  0,
-                )}%)
+                Tails: <strong>{stats.tailsCount ?? 0}</strong> ({tailsPct.toFixed(0)}%)
               </span>
             </div>
 
@@ -127,9 +116,7 @@
                 class:pos={(stats.sumDelta ?? 0) >= 0}
                 class:neg={(stats.sumDelta ?? 0) < 0}
               >
-                Δ: <strong
-                  >{(stats.sumDelta ?? 0) >= 0 ? '+' : ''}{stats.sumDelta?.toFixed(1)}</strong
-                >
+                Δ: <strong>{formatSigned(stats.sumDelta ?? 0)}</strong>
               </span>
               {#if latest.values.length > 1}
                 <span class="stat-bullet">•</span>
@@ -166,7 +153,7 @@
       <div class="session-summary-strip" role="group" aria-label="Session summary for active die">
         <div class="session-strip-header">
           <span class="session-strip-title">
-            Session Summary ({rollState.faces === 2 ? 'Coin d2' : `d${rollState.faces}`})
+            Session Summary ({dieLabel(rollState.faces)})
           </span>
           <span class="session-strip-count">
             {sessionStats.matchingThrows} throws • {sessionStats.totalDiceCount}
@@ -194,9 +181,7 @@
               class:pos={(sessionStats.averageDelta ?? 0) >= 0}
               class:neg={(sessionStats.averageDelta ?? 0) < 0}
             >
-              {(sessionStats.averageDelta ?? 0) >= 0 ? '+' : ''}{sessionStats.averageDelta?.toFixed(
-                2,
-              )} Δ
+              {formatSigned(sessionStats.averageDelta ?? 0, 2)} Δ
             </span>
             {#if (sessionStats.criticalMaxCount ?? 0) > 0}
               <span class="session-pill pill-crit">
@@ -238,7 +223,7 @@
           aria-label="Recent quick rolls feed"
         >
           <ul class="feed-list" role="list">
-            {#each rollState.quickRolls as item, idx (item.timestamp + '-' + idx)}
+            {#each rollState.quickRolls as item, idx (item.id)}
               {@const itemFaces = item.faces ?? rollState.faces}
               <li class="feed-item">
                 <div class="feed-item-left">
@@ -248,7 +233,7 @@
                     data-testid="feed-die-badge"
                     class:coin-die={itemFaces === 2}
                   >
-                    {itemFaces === 2 ? 'Coin' : `d${itemFaces}`}
+                    {dieLabel(itemFaces, 'short')}
                   </span>
                   <div class="feed-values">
                     {#if itemFaces === 2}
@@ -299,8 +284,8 @@
     flex-direction: column;
     gap: 0.85rem;
     padding: 1.25rem;
-    background: rgba(17, 24, 39, 0.75);
-    border: 1px solid rgba(75, 85, 99, 0.4);
+    background: var(--surface-panel);
+    border: 1px solid var(--border-color);
     border-radius: 0.75rem;
     backdrop-filter: blur(8px);
   }
@@ -321,16 +306,16 @@
     margin: 0;
     font-size: 1.15rem;
     font-weight: 700;
-    color: #f3f4f6;
+    color: var(--text-heading);
   }
 
   .count-badge {
     padding: 0.2rem 0.5rem;
-    background: #1f2937;
-    border: 1px solid #374151;
+    background: var(--surface-elevated);
+    border: 1px solid var(--border-subtle);
     border-radius: 9999px;
     font-size: 0.72rem;
-    color: #9ca3af;
+    color: var(--text-secondary);
   }
 
   .panel-body {
@@ -349,7 +334,11 @@
     flex-direction: column;
     gap: 0.75rem;
     padding: 1.25rem;
-    background: radial-gradient(circle at top right, #1e293b 0%, #111827 100%);
+    background: radial-gradient(
+      circle at top right,
+      var(--surface-slate) 0%,
+      var(--surface-dark) 100%
+    );
     border: 1px solid rgba(56, 189, 248, 0.3);
     border-radius: 0.75rem;
     box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
@@ -364,14 +353,14 @@
   .hero-instrument {
     font-size: 0.8rem;
     font-weight: 700;
-    color: #38bdf8;
+    color: var(--accent-blue);
     text-transform: uppercase;
     letter-spacing: 0.05em;
   }
 
   .hero-time {
     font-size: 0.75rem;
-    color: #9ca3af;
+    color: var(--text-secondary);
   }
 
   .dice-hero-display {
@@ -390,7 +379,7 @@
   .sum-label {
     font-size: 0.7rem;
     font-weight: 700;
-    color: #9ca3af;
+    color: var(--text-secondary);
     letter-spacing: 0.1em;
   }
 
@@ -398,7 +387,7 @@
     font-size: 3rem;
     font-weight: 900;
     line-height: 1;
-    background: linear-gradient(135deg, #ffffff 0%, #38bdf8 100%);
+    background: linear-gradient(135deg, var(--text-white) 0%, var(--accent-blue) 100%);
     -webkit-background-clip: text;
     background-clip: text;
     -webkit-text-fill-color: transparent;
@@ -418,24 +407,24 @@
     min-inline-size: 32px;
     min-block-size: 32px;
     padding: 0.2rem 0.5rem;
-    background: #1f2937;
-    border: 1px solid #4b5563;
+    background: var(--surface-elevated);
+    border: 1px solid var(--border-muted);
     border-radius: 0.375rem;
     font-size: 1rem;
     font-weight: 700;
-    color: #f3f4f6;
+    color: var(--text-heading);
   }
 
   .die-value-chip.crit-max {
-    border-color: #facc15;
+    border-color: var(--color-gold);
     background: rgba(234, 179, 8, 0.2);
-    color: #fef08a;
+    color: var(--color-gold-pale);
   }
 
   .die-value-chip.crit-min {
-    border-color: #ef4444;
+    border-color: var(--color-danger-bold);
     background: rgba(239, 68, 68, 0.2);
-    color: #fca5a5;
+    color: var(--color-danger-light);
   }
 
   .dice-sub-stats {
@@ -445,39 +434,39 @@
     align-items: center;
     gap: 0.4rem;
     font-size: 0.75rem;
-    color: #9ca3af;
+    color: var(--text-secondary);
   }
 
   .dice-sub-stats strong {
-    color: #e5e7eb;
+    color: var(--text-body);
   }
 
   .delta-indicator.pos strong {
-    color: #34d399;
+    color: var(--color-emerald);
   }
 
   .delta-indicator.neg strong {
-    color: #f87171;
+    color: var(--color-danger);
   }
 
   .stat-bullet {
-    color: #4b5563;
+    color: var(--border-muted);
   }
 
   .crit-highlight {
-    color: #facc15;
+    color: var(--color-gold);
     font-weight: 600;
   }
 
   .min-highlight {
-    color: #f87171;
+    color: var(--color-danger);
     font-weight: 600;
   }
 
   .quick-insight-narrative {
     margin: 0;
     font-size: 0.8rem;
-    color: #93c5fd;
+    color: var(--accent-blue-pale);
     text-align: center;
     line-height: 1.4;
   }
@@ -496,11 +485,11 @@
   }
 
   .winner-side {
-    color: #fde047;
+    color: var(--color-gold-light);
   }
 
   .winner-tie {
-    color: #94a3b8;
+    color: var(--text-muted);
   }
 
   .coin-chips-row {
@@ -519,14 +508,14 @@
 
   .coin-chip.heads {
     background: rgba(234, 179, 8, 0.25);
-    border: 1px solid #eab308;
-    color: #fef08a;
+    border: 1px solid var(--color-yellow-500);
+    color: var(--color-gold-pale);
   }
 
   .coin-chip.tails {
     background: rgba(148, 163, 184, 0.25);
-    border: 1px solid #94a3b8;
-    color: #f1f5f9;
+    border: 1px solid var(--text-muted);
+    color: var(--text-bright);
   }
 
   .coin-bar-track {
@@ -534,20 +523,20 @@
     width: 100%;
     max-width: 240px;
     height: 6px;
-    background: #1f2937;
+    background: var(--surface-elevated);
     border-radius: 9999px;
     overflow: hidden;
   }
 
   .coin-bar-heads {
     height: 100%;
-    background: #eab308;
+    background: var(--color-yellow-500);
     transition: width 0.3s ease;
   }
 
   .coin-bar-tails {
     height: 100%;
-    background: #94a3b8;
+    background: var(--text-muted);
     transition: width 0.3s ease;
   }
 
@@ -559,11 +548,11 @@
   }
 
   .heads-color {
-    color: #fde047;
+    color: var(--color-gold-light);
   }
 
   .tails-color {
-    color: #cbd5e1;
+    color: var(--text-soft);
   }
 
   /* Session Summary Strip */
@@ -572,8 +561,8 @@
     flex-direction: column;
     gap: 0.4rem;
     padding: 0.65rem 0.75rem;
-    background: #111827;
-    border: 1px solid #374151;
+    background: var(--surface-dark);
+    border: 1px solid var(--border-subtle);
     border-radius: 0.5rem;
   }
 
@@ -586,13 +575,13 @@
 
   .session-strip-title {
     font-weight: 700;
-    color: #38bdf8;
+    color: var(--accent-blue);
     text-transform: uppercase;
     letter-spacing: 0.05em;
   }
 
   .session-strip-count {
-    color: #9ca3af;
+    color: var(--text-secondary);
   }
 
   .session-strip-metrics {
@@ -610,59 +599,59 @@
 
   .pill-heads {
     background: rgba(234, 179, 8, 0.15);
-    color: #fde047;
+    color: var(--color-gold-light);
     border: 1px solid rgba(234, 179, 8, 0.3);
   }
 
   .pill-tails {
     background: rgba(148, 163, 184, 0.15);
-    color: #cbd5e1;
+    color: var(--text-soft);
     border: 1px solid rgba(148, 163, 184, 0.3);
   }
 
   .pill-verdict {
     background: rgba(56, 189, 248, 0.15);
-    color: #38bdf8;
+    color: var(--accent-blue);
     border: 1px solid rgba(56, 189, 248, 0.3);
   }
 
   .pill-avg {
-    background: #1f2937;
-    color: #e5e7eb;
-    border: 1px solid #374151;
+    background: var(--surface-elevated);
+    color: var(--text-body);
+    border: 1px solid var(--border-subtle);
   }
 
   .pill-delta {
-    background: #1f2937;
-    border: 1px solid #374151;
+    background: var(--surface-elevated);
+    border: 1px solid var(--border-subtle);
   }
 
   .pill-delta.pos {
-    color: #34d399;
+    color: var(--color-emerald);
     border-color: rgba(16, 185, 129, 0.4);
   }
 
   .pill-delta.neg {
-    color: #f87171;
+    color: var(--color-danger);
     border-color: rgba(239, 68, 68, 0.4);
   }
 
   .pill-crit {
     background: rgba(234, 179, 8, 0.15);
-    color: #facc15;
+    color: var(--color-gold);
     border: 1px solid rgba(234, 179, 8, 0.3);
   }
 
   .pill-min {
     background: rgba(239, 68, 68, 0.15);
-    color: #f87171;
+    color: var(--color-danger);
     border: 1px solid rgba(239, 68, 68, 0.3);
   }
 
   .session-strip-insight {
     margin: 0;
     font-size: 0.75rem;
-    color: #9ca3af;
+    color: var(--text-secondary);
     line-height: 1.35;
   }
 
@@ -673,8 +662,8 @@
     align-items: center;
     text-align: center;
     padding: 2rem 1rem;
-    background: #111827;
-    border: 1px dashed #374151;
+    background: var(--surface-dark);
+    border: 1px dashed var(--border-subtle);
     border-radius: 0.5rem;
   }
 
@@ -687,18 +676,18 @@
     margin: 0 0 0.25rem 0;
     font-size: 1rem;
     font-weight: 700;
-    color: #e5e7eb;
+    color: var(--text-body);
   }
 
   .empty-desc {
     margin: 0;
     font-size: 0.8rem;
-    color: #9ca3af;
+    color: var(--text-secondary);
     max-width: 260px;
   }
 
   .empty-desc strong {
-    color: #38bdf8;
+    color: var(--accent-blue);
   }
 
   /* Session Feed List */
@@ -717,35 +706,35 @@
   .feed-title {
     font-size: 0.85rem;
     font-weight: 600;
-    color: #d1d5db;
+    color: var(--text-light);
   }
 
   .clear-feed-btn {
     padding: 0.2rem 0.5rem;
     min-block-size: 24px;
     background: transparent;
-    border: 1px solid #4b5563;
+    border: 1px solid var(--border-muted);
     border-radius: 0.25rem;
     font-size: 0.72rem;
-    color: #9ca3af;
+    color: var(--text-secondary);
     cursor: pointer;
   }
 
   .clear-feed-btn:hover {
-    color: #f87171;
-    border-color: #ef4444;
+    color: var(--color-danger);
+    border-color: var(--color-danger-bold);
   }
 
   .feed-scroll-wrapper {
     max-block-size: 260px;
     overflow-y: auto;
     border-radius: 0.5rem;
-    border: 1px solid #374151;
-    background: #111827;
+    border: 1px solid var(--border-subtle);
+    background: var(--surface-dark);
   }
 
   .feed-scroll-wrapper:focus-visible {
-    outline: 2px solid #38bdf8;
+    outline: 2px solid var(--accent-blue);
     outline-offset: 1px;
   }
 
@@ -779,7 +768,7 @@
   .feed-index {
     font-size: 0.72rem;
     font-weight: 700;
-    color: var(--text-secondary, #9ca3af);
+    color: var(--text-secondary);
   }
 
   .feed-die-badge {
@@ -787,14 +776,14 @@
     border-radius: 0.25rem;
     font-size: 0.68rem;
     font-weight: 700;
-    background: #1f2937;
-    border: 1px solid #4b5563;
-    color: #38bdf8;
+    background: var(--surface-elevated);
+    border: 1px solid var(--border-muted);
+    color: var(--accent-blue);
   }
 
   .feed-die-badge.coin-die {
-    border-color: #ca8a04;
-    color: #facc15;
+    border-color: var(--color-yellow-600);
+    color: var(--color-gold);
   }
 
   .mini-coin {
@@ -810,18 +799,18 @@
   }
 
   .mini-coin.heads {
-    background: #eab308;
-    color: #422006;
+    background: var(--color-yellow-500);
+    color: var(--color-brown-deep);
   }
 
   .mini-coin.tails {
-    background: #94a3b8;
-    color: #0f172a;
+    background: var(--text-muted);
+    color: var(--surface-deep);
   }
 
   .dice-values-string {
     font-weight: 600;
-    color: #f3f4f6;
+    color: var(--text-heading);
   }
 
   .feed-item-right {
@@ -832,7 +821,7 @@
 
   .feed-sum {
     font-size: 0.95rem;
-    color: #38bdf8;
+    color: var(--accent-blue);
   }
 
   .feed-outcome {
@@ -841,21 +830,21 @@
     font-size: 0.72rem;
     font-weight: 700;
     background: rgba(56, 189, 248, 0.2);
-    color: #38bdf8;
+    color: var(--accent-blue);
   }
 
   .feed-outcome.tie {
     background: rgba(156, 163, 175, 0.2);
-    color: #9ca3af;
+    color: var(--text-secondary);
   }
 
   .feed-time {
     font-size: 0.7rem;
-    color: var(--text-secondary, #9ca3af);
+    color: var(--text-secondary);
   }
 
   button:focus-visible {
-    outline: 2px solid #38bdf8;
+    outline: 2px solid var(--accent-blue);
     outline-offset: 2px;
   }
 </style>

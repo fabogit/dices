@@ -1,6 +1,7 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import {
   ALLOWED_FACES,
+  classifyDelta,
   computeMode,
   computePlayerLeaderboard,
   computeQuickRollSessionStats,
@@ -8,6 +9,9 @@ import {
   computeRoundResult,
   computeSeriesAnalytics,
   computeSeriesSummary,
+  getCoinSplitPercentages,
+  getCoinZQualitative,
+  getSampleReliabilityLabel,
   LocalCryptoRollProvider,
   rollBatchCryptoFair,
   rollCryptoFair,
@@ -221,6 +225,7 @@ describe('computeRoundResult', () => {
     const round = computeRoundResult(0, [4, 6, 1, 5], 6, fixedTimestamp);
 
     expect(round).toEqual({
+      id: expect.any(String),
       roundIndex: 0,
       values: [4, 6, 1, 5],
       sum: 16,
@@ -228,9 +233,24 @@ describe('computeRoundResult', () => {
       min: 1,
       timestamp: fixedTimestamp,
     });
+    expect(round.id.length).toBeGreaterThan(0);
     expect(round.headsCount).toBeUndefined();
     expect(round.tailsCount).toBeUndefined();
     expect(round.roundWinnerSide).toBeUndefined();
+  });
+
+  it('assigns distinct stable ids across sequential rounds and handles missing randomUUID', () => {
+    const r1 = computeRoundResult(0, [3], 6, 1700000000001);
+    const r2 = computeRoundResult(0, [3], 6, 1700000000001);
+    expect(r1.id).not.toBe(r2.id);
+
+    vi.stubGlobal('crypto', {});
+    try {
+      const rFallback = computeRoundResult(0, [2], 6, 1700000000002);
+      expect(rFallback.id).toMatch(/^round-1700000000002-\d+$/);
+    } finally {
+      vi.unstubAllGlobals();
+    }
   });
 
   it('computes coin toss metrics (faces = 2) for HEADS win', () => {
@@ -963,5 +983,82 @@ describe('computeQuickRollSessionStats', () => {
     expect(emptySession.matchingThrows).toBe(0);
     expect(emptySession.totalDiceCount).toBe(0);
     expect(emptySession.insight).toContain('No d12 rolls');
+  });
+});
+
+describe('statistical template helpers', () => {
+  it('maps sample reliability tiers to labels', () => {
+    expect(getSampleReliabilityLabel('empty')).toBe('No Rolls');
+    expect(getSampleReliabilityLabel('small')).toBe('Small sample (<10)');
+    expect(getSampleReliabilityLabel('moderate')).toBe('Moderate sample (10–29)');
+    expect(getSampleReliabilityLabel('solid')).toBe('Solid sample (30+)');
+  });
+
+  it('derives qualitative coin z-score verdicts', () => {
+    expect(getCoinZQualitative(0, 'empty')).toBe('No data');
+    expect(getCoinZQualitative(2.5, 'empty')).toBe('No data');
+    expect(getCoinZQualitative(0.4, 'small')).toBe('Within normal variance');
+    expect(getCoinZQualitative(-0.99, 'moderate')).toBe('Within normal variance');
+    expect(getCoinZQualitative(1.0, 'solid')).toBe('Heads-leaning');
+    expect(getCoinZQualitative(-1.2, 'solid')).toBe('Tails-leaning');
+  });
+
+  it('classifies percentage delta with threshold deadband', () => {
+    expect(classifyDelta(0.06)).toBe('positive');
+    expect(classifyDelta(0.05)).toBe('neutral');
+    expect(classifyDelta(0)).toBe('neutral');
+    expect(classifyDelta(-0.05)).toBe('neutral');
+    expect(classifyDelta(-0.06)).toBe('negative');
+  });
+
+  it('resolves coin split percentages from coinStats and legacy fallbacks', () => {
+    const coinConfig: RollConfig = { faces: 2, countPerRoll: 4, seriesLength: 1, playerId: 'p1' };
+    const r0 = computeRoundResult(0, [1, 1, 1, 2], 2);
+    const modernSummary = computeSeriesSummary('s-coin', coinConfig, 'Alice', [r0]);
+
+    expect(modernSummary.analytics.sampleReliabilityLabel).toBe('Small sample (<10)');
+    expect(modernSummary.analytics.coinStats?.zQualitative).toBe('Heads-leaning');
+    expect(getCoinSplitPercentages(modernSummary)).toEqual({
+      headsPct: 75,
+      tailsPct: 25,
+      headsCount: 3,
+      tailsCount: 1,
+    });
+
+    const legacySummary = {
+      analytics: { ...modernSummary.analytics, coinStats: undefined },
+      totalHeads: 3,
+      totalTails: 1,
+    };
+    expect(getCoinSplitPercentages(legacySummary)).toEqual({
+      headsPct: 75,
+      tailsPct: 25,
+      headsCount: 3,
+      tailsCount: 1,
+    });
+
+    const emptyLegacy = {
+      analytics: { ...modernSummary.analytics, totalDiceRolled: 0, coinStats: undefined },
+    };
+    expect(getCoinSplitPercentages(emptyLegacy)).toEqual({
+      headsPct: 0,
+      tailsPct: 0,
+      headsCount: 0,
+      tailsCount: 0,
+    });
+  });
+
+  it('populates distribution bar metrics and hottest face flags in computeSeriesAnalytics', () => {
+    const config: RollConfig = { faces: 6, countPerRoll: 4, seriesLength: 1, playerId: 'p1' };
+    const analytics = computeSeriesAnalytics(config, [computeRoundResult(0, [6, 6, 6, 1], 6)]);
+
+    const face6 = analytics.distribution.find((d) => d.face === 6);
+    const face2 = analytics.distribution.find((d) => d.face === 2);
+    expect(face6?.isHot).toBe(true);
+    expect(face6?.barWidthPercentage).toBeCloseTo(100);
+    expect(face6?.deltaDirection).toBe('positive');
+    expect(face6?.expectedMarkerPercentage).toBeGreaterThan(0);
+    expect(face2?.isHot).toBe(false);
+    expect(face2?.deltaDirection).toBe('negative');
   });
 });

@@ -1,0 +1,62 @@
+:root {
+  color-scheme: dark;
+
+  /* Typography */
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+
+  /* Core Surfaces & Backgrounds */
+  --bg-dark: #090d16;
+  --surface-deepest: #030712;
+  --surface-footer: #0f1523;
+  --surface-deep: #0f172a;
+  --surface-dark: #111827;
+  --surface-slate: #1e293b;
+  --surface-elevated: #1f2937;
+  --surface-hover: #374151;
+  --surface-panel: rgba(17, 24, 39, 0.75);
+
+  /* Borders */
+  --border-color: rgba(75, 85, 99, 0.4);
+  --border-subtle: #374151;
+  --border-muted: #4b5563;
+  --border-slate: #475569;
+  --border-dashed: #6b7280;
+
+  /* Brand & Accent */
+  --primary-blue: #0369a1;
+  --primary-blue-dark: #075985;
+  --accent-sky: #0284c7;
+  --accent-blue: #38bdf8;
+  --accent-blue-soft: #60a5fa;
+  --accent-blue-light: #7dd3fc;
+  --accent-blue-pale: #93c5fd;
+  --accent-indigo: #818cf8;
+  --accent-violet: #a78bfa;
+
+  /* Text Hierarchy */
+  --text-white: #ffffff;
+  --text-primary: #f9fafb;
+  --text-heading: #f3f4f6;
+  --text-bright: #f1f5f9;
+  --text-body: #e5e7eb;
+  --text-light: #d1d5db;
+  --text-soft: #cbd5e1;
+  --text-secondary: #9ca3af;
+  --text-muted: #94a3b8;
+
+  /* Status & Semantic Feedback */
+  --color-gold-pale: #fef08a;
+  --color-gold-light: #fde047;
+  --color-gold: #facc15;
+  --color-amber: #fbbf24;
+  --color-amber-500: #f59e0b;
+  --color-yellow-500: #eab308;
+  --color-yellow-600: #ca8a04;
+  --color-amber-600: #d97706;
+  --color-brown-deep: #422006;
+  --color-emerald: #34d399;
+  --color-emerald-500: #10b981;
+  --color-danger-light: #fca5a5;
+  --color-danger: #f87171;
+  --color-danger-bold: #ef4444;
+}
