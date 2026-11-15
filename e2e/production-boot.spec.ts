@@ -62,4 +62,15 @@ test.describe('Production Boot & Baseline Sanity', () => {
     expect(pageErrors).toEqual([]);
     expect(consoleErrors).toEqual([]);
   });
+
+  test('keeps the Three.js vendor chunk out of the initial load', async ({ request }) => {
+    // The 3D arena is imported lazily; a static import of `three` anywhere in the entry
+    // graph makes Vite emit a modulepreload for the ~525 kB vendor chunk in index.html.
+    const response = await request.get('/');
+    expect(response.ok()).toBe(true);
+    const html = await response.text();
+
+    expect(html).toMatch(/<script type="module"[^>]*src="\/assets\/index-/);
+    expect(html).not.toMatch(/assets\/three-/);
+  });
 });

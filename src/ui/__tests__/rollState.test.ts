@@ -1,5 +1,25 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { computeRoundResult, computeSeriesSummary } from '../../core/engine';
 import { RollState } from '../rollState.svelte';
+
+/**
+ * Arena double whose roll animation only finishes when the test calls `land()`.
+ */
+function createDeferredArena() {
+  let resolveLanding: (() => void) | undefined;
+  const land = (): void => {
+    resolveLanding?.();
+    resolveLanding = undefined;
+  };
+  const arena: any = {
+    rollVisual: () =>
+      new Promise<void>((resolve) => {
+        resolveLanding = resolve;
+      }),
+    skipCurrentAnimation: land,
+  };
+  return { arena, land, isAnimating: () => resolveLanding !== undefined };
+}
 
 describe('RollState Controller', () => {
   let state: RollState;
@@ -320,6 +340,8 @@ describe('RollState Controller', () => {
 
   it('handles corrupt localStorage or non-array payloads safely', () => {
     const store = new Map<string, string>();
+    // Storage is only read in a browser-like environment, so `window` must exist too.
+    vi.stubGlobal('window', {});
     vi.stubGlobal('localStorage', {
       getItem: (key: string) => store.get(key) ?? null,
       setItem: (key: string, value: string) => {
@@ -346,9 +368,312 @@ describe('RollState Controller', () => {
       const stateFromObject = new RollState();
       expect(stateFromObject.history).toEqual([]);
 
+      const validSummary = computeSeriesSummary(
+        'series-persisted',
+        { faces: 6, countPerRoll: 1, seriesLength: 1, playerId: 'player-1' },
+        'Player 1',
+        [computeRoundResult(0, [4], 6, 1_000, 'round-persisted')],
+        2_000,
+      );
+      localStorage.setItem('dices_history_v1', JSON.stringify([{}, validSummary, 42]));
+      const stateFromMixed = new RollState();
+      expect(stateFromMixed.history.map((entry) => entry.id)).toEqual(['series-persisted']);
+      expect(stateFromMixed.leaderboard[0]?.seriesPlayed).toBe(1);
+
       localStorage.removeItem('dices_history_v1');
     } finally {
       vi.unstubAllGlobals();
+    }
+  });
+
+  it('does not revive a stopped auto-roll loop when restarted during the inter-round pause', async () => {
+    vi.useFakeTimers();
+    try {
+      state.instantMode = false;
+      state.setSeriesLength(8);
+
+      const first = state.autoRollSeries();
+      await vi.advanceTimersByTimeAsync(0);
+      expect(state.rounds.length).toBe(1);
+
+      // Stop and restart while the first loop is still inside its 450ms pause
+      state.stopAutoRoll();
+      const second = state.autoRollSeries();
+      await vi.advanceTimersByTimeAsync(0);
+      expect(state.rounds.length).toBe(2);
+      expect(state.isAutoRolling).toBe(true);
+
+      // Only the second loop may roll once the pauses elapse
+      await vi.advanceTimersByTimeAsync(450);
+      expect(state.rounds.length).toBe(3);
+      expect(state.isAutoRolling).toBe(true);
+
+      state.stopAutoRoll();
+      await vi.advanceTimersByTimeAsync(450);
+      await Promise.all([first, second]);
+      expect(state.isAutoRolling).toBe(false);
+      expect(state.rounds.length).toBe(3);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('yields auto-roll to another roll in flight instead of spinning on the busy guard', async () => {
+    vi.useFakeTimers();
+    try {
+      state.instantMode = false;
+      state.setSeriesLength(5);
+
+      const auto = state.autoRollSeries();
+      await vi.advanceTimersByTimeAsync(0);
+      expect(state.rounds.length).toBe(1);
+
+      // A manual roll takes the lock during the pause and fast mode is switched on
+      state.isRolling = true;
+      state.instantMode = true;
+      await vi.advanceTimersByTimeAsync(450);
+      await auto;
+
+      expect(state.isAutoRolling).toBe(false);
+      expect(state.rounds.length).toBe(1);
+      state.isRolling = false;
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('keeps counting quick rolls past the 25-entry feed cap', async () => {
+    state.instantMode = true;
+    state.setMode('quick');
+
+    for (let i = 0; i < 27; i++) {
+      await state.executeQuickRoll();
+    }
+
+    expect(state.quickRolls.length).toBe(25);
+    expect(state.quickRollCount).toBe(27);
+    expect(state.latestQuickRoll?.roundIndex).toBe(26);
+    expect(new Set(state.quickRolls.map((roll) => roll.roundIndex)).size).toBe(25);
+
+    state.clearQuickRolls();
+    expect(state.quickRollCount).toBe(0);
+  });
+
+  it('ignores non-finite configuration input', () => {
+    state.setSeriesLength(Number.NaN);
+    state.setCountPerRoll(Number.POSITIVE_INFINITY);
+    expect(state.seriesLength).toBe(3);
+    expect(state.countPerRoll).toBe(1);
+  });
+
+  it('locks the setup and the active player while a series is in progress', async () => {
+    state.instantMode = true;
+    state.setSeriesLength(3);
+    state.addPlayer('Alice');
+    expect(state.isConfigLocked).toBe(false);
+
+    await state.rollNextRound();
+    expect(state.isSeriesInProgress).toBe(true);
+    expect(state.isConfigLocked).toBe(true);
+
+    state.setFaces(20);
+    state.setCountPerRoll(4);
+    state.setSeriesLength(7);
+    state.setActivePlayer('player-1');
+    state.addPlayer('Bob');
+
+    expect(state.faces).toBe(6);
+    expect(state.countPerRoll).toBe(1);
+    expect(state.seriesLength).toBe(3);
+    expect(state.activePlayer.name).toBe('Alice');
+    expect(state.players).toHaveLength(2);
+    expect(state.rounds).toHaveLength(1);
+    expect(state.announcerMessage).toContain('Series in progress');
+
+    // An explicit reset unlocks the setup
+    state.resetCurrentSeries();
+    expect(state.isConfigLocked).toBe(false);
+    state.setFaces(20);
+    expect(state.faces).toBe(20);
+
+    // A completed series no longer locks it either
+    state.setSeriesLength(1);
+    await state.rollNextRound();
+    expect(state.isComplete).toBe(true);
+    expect(state.isConfigLocked).toBe(false);
+    state.setFaces(8);
+    expect(state.faces).toBe(8);
+    expect(state.rounds).toHaveLength(0);
+  });
+
+  it('keeps a series in progress intact while Quick Roll uses another die', async () => {
+    state.instantMode = true;
+    state.setCountPerRoll(2);
+    await state.rollNextRound();
+    const seriesRounds = state.rounds;
+
+    state.setMode('quick');
+    expect(state.isConfigLocked).toBe(false);
+    state.setFaces(20);
+    state.setCountPerRoll(5);
+    expect(state.faces).toBe(20);
+    expect(state.rounds).toBe(seriesRounds);
+    expect(state.announcerMessage).not.toContain('Series reset');
+
+    const quick = await state.executeQuickRoll();
+    expect(quick?.faces).toBe(20);
+    expect(quick?.values).toHaveLength(5);
+
+    // Returning to Series mode restores the setup the series was started with
+    state.setMode('series');
+    expect(state.faces).toBe(6);
+    expect(state.countPerRoll).toBe(2);
+    const next = await state.rollNextRound();
+    expect(next?.values).toHaveLength(2);
+    expect(state.rounds).toHaveLength(2);
+  });
+
+  it('does not announce a series reset for setup changes made in Quick Roll mode', () => {
+    state.setMode('quick');
+    state.setFaces(12);
+    state.setCountPerRoll(4);
+    expect(state.faces).toBe(12);
+    expect(state.countPerRoll).toBe(4);
+    expect(state.announcerMessage).toBe('Switched to Quick Roll mode.');
+    expect(state.summary.config.faces).toBe(12);
+
+    // An empty series adopts the setup silently upon returning to Series mode
+    state.setMode('series');
+    expect(state.faces).toBe(12);
+    expect(state.countPerRoll).toBe(4);
+    expect(state.summary.config.faces).toBe(12);
+    expect(state.summary.config.countPerRoll).toBe(4);
+    expect(state.announcerMessage).toBe('Switched to Series mode.');
+  });
+
+  it('preserves a completed series while Quick Roll uses another die and restores it on return', async () => {
+    state.instantMode = true;
+    state.setFaces(6);
+    state.setCountPerRoll(2);
+    state.setSeriesLength(1);
+    await state.rollNextRound();
+    expect(state.isComplete).toBe(true);
+    const completedRounds = state.rounds;
+
+    state.setMode('quick');
+    state.setFaces(20);
+    state.setCountPerRoll(5);
+    expect(state.rounds).toBe(completedRounds);
+    expect(state.isComplete).toBe(true);
+
+    const quick = await state.executeQuickRoll();
+    expect(quick?.faces).toBe(20);
+    expect(quick?.values).toHaveLength(5);
+
+    state.setMode('series');
+    expect(state.faces).toBe(6);
+    expect(state.countPerRoll).toBe(2);
+    expect(state.rounds).toBe(completedRounds);
+    expect(state.summary.config.faces).toBe(6);
+    expect(state.summary.config.countPerRoll).toBe(2);
+  });
+
+  it('keeps announcement coherent and locks setup while Round 1 is in flight', async () => {
+    const { arena, land, isAnimating } = createDeferredArena();
+    state.setArena(arena);
+    state.instantMode = false;
+    state.setSeriesLength(2);
+
+    const inFlight = state.rollNextRound();
+    await vi.waitFor(() => expect(isAnimating()).toBe(true));
+    expect(state.isSeriesInProgress).toBe(true);
+
+    // Switching mode settles the animation and announces only the mode change
+    state.setMode('quick');
+    expect(state.announcerMessage).toBe('Switched to Quick Roll mode.');
+    land();
+    await inFlight;
+    expect(state.announcerMessage).toBe('Switched to Quick Roll mode.');
+
+    // Same isolation in reverse when returning to Series while a Quick Roll lands
+    const quickInFlight = state.executeQuickRoll();
+    await vi.waitFor(() => expect(isAnimating()).toBe(true));
+    state.setMode('series');
+    land();
+    await quickInFlight;
+    expect(state.announcerMessage).toBe('Switched to Series mode.');
+    state.setArena(null);
+  });
+
+  it('reveals results only after the dice have landed', async () => {
+    const { arena, land, isAnimating } = createDeferredArena();
+    state.setArena(arena);
+    state.instantMode = false;
+    state.setSeriesLength(2);
+
+    const seriesRoll = state.rollNextRound();
+    await vi.waitFor(() => expect(isAnimating()).toBe(true));
+    expect(state.isRolling).toBe(true);
+    expect(state.rounds).toHaveLength(0);
+    expect(state.summary.rounds).toHaveLength(0);
+    expect(state.announcerMessage).not.toContain('Round 1');
+
+    land();
+    const round = await seriesRoll;
+    expect(state.rounds).toEqual([round]);
+    expect(state.summary.rounds).toHaveLength(1);
+    expect(state.announcerMessage).toContain('Round 1 of 2');
+
+    state.setMode('quick');
+    const quickRoll = state.executeQuickRoll();
+    await vi.waitFor(() => expect(isAnimating()).toBe(true));
+    expect(state.quickRolls).toHaveLength(0);
+    expect(state.quickRollCount).toBe(0);
+
+    land();
+    const quick = await quickRoll;
+    expect(state.latestQuickRoll).toBe(quick);
+    expect(state.quickRollCount).toBe(1);
+    state.setArena(null);
+  });
+
+  it('discards a round still in flight when the series is reset', async () => {
+    const { arena, isAnimating } = createDeferredArena();
+    state.setArena(arena);
+    state.instantMode = false;
+
+    const inFlight = state.rollNextRound();
+    await vi.waitFor(() => expect(isAnimating()).toBe(true));
+    state.resetCurrentSeries();
+
+    expect(await inFlight).toBeNull();
+    expect(state.rounds).toHaveLength(0);
+    expect(state.isRolling).toBe(false);
+    expect(state.announcerMessage).toContain('Series reset');
+    state.setArena(null);
+  });
+
+  it('keeps the rolled result when the 3D animation fails', async () => {
+    const consoleError = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const mockArena: any = {
+      rollVisual: () => Promise.reject(new Error('DiceArena3D is disposed')),
+      skipCurrentAnimation: () => {},
+    };
+    state.setArena(mockArena);
+
+    try {
+      const round = await state.rollNextRound();
+      expect(round).not.toBeNull();
+      expect(state.rounds).toHaveLength(1);
+
+      state.setMode('quick');
+      const quick = await state.executeQuickRoll();
+      expect(quick).not.toBeNull();
+      expect(state.quickRolls).toHaveLength(1);
+      expect(consoleError).toHaveBeenCalledTimes(2);
+    } finally {
+      consoleError.mockRestore();
+      state.setArena(null);
     }
   });
 

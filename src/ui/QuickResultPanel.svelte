@@ -14,7 +14,7 @@
   <div class="panel-header">
     <div class="title-with-badge">
       <h2 id="quick-result-heading" class="panel-title">Quick Roll Feed</h2>
-      <span class="count-badge">{rollState.quickRolls.length} in session</span>
+      <span class="count-badge">{rollState.quickRollCount} in session</span>
     </div>
 
     <button
@@ -223,11 +223,11 @@
           aria-label="Recent quick rolls feed"
         >
           <ul class="feed-list" role="list">
-            {#each rollState.quickRolls as item, idx (item.id)}
+            {#each rollState.quickRolls as item (item.id)}
               {@const itemFaces = item.faces ?? rollState.faces}
               <li class="feed-item">
                 <div class="feed-item-left">
-                  <span class="feed-index">#{rollState.quickRolls.length - idx}</span>
+                  <span class="feed-index">#{item.roundIndex + 1}</span>
                   <span
                     class="feed-die-badge"
                     data-testid="feed-die-badge"

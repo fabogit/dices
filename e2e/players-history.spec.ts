@@ -16,20 +16,25 @@ test.describe('Player Management, Leaderboard, & History Persistence (Issue #13)
       window.__setRandomQueue = (vals: number[]) => {
         queue = [...vals];
       };
-      const originalGetRandomValues = window.crypto.getRandomValues.bind(window.crypto);
-      window.crypto.getRandomValues = function <T extends ArrayBufferView | null>(array: T): T {
+      const originalGetRandomValues: Crypto['getRandomValues'] = window.crypto.getRandomValues.bind(
+        window.crypto,
+      );
+      const patchedGetRandomValues: Crypto['getRandomValues'] = (array) => {
         if (array instanceof Uint32Array) {
           for (let i = 0; i < array.length; i++) {
             if (queue.length > 0) {
               array[i] = queue.shift()!;
             } else {
-              originalGetRandomValues(array);
+              const fallback = new Uint32Array(1);
+              originalGetRandomValues(fallback);
+              array[i] = fallback[0]!;
             }
           }
           return array;
         }
         return originalGetRandomValues(array);
       };
+      window.crypto.getRandomValues = patchedGetRandomValues;
     });
 
     await page.goto('/');

@@ -239,12 +239,9 @@ export class DiceArena3D {
   private onContextLost = (event: Event): void => {
     event.preventDefault();
     this.isContextLost = true;
-    if (this.animationFrameId !== null) {
-      if (typeof cancelAnimationFrame !== 'undefined') {
-        cancelAnimationFrame(this.animationFrameId);
-      }
-      this.animationFrameId = null;
-    }
+    // Settle any in-flight roll: the cancelled frame loop would otherwise leave the
+    // rollVisual() promise pending forever and keep the UI locked in its rolling state.
+    this.skipCurrentAnimation();
     this.options.onContextLost?.();
   };
 
@@ -327,8 +324,9 @@ export class DiceArena3D {
     const duration = options.durationMs ?? 1200;
     const skip = options.skipAnimation || duration <= 0;
 
-    if (skip || !this.renderer) {
-      // Place immediately at rest
+    if (skip || !this.renderer || this.isContextLost) {
+      // Place immediately at rest (also while the GL context is lost, so the dice
+      // already show the rolled faces once the context is restored)
       for (const anim of animations) {
         anim.mesh.position.set(anim.targetX, anim.targetY, anim.targetZ);
         anim.mesh.quaternion.copy(anim.targetQuaternion);

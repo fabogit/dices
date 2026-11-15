@@ -10,23 +10,12 @@
   const currentRoll = $derived(
     rollState.mode === 'quick' ? rollState.latestQuickRoll : rollState.latestRound,
   );
+  // The HUD must label values with the die that produced them: the selected instrument
+  // can change while the previous quick roll is still on display.
+  const currentRollFaces = $derived(currentRoll?.faces ?? rollState.faces);
 
   onMount(() => {
     let destroyed = false;
-    let resizeObserver: ResizeObserver | null = null;
-    const resizeTarget = canvasElement.parentElement ?? canvasElement;
-
-    if (typeof ResizeObserver !== 'undefined') {
-      resizeObserver = new ResizeObserver((entries) => {
-        const hasVisibleSize = entries.some(
-          (entry) => entry.contentRect.width > 0 && entry.contentRect.height > 0,
-        );
-        if (hasVisibleSize) {
-          arena?.render();
-        }
-      });
-      resizeObserver.observe(resizeTarget);
-    }
 
     void (async () => {
       try {
@@ -48,8 +37,6 @@
 
     return () => {
       destroyed = true;
-      resizeObserver?.disconnect();
-      resizeObserver = null;
       if (arena) {
         arena.dispose();
         rollState.setArena(null);
@@ -120,7 +107,8 @@
         </div>
 
         <!-- Latest Values Banner at Bottom of Viewport -->
-        {#if currentRoll}
+        <!-- Hidden while dice are in the air so the previous result never sits under a new throw -->
+        {#if currentRoll && !rollState.isRolling}
           <div class="hud-bottom">
             <div class="results-hud-card">
               <span class="results-title">
@@ -131,7 +119,7 @@
 
               <div class="hud-values-row">
                 {#each currentRoll.values as val, idx (idx)}
-                  {#if rollState.faces === 2}
+                  {#if currentRollFaces === 2}
                     <span
                       class="hud-value-badge coin"
                       class:heads={val === 1}
@@ -147,7 +135,7 @@
                 {/each}
               </div>
 
-              {#if rollState.faces !== 2 && currentRoll.values.length > 1}
+              {#if currentRollFaces !== 2 && currentRoll.values.length > 1}
                 <span class="hud-sum-badge">
                   Sum: <strong>{currentRoll.sum}</strong>
                 </span>

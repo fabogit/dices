@@ -1,6 +1,6 @@
 # dices
 
-> High-fidelity 3D WebGL dice and coin rolling Single Page Application engineered with Svelte 5 Runes, TypeScript 7, and Three.js, powered by a mathematically unbiased Web Crypto CSPRNG rejection-sampling engine and deployed to Cloudflare Pages.
+> High-fidelity 3D WebGL dice and coin rolling Single Page Application engineered with Svelte 5 Runes, TypeScript, and Three.js, powered by a mathematically unbiased Web Crypto CSPRNG rejection-sampling engine and deployed to Cloudflare Pages.
 
 **Inception (First Commit):** `2026-11-12` • **Batch / Horizon:** `2026` • **Architecture Domain:** `Frontend 3D WebGL / CSPRNG Utility & Cloudflare Pages SPA`
 
@@ -79,10 +79,10 @@ The architecture cleanly decouples mathematical random generation, domain statis
 ## 🛠 Tech Stack
 
 - **Runtime & Framework:** [Svelte 5](https://svelte.dev/) (`^5.15.0`) utilizing Svelte 5 Runes (`$state`, `$derived`, `$effect`)
-- **3D Graphics & Rendering:** [Three.js](https://threejs.org/) (`^0.170.0`), `@types/three` (`^0.170.0`)
-- **Language & Typings:** [TypeScript](https://www.typescriptlang.org/) (`^7.0.2`), ECMAScript 2022 Target
+- **3D Graphics & Rendering:** [Three.js](https://threejs.org/) (`^0.187.0`), `@types/three` (`^0.187.0`)
+- **Language & Typings:** [TypeScript](https://www.typescriptlang.org/) (`^6.0.3`), ECMAScript 2022 Target
 - **Build Tooling & Bundler:** [Vite 6](https://vite.dev/) (`^6.0.0`), `@sveltejs/vite-plugin-svelte` (`^5.0.0`), with manual chunk splitting for `three`
-- **Testing & Quality:** [Vitest](https://vitest.dev/) (`^2.1.0`) with `@vitest/coverage-v8`, [Playwright](https://playwright.dev/) (`^1.65.0`, Chromium E2E), GitHub Actions CI, and strict type-checking via `tsc --noEmit`
+- **Testing & Quality:** [Vitest](https://vitest.dev/) (`^2.1.0`) with `@vitest/coverage-v8`, [Playwright](https://playwright.dev/) (`^1.65.0`, Chromium E2E), GitHub Actions CI, and a `pnpm run check` gate combining `tsc --noEmit`, `svelte-check`, `oxlint` (type-aware), and `oxfmt --check`
 - **Package Management & Engine:** [pnpm](https://pnpm.io/) (`pnpm@11.21.0`), Node.js `>=26.13.1` (pinned via `.node-version`)
 - **Cloud Infrastructure & Security:** [Cloudflare Pages](https://pages.cloudflare.com/) (`wrangler.jsonc`, `compatibility_date: 2026-11-01`), strict security headers via `public/_headers`
 
@@ -285,7 +285,7 @@ pnpm install
 # Start Vite local development server with Hot Module Replacement (HMR)
 pnpm run dev
 
-# Build for production (TypeScript check + Vite bundle with Three.js chunking)
+# Build for production (Vite bundle with Three.js chunking; type checks run via `pnpm run check`)
 pnpm run build
 
 # Preview the production build locally
@@ -295,16 +295,16 @@ pnpm run preview
 ### Verification & Testing
 
 ```bash
-# Run strict TypeScript type verification without emitting files
+# Run the full static gate: tsc --noEmit, svelte-check, oxlint (type-aware), and oxfmt --check
 pnpm run check
 
-# Execute comprehensive Vitest unit/state test suite (94 tests across core, 3D, and state)
+# Execute comprehensive Vitest unit/state test suite (126 tests across core, formatters, 3D, and state)
 pnpm test
 
 # Run Vitest test suite with V8 code coverage and threshold enforcement
 pnpm run test:coverage
 
-# Execute Chromium Playwright E2E test suite against the built production preview (13 tests across 8 specs)
+# Execute Chromium Playwright E2E test suite against the built production preview (16 tests across 9 specs, including visual regression baselines)
 pnpm run test:e2e
 ```
 

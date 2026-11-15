@@ -1,7 +1,7 @@
 <script lang="ts">
   import { ALLOWED_FACES } from '../core/types';
+  import { DIE_THEMES } from '../lib/dieThemes';
   import { dieLabel } from '../lib/format';
-  import { DIE_THEMES } from '../three/geometries';
   import { rollState } from './rollState.svelte';
 
   const PRESETS: Array<{ label: string; length: number }> = [
@@ -11,6 +11,9 @@
   ];
 
   let isCollapsed = $state(false);
+
+  // Setup is frozen while dice are in the air and while a series is under way
+  const controlsDisabled = $derived(rollState.isRolling || rollState.isConfigLocked);
 </script>
 
 <section class="control-panel" aria-labelledby="control-panel-heading">
@@ -29,6 +32,10 @@
   </div>
 
   <div class="panel-body" class:collapsed={isCollapsed}>
+    {#if rollState.isConfigLocked}
+      <p class="lock-hint" role="note">Series in progress. Reset the series to change the setup.</p>
+    {/if}
+
     <!-- Instrument Selector -->
     <fieldset class="field-group">
       <legend class="field-label">Choose Instrument</legend>
@@ -45,7 +52,7 @@
             style:--badge-accent={theme.accentColor}
             style:--badge-primary={theme.primaryColor}
             onclick={() => rollState.setFaces(f)}
-            disabled={rollState.isRolling}
+            disabled={controlsDisabled}
           >
             <span class="badge-dot" style:background-color={theme.accentColor}></span>
             <span class="badge-text">{dieLabel(f, 'parens')}</span>
@@ -68,7 +75,7 @@
           type="button"
           class="stepper-btn"
           aria-label="Decrease quantity"
-          disabled={rollState.countPerRoll <= 1 || rollState.isRolling}
+          disabled={rollState.countPerRoll <= 1 || controlsDisabled}
           onclick={() => rollState.setCountPerRoll(rollState.countPerRoll - 1)}
         >
           −
@@ -80,7 +87,7 @@
           max="10"
           step="1"
           value={rollState.countPerRoll}
-          disabled={rollState.isRolling}
+          disabled={controlsDisabled}
           aria-valuemin="1"
           aria-valuemax="10"
           aria-valuenow={rollState.countPerRoll}
@@ -91,7 +98,7 @@
           type="button"
           class="stepper-btn"
           aria-label="Increase quantity"
-          disabled={rollState.countPerRoll >= 10 || rollState.isRolling}
+          disabled={rollState.countPerRoll >= 10 || controlsDisabled}
           onclick={() => rollState.setCountPerRoll(rollState.countPerRoll + 1)}
         >
           +
@@ -117,7 +124,7 @@
               type="button"
               class="preset-btn"
               class:active={rollState.seriesLength === preset.length}
-              disabled={rollState.isRolling}
+              disabled={controlsDisabled}
               onclick={() => rollState.setSeriesLength(preset.length)}
             >
               {preset.label}
@@ -131,7 +138,7 @@
             type="button"
             class="stepper-btn"
             aria-label="Decrease series rounds"
-            disabled={rollState.seriesLength <= 1 || rollState.isRolling}
+            disabled={rollState.seriesLength <= 1 || controlsDisabled}
             onclick={() => rollState.setSeriesLength(rollState.seriesLength - 1)}
           >
             −
@@ -143,7 +150,7 @@
             max="21"
             step="1"
             value={rollState.seriesLength}
-            disabled={rollState.isRolling}
+            disabled={controlsDisabled}
             aria-valuemin="1"
             aria-valuemax="21"
             aria-valuenow={rollState.seriesLength}
@@ -154,7 +161,7 @@
             type="button"
             class="stepper-btn"
             aria-label="Increase series rounds"
-            disabled={rollState.seriesLength >= 21 || rollState.isRolling}
+            disabled={rollState.seriesLength >= 21 || controlsDisabled}
             onclick={() => rollState.setSeriesLength(rollState.seriesLength + 1)}
           >
             +
@@ -169,7 +176,7 @@
             min="1"
             max="21"
             value={rollState.seriesLength}
-            disabled={rollState.isRolling}
+            disabled={controlsDisabled}
             onchange={(e) =>
               rollState.setSeriesLength(Number((e.target as HTMLInputElement).value))}
             class="numeric-input"
@@ -182,6 +189,17 @@
 </section>
 
 <style>
+  .lock-hint {
+    margin: 0;
+    padding: 0.5rem 0.75rem;
+    border: 1px solid var(--border-subtle);
+    border-radius: 0.5rem;
+    background: var(--surface-elevated);
+    color: var(--text-light);
+    font-size: 0.8rem;
+    line-height: 1.4;
+  }
+
   .control-panel {
     display: flex;
     flex-direction: column;

@@ -16,7 +16,7 @@
     "lint": "oxlint --type-aware --deny-warnings",
     "format": "oxfmt --write",
     "format:check": "oxfmt --check",
-    "check:types": "tsc --noEmit",
+    "check:types": "tsc --noEmit && tsc --noEmit -p tsconfig.e2e.json",
     "check:svelte": "svelte-check --tsconfig ./tsconfig.json --fail-on-warnings",
     "check": "pnpm run check:types && pnpm run check:svelte && pnpm run lint && pnpm run format:check"
   },
@@ -26,6 +26,7 @@
   "devDependencies": {
     "@playwright/test": "^1.65.0",
     "@sveltejs/vite-plugin-svelte": "^5.0.0",
+    "@types/node": "^26.6.6",
     "@types/three": "^0.187.0",
     "@vitest/coverage-v8": "^2.1.9",
     "oxfmt": "^0.78.0",
