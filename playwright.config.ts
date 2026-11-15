@@ -7,6 +7,13 @@ export default defineConfig({
   retries: process.env.CI ? 2 : 0,
   workers: process.env.CI ? 1 : undefined,
   reporter: [['html', { open: 'never' }], ['list']],
+  expect: {
+    toHaveScreenshot: {
+      maxDiffPixels: 0,
+      threshold: 0.2,
+      animations: 'disabled',
+    },
+  },
   use: {
     baseURL: 'http://127.0.0.1:4173',
     trace: 'on-first-retry',

@@ -1,0 +1,21 @@
+version: 2
+updates:
+  - package-ecosystem: 'npm'
+    directory: '/'
+    schedule:
+      interval: 'weekly'
+    groups:
+      playwright:
+        # IMPORTANT: Whenever Dependabot updates @playwright/test, you MUST sync
+        # the container image tag in .github/workflows/ci.yml
+        # (mcr.microsoft.com/playwright:v<version>-noble) and
+        # scripts/update-visual-baselines.sh so the preinstalled Chromium
+        # binary matches the npm package version.
+        patterns:
+          - '@playwright/test'
+          - 'playwright'
+
+  - package-ecosystem: 'github-actions'
+    directory: '/'
+    schedule:
+      interval: 'weekly'

@@ -65,7 +65,7 @@
               <small>rounds won</small>
             </span>
             <div class="card-sub-row">
-              <span class="sub-stat-pct">{headsPct.toFixed(1)}%</span>
+              <span class="sub-stat-pct" data-testid="heads-pct">{headsPct.toFixed(1)}%</span>
               <span class="sub-stat-sep">•</span>
               <span class="sub-stat">{rollState.summary.totalHeads ?? 0} coins</span>
             </div>
@@ -81,7 +81,7 @@
               <small>rounds won</small>
             </span>
             <div class="card-sub-row">
-              <span class="sub-stat-pct">{tailsPct.toFixed(1)}%</span>
+              <span class="sub-stat-pct" data-testid="tails-pct">{tailsPct.toFixed(1)}%</span>
               <span class="sub-stat-sep">•</span>
               <span class="sub-stat">{rollState.summary.totalTails ?? 0} coins</span>
             </div>
@@ -254,7 +254,7 @@
       </button>
     </div>
 
-    <div class="analytics-body" class:collapsed={isAnalyticsCollapsed}>
+    <div class="analytics-body" class:collapsed={isAnalyticsCollapsed} data-testid="analytics-body">
       <!-- Statistical Insight Banner -->
       <div class="insight-banner">
         <div class="insight-header">
@@ -262,7 +262,7 @@
             <span class="insight-icon" aria-hidden="true">💡</span>
             <h4 class="insight-title">Statistical Verdict</h4>
           </div>
-          <span class="reliability-chip reliability-{analytics.sampleReliability}">
+          <span class="reliability-chip reliability-{analytics.sampleReliability}" data-testid="sample-reliability">
             {#if analytics.sampleReliability === 'empty'}
               No Rolls
             {:else if analytics.sampleReliability === 'small'}
@@ -274,7 +274,7 @@
             {/if}
           </span>
         </div>
-        <p class="insight-text">{analytics.insightSummary}</p>
+        <p class="insight-text" data-testid="insight-text">{analytics.insightSummary}</p>
       </div>
 
       <!-- Analytics Key Metrics Grid -->
@@ -293,7 +293,7 @@
                 ? 'Heads-leaning'
                 : 'Tails-leaning'}
 
-        <div class="analytics-metrics-grid coin-analytics-grid">
+        <div class="analytics-metrics-grid coin-analytics-grid" data-testid="analytics-metrics" data-variant="coin">
           <!-- Heads Share -->
           <div class="stat-box">
             <span class="stat-box-label">Heads Share</span>
@@ -357,7 +357,7 @@
         </div>
       {:else}
         <!-- Polyhedral d4..d20 Analytics Grid -->
-        <div class="analytics-metrics-grid">
+        <div class="analytics-metrics-grid" data-testid="analytics-metrics" data-variant="polyhedral">
           <!-- Expected vs Actual Round Average -->
           <div class="stat-box">
             <span class="stat-box-label">Expected Avg (E[X])</span>
@@ -430,15 +430,16 @@
               (item.expectedPercentage / analytics.distributionPeakPercentage) * 100,
             )}
             {@const isHot = analytics.hottestFaces.includes(item.face)}
-            <div class="dist-row">
+            <div class="dist-row" data-testid="dist-row">
               <span
                 class="face-label"
                 class:coin-label={rollState.faces === 2}
                 class:hot-face-label={isHot && rollState.faces > 2}
+                data-testid={isHot && rollState.faces > 2 ? 'hot-face' : undefined}
               >
                 {item.label}
                 {#if isHot && rollState.faces > 2}
-                  <span class="hot-badge" aria-hidden="true" title="Hot face">🔥</span>
+                  <span class="hot-badge" data-testid="hot-badge" aria-hidden="true" title="Hot face">🔥</span>
                 {/if}
               </span>
 
@@ -463,8 +464,8 @@
               </div>
 
               <div class="dist-stats">
-                <span class="count-text">{item.count}</span>
-                <span class="pct-text">{item.percentage.toFixed(1)}%</span>
+                <span class="count-text" data-testid="dist-count">{item.count}</span>
+                <span class="pct-text" data-testid="dist-pct">{item.percentage.toFixed(1)}%</span>
                 <span
                   class="delta-pct"
                   class:delta-pos={item.deltaPercentage > 0.05}
