@@ -1,0 +1,19 @@
+{
+  "$schema": "./node_modules/oxfmt/configuration_schema.json",
+  "printWidth": 100,
+  "tabWidth": 2,
+  "useTabs": false,
+  "semi": true,
+  "singleQuote": true,
+  "trailingComma": "all",
+  "svelte": true,
+  "ignorePatterns": [
+    "dist/**",
+    "coverage/**",
+    "playwright-report/**",
+    "test-results/**",
+    ".svelte-check/**",
+    "e2e/**/*.png",
+    "pnpm-lock.yaml"
+  ]
+}
