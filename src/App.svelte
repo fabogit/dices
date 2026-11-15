@@ -47,7 +47,7 @@
 <a href="#main-content" class="skip-link sr-only">Skip to main content</a>
 
 <!-- Centralized Screen Reader Live Region (Accessibility Guidance) -->
-<div class="sr-only" aria-live="polite" aria-atomic="true">
+<div class="sr-only" role="status" aria-live="polite" aria-atomic="true">
   {rollState.announcerMessage}
 </div>
 

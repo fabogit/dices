@@ -5,39 +5,43 @@ test.describe('Quick Roll Mode Flow', () => {
     await page.goto('/');
 
     // Switch to Quick Roll mode
-    const quickModeBtn = page.locator('.mode-switch-group').getByRole('button', { name: /Quick Roll/i });
+    const quickModeBtn = page
+      .getByRole('group', { name: 'Application mode' })
+      .getByRole('button', { name: /Quick Roll/i });
     await quickModeBtn.click();
-    await expect(quickModeBtn).toHaveClass(/active/);
+    await expect(quickModeBtn).toHaveAttribute('aria-pressed', 'true');
 
     // Verify Quick Result Panel is visible in empty state initially
-    const quickPanel = page.locator('.quick-result-panel');
+    const quickPanel = page.getByRole('region', { name: 'Quick Roll Feed' });
     await expect(quickPanel).toBeVisible();
-    await expect(page.locator('.empty-quick-state')).toBeVisible();
+    await expect(quickPanel.getByText('Ready to Roll', { exact: true })).toBeVisible();
 
     // Enable Fast mode for deterministic, non-flaky execution
-    const fastModeBtn = page.locator('.instant-toggle-btn');
-    if (!(await fastModeBtn.getAttribute('aria-pressed') === 'true')) {
+    const fastModeBtn = page.getByRole('button', { name: /Fast: (ON|OFF)/ });
+    if ((await fastModeBtn.getAttribute('aria-pressed')) !== 'true') {
       await fastModeBtn.click();
     }
 
     // Trigger first quick roll
     const toolbar = page.getByRole('toolbar', { name: 'Roll controls' });
-    const rollBtn = toolbar.locator('.primary-btn');
+    const rollBtn = toolbar.getByRole('button', { name: /Roll Round|Roll \d+d\d+|Flip|Series Complete/ });
     await expect(rollBtn).toContainText('Roll 1d6');
     await rollBtn.click();
 
     // Verify latest hero card displays valid numeric result (1..6 for d6)
-    const heroCard = page.locator('.latest-hero-card');
+    const heroCard = page.getByRole('region', { name: 'Latest Quick Roll Result' });
     await expect(heroCard).toBeVisible();
 
-    const sumElement = heroCard.locator('.sum-big-number');
+    const sumElement = heroCard.getByTestId('hero-sum');
     await expect(sumElement).toBeVisible();
     const sum = Number(await sumElement.textContent());
     expect(sum).toBeGreaterThanOrEqual(1);
     expect(sum).toBeLessThanOrEqual(6);
 
     // Verify session feed contains 1 entry
-    const feedItems = page.locator('.feed-item');
+    const feedItems = page
+      .getByRole('region', { name: 'Recent quick rolls feed' })
+      .getByRole('listitem');
     await expect(feedItems).toHaveCount(1);
 
     // Trigger second quick roll
@@ -45,12 +49,12 @@ test.describe('Quick Roll Mode Flow', () => {
     await expect(feedItems).toHaveCount(2);
 
     // Clear feed via toolbar clear button
-    const clearFeedBtn = toolbar.locator('.btn-clear-quick');
+    const clearFeedBtn = toolbar.getByRole('button', { name: 'Clear quick roll feed' });
     await expect(clearFeedBtn).toBeEnabled();
     await clearFeedBtn.click();
 
     // Verify feed is emptied and empty state returns
-    await expect(page.locator('.empty-quick-state')).toBeVisible();
-    await expect(page.locator('.feed-item')).toHaveCount(0);
+    await expect(quickPanel.getByText('Ready to Roll', { exact: true })).toBeVisible();
+    await expect(feedItems).toHaveCount(0);
   });
 });

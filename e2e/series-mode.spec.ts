@@ -24,25 +24,27 @@ test.describe('Series Mode & Custom 1..21 Slider Flow', () => {
     await bo5Btn.click();
     await expect(bo5Btn).toHaveClass(/active/);
 
-    const scoreboardBadge = page.locator('.series-badge');
+    const scoreboardBadge = page
+      .getByRole('region', { name: 'Live Series Scoreboard' })
+      .getByText(/Round \d+ of \d+/);
     await expect(scoreboardBadge).toHaveText('Round 0 of 5');
 
     // Adjust series length using the 1..21 range slider / numeric input to a custom length (e.g., 4)
-    const seriesInput = page.locator('#series-length-input');
+    const seriesInput = page.getByRole('spinbutton', { name: /Custom series length/ });
     await seriesInput.fill('4');
     await seriesInput.dispatchEvent('change');
 
     await expect(scoreboardBadge).toHaveText('Round 0 of 4');
 
     // Enable Fast mode for deterministic, instant execution
-    const fastModeBtn = page.locator('.instant-toggle-btn');
+    const fastModeBtn = page.getByRole('button', { name: /Fast: (ON|OFF)/ });
     if (!(await fastModeBtn.getAttribute('aria-pressed') === 'true')) {
       await fastModeBtn.click();
     }
 
     // Trigger round 1 roll
     const toolbar = page.getByRole('toolbar', { name: 'Roll controls' });
-    const rollRoundBtn = toolbar.locator('.primary-btn');
+    const rollRoundBtn = toolbar.getByRole('button', { name: /Roll Round|Series Complete/ });
     await expect(rollRoundBtn).toContainText('Roll Round (1/4)');
     await rollRoundBtn.click();
 
@@ -56,7 +58,7 @@ test.describe('Series Mode & Custom 1..21 Slider Flow', () => {
     await expect(rollRoundBtn).toContainText('Roll Round (2/4)');
 
     // Trigger Reset action
-    const resetBtn = toolbar.locator('.btn-reset-series');
+    const resetBtn = toolbar.getByRole('button', { name: /Reset/ });
     await resetBtn.click();
 
     // Verify rounds are reset back to 0
