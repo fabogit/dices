@@ -26,9 +26,11 @@
   "devDependencies": {
     "@playwright/test": "^1.65.0",
     "@sveltejs/vite-plugin-svelte": "^5.0.0",
+    "@testing-library/svelte": "^5.4.2",
     "@types/node": "^26.6.6",
     "@types/three": "^0.187.0",
     "@vitest/coverage-v8": "^2.1.9",
+    "happy-dom": "^21.0.4",
     "oxfmt": "^0.78.0",
     "oxlint": "^1.93.0",
     "oxlint-tsgolint": "^7.0.2007",

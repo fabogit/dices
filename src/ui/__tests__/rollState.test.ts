@@ -155,19 +155,19 @@ describe('RollState Controller', () => {
     state.setCountPerRoll(1);
     const rollD20 = await state.executeQuickRoll();
     expect(rollD20?.faces).toBe(20);
-    expect(state.latestQuickRoll).toBe(rollD20);
+    expect(state.latestQuickRoll).toEqual(rollD20);
 
     state.setFaces(6);
     state.setCountPerRoll(2);
     const rollD6 = await state.executeQuickRoll();
     expect(rollD6?.faces).toBe(6);
-    expect(state.latestQuickRoll).toBe(rollD6);
+    expect(state.latestQuickRoll).toEqual(rollD6);
 
     state.setFaces(2);
     state.setCountPerRoll(1);
     const rollCoin = await state.executeQuickRoll();
     expect(rollCoin?.faces).toBe(2);
-    expect(state.latestQuickRoll).toBe(rollCoin);
+    expect(state.latestQuickRoll).toEqual(rollCoin);
 
     // Verify all history retains their respective original faces
     expect(state.quickRolls[0].faces).toBe(2);
@@ -188,14 +188,14 @@ describe('RollState Controller', () => {
     expect(roll1).not.toBeNull();
     expect(roll1?.values.length).toBe(2);
     expect(state.quickRolls.length).toBe(1);
-    expect(state.latestQuickRoll).toBe(roll1);
+    expect(state.latestQuickRoll).toEqual(roll1);
     expect(state.history.length).toBe(0); // Quick rolls do NOT add to series history!
 
     // Roll 2 immediately without reset
     const roll2 = await state.executeQuickRoll();
     expect(roll2).not.toBeNull();
     expect(state.quickRolls.length).toBe(2);
-    expect(state.latestQuickRoll).toBe(roll2);
+    expect(state.latestQuickRoll).toEqual(roll2);
     expect(state.history.length).toBe(0);
 
     // Roll coin in quick mode
@@ -692,7 +692,7 @@ describe('RollState Controller', () => {
 
     land();
     const quick = await quickRoll;
-    expect(state.latestQuickRoll).toBe(quick);
+    expect(state.latestQuickRoll).toEqual(quick);
     expect(state.quickRollCount).toBe(1);
     state.setArena(null);
   });
@@ -764,5 +764,25 @@ describe('RollState Controller', () => {
     } finally {
       vi.unstubAllGlobals();
     }
+  });
+
+  it('memoizes $derived summary and leaderboard on the Svelte client runtime', async () => {
+    state.instantMode = true;
+    const firstSummary = state.summary;
+    expect(state.summary).toBe(firstSummary);
+
+    const firstLeaderboard = state.leaderboard;
+    expect(state.leaderboard).toBe(firstLeaderboard);
+
+    state.setFaces(20);
+    const updatedSummary = state.summary;
+    expect(updatedSummary).not.toBe(firstSummary);
+    expect(state.summary).toBe(updatedSummary);
+
+    state.setSeriesLength(1);
+    await state.rollNextRound();
+    const updatedLeaderboard = state.leaderboard;
+    expect(updatedLeaderboard).not.toBe(firstLeaderboard);
+    expect(state.leaderboard).toBe(updatedLeaderboard);
   });
 });

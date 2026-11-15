@@ -1,10 +1,13 @@
+import { svelteTesting } from '@testing-library/svelte/vite';
+import { defineConfig as defineViteConfig } from 'vite';
 import { defineConfig, mergeConfig } from 'vitest/config';
 import viteConfig from './vite.config';
 
 export default mergeConfig(
-  viteConfig,
+  mergeConfig(viteConfig, defineViteConfig({ plugins: [svelteTesting()] })),
   defineConfig({
     test: {
+      environment: 'happy-dom',
       include: ['src/**/*.{test,spec}.{js,ts}'],
       exclude: ['e2e/**', 'node_modules/**', 'dist/**'],
       coverage: {
