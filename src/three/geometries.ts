@@ -98,10 +98,7 @@ const FACE_NORMALS: Record<DieFaces, THREE.Vector3[]> = {
 };
 
 // Initialize d2 face normals (value 1 -> HEADS: (0, 1, 0), value 2 -> TAILS: (0, -1, 0))
-FACE_NORMALS[2] = [
-  new THREE.Vector3(0, 1, 0),
-  new THREE.Vector3(0, -1, 0),
-];
+FACE_NORMALS[2] = [new THREE.Vector3(0, 1, 0), new THREE.Vector3(0, -1, 0)];
 
 // Initialize d4 face normals
 {
@@ -121,15 +118,15 @@ FACE_NORMALS[2] = [
   FACE_NORMALS[4] = polys.map((poly) =>
     new THREE.Vector3()
       .crossVectors(poly[1].clone().sub(poly[0]), poly[2].clone().sub(poly[0]))
-      .normalize()
+      .normalize(),
   );
 }
 
 // Initialize d6 face normals (opposite faces sum to 7: 1-6, 2-5, 3-4)
 FACE_NORMALS[6] = [
-  new THREE.Vector3(0, 1, 0),  // 1: Top (+Y)
-  new THREE.Vector3(1, 0, 0),  // 2: Right (+X)
-  new THREE.Vector3(0, 0, 1),  // 3: Front (+Z)
+  new THREE.Vector3(0, 1, 0), // 1: Top (+Y)
+  new THREE.Vector3(1, 0, 0), // 2: Right (+X)
+  new THREE.Vector3(0, 0, 1), // 3: Front (+Z)
   new THREE.Vector3(0, 0, -1), // 4: Back (-Z)
   new THREE.Vector3(-1, 0, 0), // 5: Left (-X)
   new THREE.Vector3(0, -1, 0), // 6: Bottom (-Y)
@@ -138,9 +135,12 @@ FACE_NORMALS[6] = [
 // Initialize d8 face normals (opposite faces sum to 9: 1-8, 2-7, 3-6, 4-5)
 {
   const R = 1.15;
-  const xp = new THREE.Vector3(R, 0, 0), xm = new THREE.Vector3(-R, 0, 0);
-  const yp = new THREE.Vector3(0, R, 0), ym = new THREE.Vector3(0, -R, 0);
-  const zp = new THREE.Vector3(0, 0, R), zm = new THREE.Vector3(0, 0, -R);
+  const xp = new THREE.Vector3(R, 0, 0),
+    xm = new THREE.Vector3(-R, 0, 0);
+  const yp = new THREE.Vector3(0, R, 0),
+    ym = new THREE.Vector3(0, -R, 0);
+  const zp = new THREE.Vector3(0, 0, R),
+    zm = new THREE.Vector3(0, 0, -R);
   const polys = [
     [yp, zp, xp], // 1
     [yp, xp, zm], // 2
@@ -152,7 +152,11 @@ FACE_NORMALS[6] = [
     [ym, xp, zp], // 8 (opposite 1)
   ];
   FACE_NORMALS[8] = polys.map((poly) => {
-    const c = poly[0].clone().add(poly[1]).add(poly[2]).multiplyScalar(1 / 3);
+    const c = poly[0]
+      .clone()
+      .add(poly[1])
+      .add(poly[2])
+      .multiplyScalar(1 / 3);
     const n = new THREE.Vector3()
       .crossVectors(poly[1].clone().sub(poly[0]), poly[2].clone().sub(poly[0]))
       .normalize();
@@ -246,7 +250,7 @@ export function getFaceNormal(faces: DieFaces, value: number): THREE.Vector3 {
 export function computeTargetQuaternion(
   faces: DieFaces,
   value: number,
-  yawRadians = 0
+  yawRadians = 0,
 ): THREE.Quaternion {
   const normal = getFaceNormal(faces, value);
   const up = new THREE.Vector3(0, 1, 0);
@@ -263,7 +267,7 @@ export function computeTargetQuaternion(
  */
 function buildPlanarFaceGeometry(
   polygons: THREE.Vector3[][],
-  normals: THREE.Vector3[]
+  normals: THREE.Vector3[],
 ): THREE.BufferGeometry {
   const positions: number[] = [];
   const normalArray: number[] = [];
@@ -272,12 +276,15 @@ function buildPlanarFaceGeometry(
 
   polygons.forEach((poly, faceIndex) => {
     const normal = normals[faceIndex];
-    const c = poly.reduce((acc, v) => acc.add(v), new THREE.Vector3()).multiplyScalar(1 / poly.length);
+    const c = poly
+      .reduce((acc, v) => acc.add(v), new THREE.Vector3())
+      .multiplyScalar(1 / poly.length);
 
     // Coordinate basis on tangent plane
-    const ref = Math.abs(normal.dot(new THREE.Vector3(0, 1, 0))) < 0.95
-      ? new THREE.Vector3(0, 1, 0)
-      : new THREE.Vector3(0, 0, 1);
+    const ref =
+      Math.abs(normal.dot(new THREE.Vector3(0, 1, 0))) < 0.95
+        ? new THREE.Vector3(0, 1, 0)
+        : new THREE.Vector3(0, 0, 1);
     const tangent = new THREE.Vector3().crossVectors(ref, normal).normalize();
     const bitangent = new THREE.Vector3().crossVectors(normal, tangent).normalize();
     const maxRadius = Math.max(...poly.map((v) => v.distanceTo(c)));
@@ -347,21 +354,54 @@ export function createDieGeometry(faces: DieFaces): THREE.BufferGeometry {
   if (faces === 6) {
     const s = 0.8;
     const polys = [
-      [new THREE.Vector3(-s, s, s), new THREE.Vector3(s, s, s), new THREE.Vector3(s, s, -s), new THREE.Vector3(-s, s, -s)],
-      [new THREE.Vector3(s, -s, s), new THREE.Vector3(s, -s, -s), new THREE.Vector3(s, s, -s), new THREE.Vector3(s, s, s)],
-      [new THREE.Vector3(-s, -s, s), new THREE.Vector3(s, -s, s), new THREE.Vector3(s, s, s), new THREE.Vector3(-s, s, s)],
-      [new THREE.Vector3(s, -s, -s), new THREE.Vector3(-s, -s, -s), new THREE.Vector3(-s, s, -s), new THREE.Vector3(s, s, -s)],
-      [new THREE.Vector3(-s, -s, -s), new THREE.Vector3(-s, -s, s), new THREE.Vector3(-s, s, s), new THREE.Vector3(-s, s, -s)],
-      [new THREE.Vector3(-s, -s, -s), new THREE.Vector3(s, -s, -s), new THREE.Vector3(s, -s, s), new THREE.Vector3(-s, -s, s)],
+      [
+        new THREE.Vector3(-s, s, s),
+        new THREE.Vector3(s, s, s),
+        new THREE.Vector3(s, s, -s),
+        new THREE.Vector3(-s, s, -s),
+      ],
+      [
+        new THREE.Vector3(s, -s, s),
+        new THREE.Vector3(s, -s, -s),
+        new THREE.Vector3(s, s, -s),
+        new THREE.Vector3(s, s, s),
+      ],
+      [
+        new THREE.Vector3(-s, -s, s),
+        new THREE.Vector3(s, -s, s),
+        new THREE.Vector3(s, s, s),
+        new THREE.Vector3(-s, s, s),
+      ],
+      [
+        new THREE.Vector3(s, -s, -s),
+        new THREE.Vector3(-s, -s, -s),
+        new THREE.Vector3(-s, s, -s),
+        new THREE.Vector3(s, s, -s),
+      ],
+      [
+        new THREE.Vector3(-s, -s, -s),
+        new THREE.Vector3(-s, -s, s),
+        new THREE.Vector3(-s, s, s),
+        new THREE.Vector3(-s, s, -s),
+      ],
+      [
+        new THREE.Vector3(-s, -s, -s),
+        new THREE.Vector3(s, -s, -s),
+        new THREE.Vector3(s, -s, s),
+        new THREE.Vector3(-s, -s, s),
+      ],
     ];
     return buildPlanarFaceGeometry(polys, FACE_NORMALS[6]);
   }
 
   if (faces === 8) {
     const R = 1.15;
-    const xp = new THREE.Vector3(R, 0, 0), xm = new THREE.Vector3(-R, 0, 0);
-    const yp = new THREE.Vector3(0, R, 0), ym = new THREE.Vector3(0, -R, 0);
-    const zp = new THREE.Vector3(0, 0, R), zm = new THREE.Vector3(0, 0, -R);
+    const xp = new THREE.Vector3(R, 0, 0),
+      xm = new THREE.Vector3(-R, 0, 0);
+    const yp = new THREE.Vector3(0, R, 0),
+      ym = new THREE.Vector3(0, -R, 0);
+    const zp = new THREE.Vector3(0, 0, R),
+      zm = new THREE.Vector3(0, 0, -R);
     const polys = [
       [yp, zp, xp],
       [yp, xp, zm],
@@ -408,7 +448,9 @@ export function createDieGeometry(faces: DieFaces): THREE.BufferGeometry {
       const v0 = new THREE.Vector3().fromBufferAttribute(pos, i);
       const v1 = new THREE.Vector3().fromBufferAttribute(pos, i + 1);
       const v2 = new THREE.Vector3().fromBufferAttribute(pos, i + 2);
-      const n = new THREE.Vector3().crossVectors(v1.clone().sub(v0), v2.clone().sub(v0)).normalize();
+      const n = new THREE.Vector3()
+        .crossVectors(v1.clone().sub(v0), v2.clone().sub(v0))
+        .normalize();
 
       let target = rawFaces.find((f) => f.normal.dot(n) > 0.99);
       if (!target) {
@@ -425,12 +467,15 @@ export function createDieGeometry(faces: DieFaces): THREE.BufferGeometry {
 
     rawFaces.forEach((face, fIdx) => {
       const allVerts = face.triangles.flat();
-      const c = allVerts.reduce((acc, v) => acc.add(v), new THREE.Vector3()).multiplyScalar(1 / allVerts.length);
+      const c = allVerts
+        .reduce((acc, v) => acc.add(v), new THREE.Vector3())
+        .multiplyScalar(1 / allVerts.length);
       const normal = face.normal;
 
-      const ref = Math.abs(normal.dot(new THREE.Vector3(0, 1, 0))) < 0.95
-        ? new THREE.Vector3(0, 1, 0)
-        : new THREE.Vector3(0, 0, 1);
+      const ref =
+        Math.abs(normal.dot(new THREE.Vector3(0, 1, 0))) < 0.95
+          ? new THREE.Vector3(0, 1, 0)
+          : new THREE.Vector3(0, 0, 1);
       const tangent = new THREE.Vector3().crossVectors(ref, normal).normalize();
       const bitangent = new THREE.Vector3().crossVectors(normal, tangent).normalize();
       const maxRadius = Math.max(...allVerts.map((v) => v.distanceTo(c)));
@@ -475,12 +520,19 @@ export function createDieGeometry(faces: DieFaces): THREE.BufferGeometry {
       const v0 = new THREE.Vector3().fromBufferAttribute(pos, i);
       const v1 = new THREE.Vector3().fromBufferAttribute(pos, i + 1);
       const v2 = new THREE.Vector3().fromBufferAttribute(pos, i + 2);
-      const normal = new THREE.Vector3().crossVectors(v1.clone().sub(v0), v2.clone().sub(v0)).normalize();
-      const c = v0.clone().add(v1).add(v2).multiplyScalar(1 / 3);
+      const normal = new THREE.Vector3()
+        .crossVectors(v1.clone().sub(v0), v2.clone().sub(v0))
+        .normalize();
+      const c = v0
+        .clone()
+        .add(v1)
+        .add(v2)
+        .multiplyScalar(1 / 3);
 
-      const ref = Math.abs(normal.dot(new THREE.Vector3(0, 1, 0))) < 0.95
-        ? new THREE.Vector3(0, 1, 0)
-        : new THREE.Vector3(0, 0, 1);
+      const ref =
+        Math.abs(normal.dot(new THREE.Vector3(0, 1, 0))) < 0.95
+          ? new THREE.Vector3(0, 1, 0)
+          : new THREE.Vector3(0, 0, 1);
       const tangent = new THREE.Vector3().crossVectors(ref, normal).normalize();
       const bitangent = new THREE.Vector3().crossVectors(normal, tangent).normalize();
       const maxRadius = Math.max(v0.distanceTo(c), v1.distanceTo(c), v2.distanceTo(c));
@@ -513,7 +565,7 @@ export function createDieGeometry(faces: DieFaces): THREE.BufferGeometry {
 export function generateDieFaceTexture(
   faces: DieFaces,
   value: number,
-  customLabel?: string
+  customLabel?: string,
 ): THREE.Texture {
   const cacheKey = `${faces}_${value}_${customLabel ?? ''}`;
   const cached = textureCache.get(cacheKey);
@@ -633,7 +685,7 @@ export function createDieMaterials(faces: DieFaces): THREE.Material[] {
         map: generateDieFaceTexture(faces, v),
         metalness: theme.metalness,
         roughness: theme.roughness,
-      })
+      }),
     );
   }
   return materials;

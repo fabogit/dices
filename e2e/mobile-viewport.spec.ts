@@ -3,7 +3,9 @@ import { test, expect } from '@playwright/test';
 test.describe('Mobile Viewport & Panel Collapsibility (Issue #8)', () => {
   test.use({ viewport: { width: 375, height: 667 } });
 
-  test('keeps 3D arena viewport bounded <= 260px on mobile before and after roll and supports panel collapsing', async ({ page }) => {
+  test('keeps 3D arena viewport bounded <= 260px on mobile before and after roll and supports panel collapsing', async ({
+    page,
+  }) => {
     await page.goto('/');
 
     const viewport = page.getByRole('region', { name: '3D Dice Arena Viewport' });
@@ -17,7 +19,7 @@ test.describe('Mobile Viewport & Panel Collapsibility (Issue #8)', () => {
 
     // Enable fast mode to settle rolls instantaneously
     const fastModeBtn = page.getByRole('button', { name: /Fast: (ON|OFF)/ });
-    if (!(await fastModeBtn.getAttribute('aria-pressed') === 'true')) {
+    if (!((await fastModeBtn.getAttribute('aria-pressed')) === 'true')) {
       await fastModeBtn.click();
     }
     await expect(fastModeBtn).toHaveAttribute('aria-pressed', 'true');

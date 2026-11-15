@@ -32,154 +32,155 @@
   </div>
 
   <div class="panel-body" class:collapsed={isCollapsed}>
-  <!-- Instrument Selector -->
-  <fieldset class="field-group">
-    <legend class="field-label">Choose Instrument</legend>
-    <div class="faces-grid" role="radiogroup" aria-label="Die face selector">
-      {#each ALLOWED_FACES as f (f)}
-        {@const theme = DIE_THEMES[f]}
-        {@const isSelected = rollState.faces === f}
-        <button
-          type="button"
-          role="radio"
-          aria-checked={isSelected}
-          class="face-badge-button"
-          class:selected={isSelected}
-          style:--badge-accent={theme.accentColor}
-          style:--badge-primary={theme.primaryColor}
-          onclick={() => rollState.setFaces(f)}
-          disabled={rollState.isRolling}
-        >
-          <span class="badge-dot" style:background-color={theme.accentColor}></span>
-          <span class="badge-text">{getFaceLabel(f)}</span>
-        </button>
-      {/each}
-    </div>
-  </fieldset>
-
-  <!-- Quantity Per Throw (M) -->
-  <div class="field-group">
-    <div class="field-label-row">
-      <label for="count-slider" class="field-label">
-        Quantity Per Roll (M):
-        <strong class="count-value">{rollState.countPerRoll}</strong>
-      </label>
-      <span class="field-hint">1 to 10 {rollState.faces === 2 ? 'coins' : 'dice'}</span>
-    </div>
-    <div class="slider-controls">
-      <button
-        type="button"
-        class="stepper-btn"
-        aria-label="Decrease quantity"
-        disabled={rollState.countPerRoll <= 1 || rollState.isRolling}
-        onclick={() => rollState.setCountPerRoll(rollState.countPerRoll - 1)}
-      >
-        −
-      </button>
-      <input
-        id="count-slider"
-        type="range"
-        min="1"
-        max="10"
-        step="1"
-        value={rollState.countPerRoll}
-        disabled={rollState.isRolling}
-        aria-valuemin="1"
-        aria-valuemax="10"
-        aria-valuenow={rollState.countPerRoll}
-        oninput={(e) => rollState.setCountPerRoll(Number((e.target as HTMLInputElement).value))}
-        class="range-slider"
-      />
-      <button
-        type="button"
-        class="stepper-btn"
-        aria-label="Increase quantity"
-        disabled={rollState.countPerRoll >= 10 || rollState.isRolling}
-        onclick={() => rollState.setCountPerRoll(rollState.countPerRoll + 1)}
-      >
-        +
-      </button>
-    </div>
-  </div>
-
-  <!-- Series Length (K) - Shown only in Series mode -->
-  {#if rollState.mode === 'series'}
-    <div class="field-group">
-      <div class="field-label-row">
-        <label for="series-length-slider" class="field-label">
-          Series Rounds (K):
-          <strong class="count-value">{rollState.seriesLength}</strong>
-        </label>
-        <span class="field-hint">1 to 21 rounds</span>
-      </div>
-
-      <!-- Presets -->
-      <div class="preset-buttons" role="group" aria-label="Series length presets">
-        {#each PRESETS as preset (preset.length)}
+    <!-- Instrument Selector -->
+    <fieldset class="field-group">
+      <legend class="field-label">Choose Instrument</legend>
+      <div class="faces-grid" role="radiogroup" aria-label="Die face selector">
+        {#each ALLOWED_FACES as f (f)}
+          {@const theme = DIE_THEMES[f]}
+          {@const isSelected = rollState.faces === f}
           <button
             type="button"
-            class="preset-btn"
-            class:active={rollState.seriesLength === preset.length}
+            role="radio"
+            aria-checked={isSelected}
+            class="face-badge-button"
+            class:selected={isSelected}
+            style:--badge-accent={theme.accentColor}
+            style:--badge-primary={theme.primaryColor}
+            onclick={() => rollState.setFaces(f)}
             disabled={rollState.isRolling}
-            onclick={() => rollState.setSeriesLength(preset.length)}
           >
-            {preset.label}
+            <span class="badge-dot" style:background-color={theme.accentColor}></span>
+            <span class="badge-text">{getFaceLabel(f)}</span>
           </button>
         {/each}
       </div>
+    </fieldset>
 
-      <!-- Range Slider + Steppers for Series Length -->
+    <!-- Quantity Per Throw (M) -->
+    <div class="field-group">
+      <div class="field-label-row">
+        <label for="count-slider" class="field-label">
+          Quantity Per Roll (M):
+          <strong class="count-value">{rollState.countPerRoll}</strong>
+        </label>
+        <span class="field-hint">1 to 10 {rollState.faces === 2 ? 'coins' : 'dice'}</span>
+      </div>
       <div class="slider-controls">
         <button
           type="button"
           class="stepper-btn"
-          aria-label="Decrease series rounds"
-          disabled={rollState.seriesLength <= 1 || rollState.isRolling}
-          onclick={() => rollState.setSeriesLength(rollState.seriesLength - 1)}
+          aria-label="Decrease quantity"
+          disabled={rollState.countPerRoll <= 1 || rollState.isRolling}
+          onclick={() => rollState.setCountPerRoll(rollState.countPerRoll - 1)}
         >
           −
         </button>
         <input
-          id="series-length-slider"
+          id="count-slider"
           type="range"
           min="1"
-          max="21"
+          max="10"
           step="1"
-          value={rollState.seriesLength}
+          value={rollState.countPerRoll}
           disabled={rollState.isRolling}
           aria-valuemin="1"
-          aria-valuemax="21"
-          aria-valuenow={rollState.seriesLength}
-          oninput={(e) => rollState.setSeriesLength(Number((e.target as HTMLInputElement).value))}
+          aria-valuemax="10"
+          aria-valuenow={rollState.countPerRoll}
+          oninput={(e) => rollState.setCountPerRoll(Number((e.target as HTMLInputElement).value))}
           class="range-slider"
         />
         <button
           type="button"
           class="stepper-btn"
-          aria-label="Increase series rounds"
-          disabled={rollState.seriesLength >= 21 || rollState.isRolling}
-          onclick={() => rollState.setSeriesLength(rollState.seriesLength + 1)}
+          aria-label="Increase quantity"
+          disabled={rollState.countPerRoll >= 10 || rollState.isRolling}
+          onclick={() => rollState.setCountPerRoll(rollState.countPerRoll + 1)}
         >
           +
         </button>
       </div>
-
-      <div class="stepper-row">
-        <label for="series-length-input" class="sr-only">Custom series length (1 to 21)</label>
-        <input
-          id="series-length-input"
-          type="number"
-          min="1"
-          max="21"
-          value={rollState.seriesLength}
-          disabled={rollState.isRolling}
-          onchange={(e) => rollState.setSeriesLength(Number((e.target as HTMLInputElement).value))}
-          class="numeric-input"
-        />
-        <span class="unit-text">rounds (custom 1..21)</span>
-      </div>
     </div>
-  {/if}
+
+    <!-- Series Length (K) - Shown only in Series mode -->
+    {#if rollState.mode === 'series'}
+      <div class="field-group">
+        <div class="field-label-row">
+          <label for="series-length-slider" class="field-label">
+            Series Rounds (K):
+            <strong class="count-value">{rollState.seriesLength}</strong>
+          </label>
+          <span class="field-hint">1 to 21 rounds</span>
+        </div>
+
+        <!-- Presets -->
+        <div class="preset-buttons" role="group" aria-label="Series length presets">
+          {#each PRESETS as preset (preset.length)}
+            <button
+              type="button"
+              class="preset-btn"
+              class:active={rollState.seriesLength === preset.length}
+              disabled={rollState.isRolling}
+              onclick={() => rollState.setSeriesLength(preset.length)}
+            >
+              {preset.label}
+            </button>
+          {/each}
+        </div>
+
+        <!-- Range Slider + Steppers for Series Length -->
+        <div class="slider-controls">
+          <button
+            type="button"
+            class="stepper-btn"
+            aria-label="Decrease series rounds"
+            disabled={rollState.seriesLength <= 1 || rollState.isRolling}
+            onclick={() => rollState.setSeriesLength(rollState.seriesLength - 1)}
+          >
+            −
+          </button>
+          <input
+            id="series-length-slider"
+            type="range"
+            min="1"
+            max="21"
+            step="1"
+            value={rollState.seriesLength}
+            disabled={rollState.isRolling}
+            aria-valuemin="1"
+            aria-valuemax="21"
+            aria-valuenow={rollState.seriesLength}
+            oninput={(e) => rollState.setSeriesLength(Number((e.target as HTMLInputElement).value))}
+            class="range-slider"
+          />
+          <button
+            type="button"
+            class="stepper-btn"
+            aria-label="Increase series rounds"
+            disabled={rollState.seriesLength >= 21 || rollState.isRolling}
+            onclick={() => rollState.setSeriesLength(rollState.seriesLength + 1)}
+          >
+            +
+          </button>
+        </div>
+
+        <div class="stepper-row">
+          <label for="series-length-input" class="sr-only">Custom series length (1 to 21)</label>
+          <input
+            id="series-length-input"
+            type="number"
+            min="1"
+            max="21"
+            value={rollState.seriesLength}
+            disabled={rollState.isRolling}
+            onchange={(e) =>
+              rollState.setSeriesLength(Number((e.target as HTMLInputElement).value))}
+            class="numeric-input"
+          />
+          <span class="unit-text">rounds (custom 1..21)</span>
+        </div>
+      </div>
+    {/if}
   </div>
 </section>
 
@@ -380,12 +381,14 @@
     color: #9ca3af;
   }
 
-  button:focus-visible, input:focus-visible {
+  button:focus-visible,
+  input:focus-visible {
     outline: 2px solid #38bdf8;
     outline-offset: 2px;
   }
 
-  button:disabled, input:disabled {
+  button:disabled,
+  input:disabled {
     opacity: 0.5;
     cursor: not-allowed;
   }

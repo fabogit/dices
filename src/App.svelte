@@ -22,7 +22,8 @@
     const currentIndex = RIGHT_TABS.indexOf(rightPanelTab);
     let nextIndex = -1;
     if (e.key === 'ArrowRight') nextIndex = (currentIndex + 1) % RIGHT_TABS.length;
-    else if (e.key === 'ArrowLeft') nextIndex = (currentIndex - 1 + RIGHT_TABS.length) % RIGHT_TABS.length;
+    else if (e.key === 'ArrowLeft')
+      nextIndex = (currentIndex - 1 + RIGHT_TABS.length) % RIGHT_TABS.length;
     else if (e.key === 'Home') nextIndex = 0;
     else if (e.key === 'End') nextIndex = RIGHT_TABS.length - 1;
 
@@ -153,9 +154,7 @@
             >
               Cancel
             </button>
-            <button type="submit" class="modal-btn confirm">
-              Add Player
-            </button>
+            <button type="submit" class="modal-btn confirm"> Add Player </button>
           </div>
         </form>
       </div>
@@ -180,11 +179,7 @@
         {#if rollState.mode === 'quick'}
           <QuickResultPanel />
         {:else}
-          <div
-            class="right-panel-tabs"
-            role="tablist"
-            aria-label="Series analysis views"
-          >
+          <div class="right-panel-tabs" role="tablist" aria-label="Series analysis views">
             <button
               id="tab-scoreboard"
               type="button"
@@ -315,7 +310,13 @@
     --accent-blue: #38bdf8;
     --text-primary: #f9fafb;
     --text-secondary: #9ca3af;
-    font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    font-family:
+      system-ui,
+      -apple-system,
+      BlinkMacSystemFont,
+      'Segoe UI',
+      Roboto,
+      sans-serif;
   }
 
   :global(body) {
@@ -421,6 +422,7 @@
     font-weight: 800;
     background: linear-gradient(135deg, #38bdf8 0%, #818cf8 100%);
     -webkit-background-clip: text;
+    background-clip: text;
     -webkit-text-fill-color: transparent;
     letter-spacing: -0.02em;
   }
@@ -742,7 +744,9 @@
     font-weight: 600;
     text-decoration: none;
     border-radius: 0.25rem;
-    transition: color 0.15s ease, text-decoration-color 0.15s ease;
+    transition:
+      color 0.15s ease,
+      text-decoration-color 0.15s ease;
   }
 
   .footer-link:hover {
@@ -801,7 +805,10 @@
     }
   }
 
-  a:focus-visible, button:focus-visible, select:focus-visible, input:focus-visible {
+  a:focus-visible,
+  button:focus-visible,
+  select:focus-visible,
+  input:focus-visible {
     outline: 2px solid var(--accent-blue);
     outline-offset: 2px;
   }

@@ -3,7 +3,13 @@ import { ALLOWED_FACES, type DieFaces, type RollConfig } from './types';
 export type RandomSource = (buf: Uint32Array) => Uint32Array;
 
 const defaultRandomSource: RandomSource = (buf: Uint32Array): Uint32Array => {
-  globalThis.crypto.getRandomValues(buf as any);
+  if (buf.buffer instanceof ArrayBuffer) {
+    globalThis.crypto.getRandomValues(new Uint32Array(buf.buffer, buf.byteOffset, buf.length));
+  } else {
+    const tmp = new Uint32Array(buf.length);
+    globalThis.crypto.getRandomValues(tmp);
+    buf.set(tmp);
+  }
   return buf;
 };
 
@@ -14,7 +20,7 @@ export function validateRollConfig(config: RollConfig): void {
 
   if (!ALLOWED_FACES.includes(config.faces)) {
     throw new Error(
-      `Invalid faces count: ${config.faces}. Allowed values are: ${ALLOWED_FACES.join(', ')}`
+      `Invalid faces count: ${config.faces}. Allowed values are: ${ALLOWED_FACES.join(', ')}`,
     );
   }
 
@@ -24,7 +30,7 @@ export function validateRollConfig(config: RollConfig): void {
     config.countPerRoll > 10
   ) {
     throw new Error(
-      `Invalid countPerRoll: ${config.countPerRoll}. Must be an integer between 1 and 10`
+      `Invalid countPerRoll: ${config.countPerRoll}. Must be an integer between 1 and 10`,
     );
   }
 
@@ -34,7 +40,7 @@ export function validateRollConfig(config: RollConfig): void {
     config.seriesLength > 21
   ) {
     throw new Error(
-      `Invalid seriesLength: ${config.seriesLength}. Must be an integer between 1 and 21`
+      `Invalid seriesLength: ${config.seriesLength}. Must be an integer between 1 and 21`,
     );
   }
 
@@ -49,7 +55,7 @@ export function rollCryptoFair(
 ): number {
   if (!ALLOWED_FACES.includes(faces)) {
     throw new Error(
-      `Invalid faces count: ${faces}. Allowed values are: ${ALLOWED_FACES.join(', ')}`
+      `Invalid faces count: ${faces}. Allowed values are: ${ALLOWED_FACES.join(', ')}`,
     );
   }
 
@@ -74,9 +80,5 @@ export function rollBatchCryptoFair(
     throw new Error(`Count must be a non-negative integer, received: ${count}`);
   }
 
-  const results = new Array<number>(count);
-  for (let i = 0; i < count; i++) {
-    results[i] = rollCryptoFair(faces, randomSource);
-  }
-  return results;
+  return Array.from({ length: count }, () => rollCryptoFair(faces, randomSource));
 }

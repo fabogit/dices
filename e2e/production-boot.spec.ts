@@ -2,7 +2,9 @@ import { test, expect } from '@playwright/test';
 import pkg from '../package.json' with { type: 'json' };
 
 test.describe('Production Boot & Baseline Sanity', () => {
-  test('boots without console errors, renders correct title, favicon, and 3D canvas', async ({ page }) => {
+  test('boots without console errors, renders correct title, favicon, and 3D canvas', async ({
+    page,
+  }) => {
     const consoleErrors: string[] = [];
     const pageErrors: Error[] = [];
 

@@ -20,6 +20,11 @@ import {
   type RoundResult,
 } from '../index';
 
+const zeroMinMock = (buf: Uint32Array): Uint32Array => {
+  buf[0] = 0;
+  return buf;
+};
+
 describe('validateRollConfig', () => {
   const validBaseConfig: RollConfig = {
     faces: 6,
@@ -34,7 +39,7 @@ describe('validateRollConfig', () => {
         validateRollConfig({
           ...validBaseConfig,
           faces,
-        })
+        }),
       ).not.toThrow();
     }
   });
@@ -46,7 +51,7 @@ describe('validateRollConfig', () => {
         validateRollConfig({
           ...validBaseConfig,
           faces,
-        })
+        }),
       ).toThrow(/Invalid faces count/i);
     }
   });
@@ -56,14 +61,14 @@ describe('validateRollConfig', () => {
       validateRollConfig({
         ...validBaseConfig,
         countPerRoll: 2.5,
-      })
+      }),
     ).toThrow(/Invalid countPerRoll/i);
 
     expect(() =>
       validateRollConfig({
         ...validBaseConfig,
         seriesLength: 4.8,
-      })
+      }),
     ).toThrow(/Invalid seriesLength/i);
   });
 
@@ -72,14 +77,14 @@ describe('validateRollConfig', () => {
       validateRollConfig({
         ...validBaseConfig,
         countPerRoll: NaN,
-      })
+      }),
     ).toThrow(/Invalid countPerRoll/i);
 
     expect(() =>
       validateRollConfig({
         ...validBaseConfig,
         seriesLength: Infinity,
-      })
+      }),
     ).toThrow(/Invalid seriesLength/i);
   });
 
@@ -88,21 +93,21 @@ describe('validateRollConfig', () => {
       validateRollConfig({
         ...validBaseConfig,
         countPerRoll: 0,
-      })
+      }),
     ).toThrow(/Invalid countPerRoll/i);
 
     expect(() =>
       validateRollConfig({
         ...validBaseConfig,
         countPerRoll: -1,
-      })
+      }),
     ).toThrow(/Invalid countPerRoll/i);
 
     expect(() =>
       validateRollConfig({
         ...validBaseConfig,
         countPerRoll: 11,
-      })
+      }),
     ).toThrow(/Invalid countPerRoll/i);
   });
 
@@ -111,21 +116,21 @@ describe('validateRollConfig', () => {
       validateRollConfig({
         ...validBaseConfig,
         seriesLength: 0,
-      })
+      }),
     ).toThrow(/Invalid seriesLength/i);
 
     expect(() =>
       validateRollConfig({
         ...validBaseConfig,
         seriesLength: -5,
-      })
+      }),
     ).toThrow(/Invalid seriesLength/i);
 
     expect(() =>
       validateRollConfig({
         ...validBaseConfig,
         seriesLength: 22,
-      })
+      }),
     ).toThrow(/Invalid seriesLength/i);
   });
 
@@ -134,20 +139,20 @@ describe('validateRollConfig', () => {
       validateRollConfig({
         ...validBaseConfig,
         playerId: '',
-      })
+      }),
     ).toThrow(/playerId must be a non-empty string/i);
 
     expect(() =>
       validateRollConfig({
         ...validBaseConfig,
         playerId: '    ',
-      })
+      }),
     ).toThrow(/playerId must be a non-empty string/i);
   });
 
   it('rejects non-object configurations', () => {
     expect(() => validateRollConfig(null as unknown as RollConfig)).toThrow(
-      /Roll configuration must be a valid object/i
+      /Roll configuration must be a valid object/i,
     );
   });
 });
@@ -174,11 +179,7 @@ describe('rollCryptoFair and rollBatchCryptoFair', () => {
 
   it('maps boundary values correctly', () => {
     // Minimum value: rand = 0 -> (0 % 20) + 1 = 1
-    const minMock = (buf: Uint32Array): Uint32Array => {
-      buf[0] = 0;
-      return buf;
-    };
-    expect(rollCryptoFair(20, minMock)).toBe(1);
+    expect(rollCryptoFair(20, zeroMinMock)).toBe(1);
 
     // Maximum accepted value for d6: limit - 1 = 4294967291 -> (4294967291 % 6) + 1 = 5 + 1 = 6
     const limitD6 = Math.floor(0x100000000 / 6) * 6;
@@ -964,4 +965,3 @@ describe('computeQuickRollSessionStats', () => {
     expect(emptySession.insight).toContain('No d12 rolls');
   });
 });
-

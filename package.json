@@ -1,15 +1,10 @@
 {
   "name": "dices",
-  "private": true,
   "version": "1.0.2",
+  "private": true,
   "license": "MIT",
   "author": "fabogit",
   "type": "module",
-  "packageManager": "pnpm@11.21.0",
-  "engines": {
-    "node": ">=26.13.1",
-    "pnpm": ">=11.21.0"
-  },
   "scripts": {
     "dev": "vite",
     "build": "vite build",
@@ -18,7 +13,12 @@
     "test:coverage": "vitest run --coverage",
     "test:e2e": "playwright test",
     "test:e2e:guard": "node scripts/check-e2e-selectors.mjs",
-    "check": "tsc --noEmit"
+    "lint": "oxlint --type-aware --deny-warnings",
+    "format": "oxfmt --write",
+    "format:check": "oxfmt --check",
+    "check:types": "tsc --noEmit",
+    "check:svelte": "svelte-check --tsconfig ./tsconfig.json --fail-on-warnings",
+    "check": "pnpm run check:types && pnpm run check:svelte && pnpm run lint && pnpm run format:check"
   },
   "dependencies": {
     "three": "^0.187.0"
@@ -28,9 +28,18 @@
     "@sveltejs/vite-plugin-svelte": "^5.0.0",
     "@types/three": "^0.187.0",
     "@vitest/coverage-v8": "^2.1.9",
+    "oxfmt": "^0.78.0",
+    "oxlint": "^1.93.0",
+    "oxlint-tsgolint": "^7.0.2007",
     "svelte": "^5.15.0",
-    "typescript": "^7.0.2",
+    "svelte-check": "^4.7.8",
+    "typescript": "^6.0.3",
     "vite": "^6.0.0",
     "vitest": "^2.1.0"
-  }
+  },
+  "engines": {
+    "node": ">=26.13.1",
+    "pnpm": ">=11.21.0"
+  },
+  "packageManager": "pnpm@11.21.0"
 }

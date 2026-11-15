@@ -1,14 +1,18 @@
 import { test, expect } from '@playwright/test';
 
 test.describe('Accessibility & Arena Toolbar (Issue #9)', () => {
-  test('verifies role="toolbar", keyboard focus traversal, and live region announcements', async ({ page }) => {
+  test('verifies role="toolbar", keyboard focus traversal, and live region announcements', async ({
+    page,
+  }) => {
     await page.goto('/');
 
     // Verify presence and accessibility label of the roll controls toolbar
     const toolbar = page.getByRole('toolbar', { name: 'Roll controls' });
     await expect(toolbar).toBeVisible();
 
-    const rollBtn = toolbar.getByRole('button', { name: /Roll Round|Roll \d+d\d+|Flip|Series Complete/ });
+    const rollBtn = toolbar.getByRole('button', {
+      name: /Roll Round|Roll \d+d\d+|Flip|Series Complete/,
+    });
     await expect(rollBtn).toBeVisible();
 
     // Verify keyboard focus traversal to skip link and within the toolbar
@@ -41,7 +45,7 @@ test.describe('Accessibility & Arena Toolbar (Issue #9)', () => {
 
     // Enable Fast mode and trigger a roll in Series mode to test round announcement
     const fastModeBtn = page.getByRole('button', { name: /Fast: (ON|OFF)/ });
-    if (!(await fastModeBtn.getAttribute('aria-pressed') === 'true')) {
+    if (!((await fastModeBtn.getAttribute('aria-pressed')) === 'true')) {
       await fastModeBtn.click();
     }
 

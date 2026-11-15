@@ -76,7 +76,7 @@ function collectSpecFiles(dir) {
     }
   }
 
-  return files.sort();
+  return files.toSorted((a, b) => (a < b ? -1 : a > b ? 1 : 0));
 }
 
 function runSelfTest() {

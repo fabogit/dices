@@ -12,7 +12,9 @@ test.describe('3D Arena Workflows, Animations & Multi-Instrument Sweep (Issue #1
     await expect(fastModeBtn).toHaveText(/Fast: OFF/i);
 
     const toolbar = page.getByRole('toolbar', { name: 'Roll controls' });
-    const rollBtn = toolbar.getByRole('button', { name: /Roll Round|Roll \d+d\d+|Flip|Series Complete/ });
+    const rollBtn = toolbar.getByRole('button', {
+      name: /Roll Round|Roll \d+d\d+|Flip|Series Complete/,
+    });
 
     // Click Roll Round in series mode
     await rollBtn.click();
@@ -34,7 +36,9 @@ test.describe('3D Arena Workflows, Animations & Multi-Instrument Sweep (Issue #1
     ).toHaveText('Round 1 of 3');
   });
 
-  test('completes auto-roll series and tests mid-series auto-roll cancellation', async ({ page }) => {
+  test('completes auto-roll series and tests mid-series auto-roll cancellation', async ({
+    page,
+  }) => {
     await page.goto('/');
 
     const fastModeBtn = page.getByRole('button', { name: /Fast: (ON|OFF)/ });
@@ -46,7 +50,9 @@ test.describe('3D Arena Workflows, Animations & Multi-Instrument Sweep (Issue #1
     await page.getByRole('button', { name: 'Bo3 (3)' }).click();
 
     const toolbar = page.getByRole('toolbar', { name: 'Roll controls' });
-    const rollBtn = toolbar.getByRole('button', { name: /Roll Round|Roll \d+d\d+|Flip|Series Complete/ });
+    const rollBtn = toolbar.getByRole('button', {
+      name: /Roll Round|Roll \d+d\d+|Flip|Series Complete/,
+    });
     const autoRollBtn = page.getByRole('button', { name: /Auto-Roll Series/i });
     const resetBtn = toolbar.getByRole('button', { name: /Reset/ });
 
@@ -89,7 +95,9 @@ test.describe('3D Arena Workflows, Animations & Multi-Instrument Sweep (Issue #1
     expect(roundCount).toMatch(/Round [1-4] of 5/);
   });
 
-  test('sweeps all 7 instruments without console errors, tests steppers, and toggles arena collapse', async ({ page }) => {
+  test('sweeps all 7 instruments without console errors, tests steppers, and toggles arena collapse', async ({
+    page,
+  }) => {
     const consoleErrors: string[] = [];
     page.on('console', (msg) => {
       if (msg.type() === 'error') {
@@ -110,7 +118,10 @@ test.describe('3D Arena Workflows, Animations & Multi-Instrument Sweep (Issue #1
     }
 
     // Switch to Quick Roll mode
-    await page.getByRole('group', { name: 'Application mode' }).getByRole('button', { name: /Quick Roll/i }).click();
+    await page
+      .getByRole('group', { name: 'Application mode' })
+      .getByRole('button', { name: /Quick Roll/i })
+      .click();
 
     const instruments = [
       { name: /Coin \(d2\)/i, faces: 2, badge: 'Coin' },
@@ -123,7 +134,9 @@ test.describe('3D Arena Workflows, Animations & Multi-Instrument Sweep (Issue #1
     ];
 
     const toolbar = page.getByRole('toolbar', { name: 'Roll controls' });
-    const rollBtn = toolbar.getByRole('button', { name: /Roll Round|Roll \d+d\d+|Flip|Series Complete/ });
+    const rollBtn = toolbar.getByRole('button', {
+      name: /Roll Round|Roll \d+d\d+|Flip|Series Complete/,
+    });
 
     for (const inst of instruments) {
       await page.getByRole('radio', { name: inst.name }).click();
@@ -164,7 +177,10 @@ test.describe('3D Arena Workflows, Animations & Multi-Instrument Sweep (Issue #1
     await expect(quantitySlider).toHaveValue('1');
 
     // Switch back to Series Mode and test Series Rounds steppers
-    await page.getByRole('group', { name: 'Application mode' }).getByRole('button', { name: /Series/i }).click();
+    await page
+      .getByRole('group', { name: 'Application mode' })
+      .getByRole('button', { name: /Series/i })
+      .click();
     const seriesInput = page.getByRole('spinbutton', { name: /Custom series length/ });
     await page.getByRole('button', { name: 'Single (1)' }).click();
     await expect(seriesInput).toHaveValue('1');

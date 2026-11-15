@@ -113,13 +113,19 @@
           <div class="hud-bottom">
             <div class="results-hud-card">
               <span class="results-title">
-                {rollState.mode === 'quick' ? 'Quick Roll:' : `Round #${currentRoll.roundIndex + 1}:`}
+                {rollState.mode === 'quick'
+                  ? 'Quick Roll:'
+                  : `Round #${currentRoll.roundIndex + 1}:`}
               </span>
 
               <div class="hud-values-row">
                 {#each currentRoll.values as val, idx (idx)}
                   {#if rollState.faces === 2}
-                    <span class="hud-value-badge coin" class:heads={val === 1} class:tails={val === 2}>
+                    <span
+                      class="hud-value-badge coin"
+                      class:heads={val === 1}
+                      class:tails={val === 2}
+                    >
                       {val === 1 ? 'HEADS' : 'TAILS'}
                     </span>
                   {:else}
@@ -193,7 +199,9 @@
             }
           }}
         >
-          {rollState.isAutoRolling ? '⏹ Stop Auto-Roll' : `⚡ Auto-Roll Series (${rollState.seriesLength})`}
+          {rollState.isAutoRolling
+            ? '⏹ Stop Auto-Roll'
+            : `⚡ Auto-Roll Series (${rollState.seriesLength})`}
         </button>
 
         <button
@@ -207,11 +215,7 @@
       {/if}
 
       {#if rollState.isRolling && !rollState.instantMode}
-        <button
-          type="button"
-          class="action-btn btn-skip"
-          onclick={() => rollState.skipAnimation()}
-        >
+        <button type="button" class="action-btn btn-skip" onclick={() => rollState.skipAnimation()}>
           ⏩ Skip Animation
         </button>
       {/if}
@@ -355,9 +359,15 @@
     border-radius: 50%;
   }
 
-  .status-dot.green { background: #10b981; }
-  .status-dot.blue { background: #38bdf8; }
-  .status-dot.gray { background: #6b7280; }
+  .status-dot.green {
+    background: #10b981;
+  }
+  .status-dot.blue {
+    background: #38bdf8;
+  }
+  .status-dot.gray {
+    background: #6b7280;
+  }
 
   .instant-badge {
     background: rgba(124, 58, 237, 0.25);
@@ -456,7 +466,11 @@
   .primary-btn {
     flex: 2;
     min-inline-size: 130px;
-    background: linear-gradient(135deg, var(--primary-blue, #0369a1) 0%, var(--primary-blue-dark, #075985) 100%);
+    background: linear-gradient(
+      135deg,
+      var(--primary-blue, #0369a1) 0%,
+      var(--primary-blue-dark, #075985) 100%
+    );
     border: 1px solid #38bdf8;
     color: #ffffff;
     box-shadow: 0 4px 12px rgba(3, 105, 161, 0.35);
@@ -496,13 +510,19 @@
     background: rgba(202, 138, 4, 0.15);
   }
 
-  .btn-clear-quick, .btn-reset-series {
+  .btn-clear-quick,
+  .btn-reset-series {
     flex: 0 1 auto;
   }
 
   @keyframes pulse {
-    0%, 100% { opacity: 1; }
-    50% { opacity: 0.8; }
+    0%,
+    100% {
+      opacity: 1;
+    }
+    50% {
+      opacity: 0.8;
+    }
   }
 
   button:focus-visible {

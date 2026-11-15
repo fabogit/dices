@@ -7,11 +7,7 @@ import {
   type RoundResult,
   type SeriesSummary,
 } from '../core/types';
-import {
-  computePlayerLeaderboard,
-  computeRoundResult,
-  RollSeriesEngine,
-} from '../core/engine';
+import { computePlayerLeaderboard, computeRoundResult, RollSeriesEngine } from '../core/engine';
 import { LocalCryptoRollProvider } from '../core/provider';
 import type { DiceArena3D } from '../three/DiceArena3D';
 
@@ -62,9 +58,7 @@ export class RollState {
   seriesLength: number = $state(3);
 
   // Players
-  players: Player[] = $state([
-    { id: 'player-1', name: 'Player 1', color: '#38bdf8' },
-  ]);
+  players: Player[] = $state([{ id: 'player-1', name: 'Player 1', color: '#38bdf8' }]);
   activePlayerId: string = $state('player-1');
 
   // Animation & Execution States
@@ -113,8 +107,8 @@ export class RollState {
       };
       if (typeof mediaQuery.addEventListener === 'function') {
         mediaQuery.addEventListener('change', listener);
-      } else if (typeof (mediaQuery as any).addListener === 'function') {
-        (mediaQuery as any).addListener(listener);
+      } else if (typeof mediaQuery.addListener === 'function') {
+        mediaQuery.addListener(listener);
       }
     }
   }

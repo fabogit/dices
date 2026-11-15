@@ -1,9 +1,6 @@
 <script lang="ts">
   import { rollState } from './rollState.svelte';
-  import {
-    computeQuickRollSessionStats,
-    computeQuickRollStats,
-  } from '../core/engine';
+  import { computeQuickRollSessionStats, computeQuickRollStats } from '../core/engine';
 
   let isCollapsed = $state(false);
 
@@ -74,24 +71,28 @@
             </div>
 
             <!-- Proportional Coin Split Bar -->
-            <div class="coin-bar-track" role="img" aria-label="Split: {stats.headsPercentage?.toFixed(0)}% Heads, {stats.tailsPercentage?.toFixed(0)}% Tails">
-              <div
-                class="coin-bar-heads"
-                style:width="{stats.headsPercentage ?? 0}%"
-              ></div>
-              <div
-                class="coin-bar-tails"
-                style:width="{stats.tailsPercentage ?? 0}%"
-              ></div>
+            <div
+              class="coin-bar-track"
+              role="img"
+              aria-label="Split: {stats.headsPercentage?.toFixed(
+                0,
+              )}% Heads, {stats.tailsPercentage?.toFixed(0)}% Tails"
+            >
+              <div class="coin-bar-heads" style:width="{stats.headsPercentage ?? 0}%"></div>
+              <div class="coin-bar-tails" style:width="{stats.tailsPercentage ?? 0}%"></div>
             </div>
 
             <div class="coin-counts-row">
               <span class="coin-count-stat heads-color">
-                Heads: <strong>{stats.headsCount ?? 0}</strong> ({stats.headsPercentage?.toFixed(0)}%)
+                Heads: <strong>{stats.headsCount ?? 0}</strong> ({stats.headsPercentage?.toFixed(
+                  0,
+                )}%)
               </span>
               <span class="stat-bullet">•</span>
               <span class="coin-count-stat tails-color">
-                Tails: <strong>{stats.tailsCount ?? 0}</strong> ({stats.tailsPercentage?.toFixed(0)}%)
+                Tails: <strong>{stats.tailsCount ?? 0}</strong> ({stats.tailsPercentage?.toFixed(
+                  0,
+                )}%)
               </span>
             </div>
 
@@ -126,7 +127,9 @@
                 class:pos={(stats.sumDelta ?? 0) >= 0}
                 class:neg={(stats.sumDelta ?? 0) < 0}
               >
-                Δ: <strong>{(stats.sumDelta ?? 0) >= 0 ? '+' : ''}{stats.sumDelta?.toFixed(1)}</strong>
+                Δ: <strong
+                  >{(stats.sumDelta ?? 0) >= 0 ? '+' : ''}{stats.sumDelta?.toFixed(1)}</strong
+                >
               </span>
               {#if latest.values.length > 1}
                 <span class="stat-bullet">•</span>
@@ -166,7 +169,8 @@
             Session Summary ({rollState.faces === 2 ? 'Coin d2' : `d${rollState.faces}`})
           </span>
           <span class="session-strip-count">
-            {sessionStats.matchingThrows} throws • {sessionStats.totalDiceCount} {rollState.faces === 2 ? 'coins' : 'dice'}
+            {sessionStats.matchingThrows} throws • {sessionStats.totalDiceCount}
+            {rollState.faces === 2 ? 'coins' : 'dice'}
           </span>
         </div>
 
@@ -190,7 +194,9 @@
               class:pos={(sessionStats.averageDelta ?? 0) >= 0}
               class:neg={(sessionStats.averageDelta ?? 0) < 0}
             >
-              {(sessionStats.averageDelta ?? 0) >= 0 ? '+' : ''}{sessionStats.averageDelta?.toFixed(2)} Δ
+              {(sessionStats.averageDelta ?? 0) >= 0 ? '+' : ''}{sessionStats.averageDelta?.toFixed(
+                2,
+              )} Δ
             </span>
             {#if (sessionStats.criticalMaxCount ?? 0) > 0}
               <span class="session-pill pill-crit">
@@ -257,7 +263,9 @@
                         </span>
                       {/each}
                     {:else}
-                      <span class="dice-values-string" data-testid="dice-values">{item.values.join(', ')}</span>
+                      <span class="dice-values-string" data-testid="dice-values"
+                        >{item.values.join(', ')}</span
+                      >
                     {/if}
                   </div>
                 </div>
@@ -392,6 +400,7 @@
     line-height: 1;
     background: linear-gradient(135deg, #ffffff 0%, #38bdf8 100%);
     -webkit-background-clip: text;
+    background-clip: text;
     -webkit-text-fill-color: transparent;
   }
 
