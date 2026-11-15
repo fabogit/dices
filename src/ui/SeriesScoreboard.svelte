@@ -234,8 +234,7 @@
             Statistical Breakdown ({rollState.faces === 2 ? 'Coin d2' : `d${rollState.faces}`})
           </svelte:element>
           <span class="dice-count-tag">
-            {analytics.totalDiceRolled}
-            {analytics.totalDiceRolled === 1 ? 'die rolled' : 'dice rolled'}
+            {`${analytics.totalDiceRolled} ${analytics.totalDiceRolled === 1 ? 'die' : 'dice'} rolled`}
           </span>
         </div>
         <button

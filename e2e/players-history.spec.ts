@@ -1,5 +1,11 @@
 import { test, expect } from '@playwright/test';
 
+declare global {
+  interface Window {
+    __setRandomQueue?: (vals: number[]) => void;
+  }
+}
+
 test.describe('Player Management, Leaderboard, & History Persistence (Issue #13)', () => {
   test('manages players, ranks leaderboard deterministically, persists to localStorage, and clears cleanly', async ({
     page,
@@ -7,7 +13,7 @@ test.describe('Player Management, Leaderboard, & History Persistence (Issue #13)
     // Inject deterministic random provider queue
     await page.addInitScript(() => {
       let queue: number[] = [];
-      (window as any).__setRandomQueue = (vals: number[]) => {
+      window.__setRandomQueue = (vals: number[]) => {
         queue = [...vals];
       };
       const originalGetRandomValues = window.crypto.getRandomValues.bind(window.crypto);
@@ -80,7 +86,7 @@ test.describe('Player Management, Leaderboard, & History Persistence (Issue #13)
     await page.getByRole('button', { name: 'Single (1)' }).click();
     await page.getByRole('button', { name: 'Increase quantity' }).click(); // 2 dice
 
-    await page.evaluate((vals) => (window as any).__setRandomQueue(vals), [5, 5]);
+    await page.evaluate((vals) => window.__setRandomQueue?.(vals), [5, 5]);
     await rollBtn.click();
     await expect(rollBtn).toHaveText(/Series Complete/i);
 
@@ -88,7 +94,7 @@ test.describe('Player Management, Leaderboard, & History Persistence (Issue #13)
     // (0 % 6) + 1 = 1
     await playerSelect.selectOption({ label: 'Player 1' });
     await page.getByRole('button', { name: 'Single (1)' }).click(); // Ensure 1 round
-    await page.evaluate((vals) => (window as any).__setRandomQueue(vals), [0, 0]);
+    await page.evaluate((vals) => window.__setRandomQueue?.(vals), [0, 0]);
     await rollBtn.click();
     await expect(rollBtn).toHaveText(/Series Complete/i);
 
@@ -101,7 +107,7 @@ test.describe('Player Management, Leaderboard, & History Persistence (Issue #13)
     await page.getByRole('button', { name: 'Decrease quantity' }).click();
     await expect(page.getByRole('slider', { name: /Quantity Per Roll/ })).toHaveValue('1');
 
-    await page.evaluate((vals) => (window as any).__setRandomQueue(vals), [0]);
+    await page.evaluate((vals) => window.__setRandomQueue?.(vals), [0]);
     await rollBtn.click();
     await expect(rollBtn).toHaveText(/Series Complete/i);
 

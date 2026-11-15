@@ -3,7 +3,13 @@ import { ALLOWED_FACES, type DieFaces, type RollConfig } from './types';
 export type RandomSource = (buf: Uint32Array) => Uint32Array;
 
 const defaultRandomSource: RandomSource = (buf: Uint32Array): Uint32Array => {
-  globalThis.crypto.getRandomValues(buf as any);
+  if (buf.buffer instanceof ArrayBuffer) {
+    globalThis.crypto.getRandomValues(new Uint32Array(buf.buffer, buf.byteOffset, buf.length));
+  } else {
+    const tmp = new Uint32Array(buf.length);
+    globalThis.crypto.getRandomValues(tmp);
+    buf.set(tmp);
+  }
   return buf;
 };
 
@@ -74,9 +80,5 @@ export function rollBatchCryptoFair(
     throw new Error(`Count must be a non-negative integer, received: ${count}`);
   }
 
-  const results = new Array<number>(count);
-  for (let i = 0; i < count; i++) {
-    results[i] = rollCryptoFair(faces, randomSource);
-  }
-  return results;
+  return Array.from({ length: count }, () => rollCryptoFair(faces, randomSource));
 }

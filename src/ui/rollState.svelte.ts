@@ -107,8 +107,8 @@ export class RollState {
       };
       if (typeof mediaQuery.addEventListener === 'function') {
         mediaQuery.addEventListener('change', listener);
-      } else if (typeof (mediaQuery as any).addListener === 'function') {
-        (mediaQuery as any).addListener(listener);
+      } else if (typeof mediaQuery.addListener === 'function') {
+        mediaQuery.addListener(listener);
       }
     }
   }

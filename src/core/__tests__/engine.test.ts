@@ -20,6 +20,11 @@ import {
   type RoundResult,
 } from '../index';
 
+const zeroMinMock = (buf: Uint32Array): Uint32Array => {
+  buf[0] = 0;
+  return buf;
+};
+
 describe('validateRollConfig', () => {
   const validBaseConfig: RollConfig = {
     faces: 6,
@@ -174,11 +179,7 @@ describe('rollCryptoFair and rollBatchCryptoFair', () => {
 
   it('maps boundary values correctly', () => {
     // Minimum value: rand = 0 -> (0 % 20) + 1 = 1
-    const minMock = (buf: Uint32Array): Uint32Array => {
-      buf[0] = 0;
-      return buf;
-    };
-    expect(rollCryptoFair(20, minMock)).toBe(1);
+    expect(rollCryptoFair(20, zeroMinMock)).toBe(1);
 
     // Maximum accepted value for d6: limit - 1 = 4294967291 -> (4294967291 % 6) + 1 = 5 + 1 = 6
     const limitD6 = Math.floor(0x100000000 / 6) * 6;

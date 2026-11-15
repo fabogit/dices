@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { RollState } from '../rollState.svelte';
 
 describe('RollState Controller', () => {
@@ -319,7 +319,25 @@ describe('RollState Controller', () => {
   });
 
   it('handles corrupt localStorage or non-array payloads safely', () => {
-    if (typeof localStorage !== 'undefined') {
+    const store = new Map<string, string>();
+    vi.stubGlobal('localStorage', {
+      getItem: (key: string) => store.get(key) ?? null,
+      setItem: (key: string, value: string) => {
+        store.set(key, value);
+      },
+      removeItem: (key: string) => {
+        store.delete(key);
+      },
+      clear: () => {
+        store.clear();
+      },
+      key: (index: number) => Array.from(store.keys())[index] ?? null,
+      get length() {
+        return store.size;
+      },
+    });
+
+    try {
       localStorage.setItem('dices_history_v1', 'invalid-json{{');
       const stateFromCorrupt = new RollState();
       expect(stateFromCorrupt.history).toEqual([]);
@@ -329,6 +347,8 @@ describe('RollState Controller', () => {
       expect(stateFromObject.history).toEqual([]);
 
       localStorage.removeItem('dices_history_v1');
+    } finally {
+      vi.unstubAllGlobals();
     }
   });
 });
