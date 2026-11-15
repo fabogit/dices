@@ -300,90 +300,6 @@
 </div>
 
 <style>
-  :global(:root) {
-    color-scheme: dark;
-    --bg-dark: #090d16;
-    --surface-dark: #111827;
-    --border-color: rgba(75, 85, 99, 0.4);
-    --primary-blue: #0369a1;
-    --primary-blue-dark: #075985;
-    --accent-blue: #38bdf8;
-    --text-primary: #f9fafb;
-    --text-secondary: #9ca3af;
-    font-family:
-      system-ui,
-      -apple-system,
-      BlinkMacSystemFont,
-      'Segoe UI',
-      Roboto,
-      sans-serif;
-  }
-
-  :global(body) {
-    margin: 0;
-    padding: 0;
-    background-color: var(--bg-dark);
-    color: var(--text-primary);
-    min-height: 100vh;
-  }
-
-  /* Visually Hidden Utility - Modern Web Guidance */
-  :global(.sr-only:where(:not(:focus-within, :active))) {
-    position: absolute !important;
-    clip-path: inset(50%) !important;
-    overflow: hidden !important;
-    width: 1px !important;
-    height: 1px !important;
-    margin: -1px !important;
-    padding: 0 !important;
-    border: 0 !important;
-    white-space: nowrap !important;
-  }
-
-  :global(.collapse-toggle-btn) {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.35rem;
-    padding: 0.25rem 0.6rem;
-    min-block-size: 28px;
-    background: #1f2937;
-    border: 1px solid #374151;
-    border-radius: 0.375rem;
-    color: var(--text-secondary);
-    font-size: 0.75rem;
-    font-weight: 600;
-    cursor: pointer;
-    transition: all 0.15s ease;
-  }
-
-  :global(.collapse-toggle-btn:hover) {
-    background: #374151;
-    color: #f3f4f6;
-  }
-
-  :global(.collapse-toggle-btn .chevron) {
-    font-size: 0.85rem;
-    color: var(--accent-blue);
-  }
-
-  .skip-link:focus-visible {
-    position: fixed !important;
-    top: 1rem !important;
-    left: 1rem !important;
-    z-index: 1000 !important;
-    background: var(--primary-blue) !important;
-    color: #ffffff !important;
-    padding: 0.6rem 1.2rem !important;
-    border-radius: 0.375rem !important;
-    outline: 3px solid #38bdf8 !important;
-    clip-path: none !important;
-    width: auto !important;
-    height: auto !important;
-    margin: 0 !important;
-    text-decoration: none !important;
-    font-weight: 700 !important;
-  }
-
   .app-layout {
     display: flex;
     flex-direction: column;
@@ -420,7 +336,7 @@
   .title-gradient {
     font-size: 1.5rem;
     font-weight: 800;
-    background: linear-gradient(135deg, #38bdf8 0%, #818cf8 100%);
+    background: linear-gradient(135deg, var(--accent-blue) 0%, var(--accent-indigo) 100%);
     -webkit-background-clip: text;
     background-clip: text;
     -webkit-text-fill-color: transparent;
@@ -442,8 +358,8 @@
 
   .mode-switch-group {
     display: inline-flex;
-    background: #111827;
-    border: 1px solid #374151;
+    background: var(--surface-dark);
+    border: 1px solid var(--border-subtle);
     border-radius: 0.5rem;
     padding: 2px;
   }
@@ -470,7 +386,7 @@
 
   .mode-btn.active {
     background: var(--primary-blue);
-    color: #ffffff;
+    color: var(--text-white);
     box-shadow: 0 2px 6px rgba(2, 132, 199, 0.4);
   }
 
@@ -488,8 +404,8 @@
   .player-select {
     padding: 0.35rem 0.65rem;
     min-block-size: 32px;
-    background: #1f2937;
-    border: 1px solid #4b5563;
+    background: var(--surface-elevated);
+    border: 1px solid var(--border-muted);
     border-radius: 0.375rem;
     color: var(--text-primary);
     font-size: 0.85rem;
@@ -501,7 +417,7 @@
     padding: 0.35rem 0.65rem;
     min-block-size: 32px;
     background: transparent;
-    border: 1px dashed #6b7280;
+    border: 1px dashed var(--border-dashed);
     border-radius: 0.375rem;
     color: var(--accent-blue);
     font-size: 0.8rem;
@@ -521,8 +437,8 @@
     gap: 0.35rem;
     padding: 0.35rem 0.75rem;
     min-block-size: 32px;
-    background: #1f2937;
-    border: 1px solid #4b5563;
+    background: var(--surface-elevated);
+    border: 1px solid var(--border-muted);
     border-radius: 0.375rem;
     color: var(--text-secondary);
     font-size: 0.8rem;
@@ -532,13 +448,13 @@
   }
 
   .instant-toggle-btn:hover {
-    background: #374151;
+    background: var(--surface-hover);
     color: var(--text-primary);
   }
 
   .instant-toggle-btn.active {
     background: rgba(124, 58, 237, 0.3);
-    border-color: #a78bfa;
+    border-color: var(--accent-violet);
     color: #f5f3ff;
   }
 
@@ -560,8 +476,8 @@
   }
 
   .modal-content {
-    background: #1f2937;
-    border: 1px solid #374151;
+    background: var(--surface-elevated);
+    border: 1px solid var(--border-subtle);
     border-radius: 0.75rem;
     padding: 1.5rem;
     width: 100%;
@@ -589,8 +505,8 @@
   .modal-input {
     padding: 0.5rem 0.75rem;
     min-block-size: 38px;
-    background: #111827;
-    border: 1px solid #4b5563;
+    background: var(--surface-dark);
+    border: 1px solid var(--border-muted);
     border-radius: 0.375rem;
     color: var(--text-primary);
     font-size: 0.95rem;
@@ -614,14 +530,14 @@
 
   .modal-btn.cancel {
     background: transparent;
-    border: 1px solid #4b5563;
+    border: 1px solid var(--border-muted);
     color: var(--text-secondary);
   }
 
   .modal-btn.confirm {
     background: var(--primary-blue);
     border: 1px solid var(--accent-blue);
-    color: #ffffff;
+    color: var(--text-white);
   }
 
   /* Main Grid Layout */
@@ -693,7 +609,7 @@
   .panel-tab-btn.active {
     background: var(--primary-blue);
     border-color: var(--accent-blue);
-    color: #ffffff;
+    color: var(--text-white);
   }
 
   .tab-badge {
@@ -701,13 +617,13 @@
     border-radius: 9999px;
     font-size: 0.68rem;
     font-weight: 700;
-    background: #1f2937;
+    background: var(--surface-elevated);
     color: var(--accent-blue);
   }
 
   .panel-tab-btn.active .tab-badge {
     background: rgba(255, 255, 255, 0.2);
-    color: #ffffff;
+    color: var(--text-white);
   }
 
   /* Semantic Footer */
@@ -718,7 +634,7 @@
     justify-content: space-between;
     gap: 0.75rem 1.5rem;
     padding: 0.85rem 1.5rem;
-    background: #0f1523;
+    background: var(--surface-footer);
     border-top: 1px solid var(--border-color);
     color: var(--text-secondary);
     font-size: 0.8rem;
@@ -732,7 +648,7 @@
   }
 
   .footer-sep {
-    color: #4b5563;
+    color: var(--border-muted);
   }
 
   .footer-link {
@@ -750,7 +666,7 @@
   }
 
   .footer-link:hover {
-    color: #7dd3fc;
+    color: var(--accent-blue-light);
     text-decoration: underline;
     text-underline-offset: 3px;
   }

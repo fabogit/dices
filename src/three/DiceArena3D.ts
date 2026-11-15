@@ -223,8 +223,9 @@ export class DiceArena3D {
   private handleResize(): void {
     if (this.isDisposed || !this.renderer) return;
     const container = this.canvas.parentElement ?? this.canvas;
-    const width = container.clientWidth || 640;
-    const height = container.clientHeight || 360;
+    const width = container.clientWidth;
+    const height = container.clientHeight;
+    if (width === 0 || height === 0) return;
     const aspect = width / height;
     const zoomOut = aspect < 1.25 ? 1.25 / Math.max(0.55, aspect) : 1;
     this.camera.aspect = aspect;

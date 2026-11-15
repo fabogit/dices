@@ -4,6 +4,10 @@ export type DieFaces = (typeof ALLOWED_FACES)[number];
 
 export type CoinSide = 'HEADS' | 'TAILS';
 
+export type SampleReliability = 'empty' | 'small' | 'moderate' | 'solid';
+
+export type DeltaDirection = 'positive' | 'negative' | 'neutral';
+
 export interface Player {
   id: string;
   name: string;
@@ -18,6 +22,7 @@ export interface RollConfig {
 }
 
 export interface RoundResult {
+  id: string;
   roundIndex: number;
   values: number[];
   sum: number;
@@ -43,6 +48,10 @@ export interface FaceDistributionEntry {
   percentage: number;
   expectedPercentage: number;
   deltaPercentage: number;
+  barWidthPercentage: number;
+  expectedMarkerPercentage: number;
+  deltaDirection: DeltaDirection;
+  isHot: boolean;
 }
 
 export interface CoinSeriesStats {
@@ -55,6 +64,7 @@ export interface CoinSeriesStats {
   headsRoundsWon: number;
   tailsRoundsWon: number;
   tieRounds: number;
+  zQualitative: string;
 }
 
 export interface SeriesAnalytics {
@@ -64,7 +74,8 @@ export interface SeriesAnalytics {
   standardDeviation: number;
   theoreticalRoundStdDev: number;
   zScore: number;
-  sampleReliability: 'empty' | 'small' | 'moderate' | 'solid';
+  sampleReliability: SampleReliability;
+  sampleReliabilityLabel: string;
   distributionPeakPercentage: number;
   hottestFaces: number[];
   coldestFaces: number[];

@@ -10,7 +10,12 @@ export default mergeConfig(
       coverage: {
         provider: 'v8',
         reporter: ['text', 'html'],
-        include: ['src/core/**/*.ts', 'src/three/geometries.ts', 'src/ui/rollState.svelte.ts'],
+        include: [
+          'src/core/**/*.ts',
+          'src/lib/**/*.ts',
+          'src/three/geometries.ts',
+          'src/ui/rollState.svelte.ts',
+        ],
         thresholds: {
           statements: 90,
           branches: 85,

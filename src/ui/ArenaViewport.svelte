@@ -13,6 +13,20 @@
 
   onMount(() => {
     let destroyed = false;
+    let resizeObserver: ResizeObserver | null = null;
+    const resizeTarget = canvasElement.parentElement ?? canvasElement;
+
+    if (typeof ResizeObserver !== 'undefined') {
+      resizeObserver = new ResizeObserver((entries) => {
+        const hasVisibleSize = entries.some(
+          (entry) => entry.contentRect.width > 0 && entry.contentRect.height > 0,
+        );
+        if (hasVisibleSize) {
+          arena?.render();
+        }
+      });
+      resizeObserver.observe(resizeTarget);
+    }
 
     void (async () => {
       try {
@@ -34,6 +48,8 @@
 
     return () => {
       destroyed = true;
+      resizeObserver?.disconnect();
+      resizeObserver = null;
       if (arena) {
         arena.dispose();
         rollState.setArena(null);
@@ -44,11 +60,6 @@
 
   function toggleCollapse() {
     isCollapsed = !isCollapsed;
-    if (!isCollapsed && arena) {
-      setTimeout(() => {
-        arena?.render();
-      }, 50);
-    }
   }
 </script>
 
@@ -241,7 +252,7 @@
     margin: 0;
     font-size: 1.15rem;
     font-weight: 700;
-    color: #f3f4f6;
+    color: var(--text-heading);
   }
 
   .arena-body {
@@ -260,8 +271,12 @@
     width: 100%;
     height: 400px;
     max-height: 400px;
-    background: radial-gradient(circle at center, #111827 0%, #030712 100%);
-    border: 1px solid rgba(75, 85, 99, 0.4);
+    background: radial-gradient(
+      circle at center,
+      var(--surface-dark) 0%,
+      var(--surface-deepest) 100%
+    );
+    border: 1px solid var(--border-color);
     border-radius: 0.75rem;
     overflow: hidden;
   }
@@ -299,24 +314,24 @@
     display: flex;
     align-items: center;
     gap: 1rem;
-    background: #1f2937;
-    border: 1px solid #ef4444;
+    background: var(--surface-elevated);
+    border: 1px solid var(--color-danger-bold);
     border-radius: 0.5rem;
     padding: 1rem 1.25rem;
-    color: #f3f4f6;
+    color: var(--text-heading);
     max-width: 440px;
   }
 
   .context-loss-card h3 {
     margin: 0 0 0.25rem 0;
     font-size: 1rem;
-    color: #f87171;
+    color: var(--color-danger);
   }
 
   .context-loss-card p {
     margin: 0;
     font-size: 0.825rem;
-    color: #9ca3af;
+    color: var(--text-secondary);
   }
 
   .warning-icon {
@@ -349,7 +364,7 @@
     border-radius: 9999px;
     font-size: 0.8rem;
     font-weight: 600;
-    color: #e5e7eb;
+    color: var(--text-body);
     backdrop-filter: blur(4px);
   }
 
@@ -360,18 +375,18 @@
   }
 
   .status-dot.green {
-    background: #10b981;
+    background: var(--color-emerald-500);
   }
   .status-dot.blue {
-    background: #38bdf8;
+    background: var(--accent-blue);
   }
   .status-dot.gray {
-    background: #6b7280;
+    background: var(--border-dashed);
   }
 
   .instant-badge {
     background: rgba(124, 58, 237, 0.25);
-    border-color: #a78bfa;
+    border-color: var(--accent-violet);
     color: #c4b5fd;
   }
 
@@ -394,7 +409,7 @@
   .results-title {
     font-size: 0.825rem;
     font-weight: 600;
-    color: #9ca3af;
+    color: var(--text-secondary);
   }
 
   .hud-values-row {
@@ -410,32 +425,32 @@
   }
 
   .hud-value-badge.die {
-    background: #1e293b;
-    border: 1px solid #475569;
-    color: #38bdf8;
+    background: var(--surface-slate);
+    border: 1px solid var(--border-slate);
+    color: var(--accent-blue);
   }
 
   .hud-value-badge.coin.heads {
     background: rgba(234, 179, 8, 0.25);
-    border: 1px solid #eab308;
-    color: #fef08a;
+    border: 1px solid var(--color-yellow-500);
+    color: var(--color-gold-pale);
   }
 
   .hud-value-badge.coin.tails {
     background: rgba(148, 163, 184, 0.25);
-    border: 1px solid #94a3b8;
-    color: #f1f5f9;
+    border: 1px solid var(--text-muted);
+    color: var(--text-bright);
   }
 
   .hud-sum-badge {
     font-size: 0.825rem;
-    color: #d1d5db;
-    border-left: 1px solid #4b5563;
+    color: var(--text-light);
+    border-left: 1px solid var(--border-muted);
     padding-left: 0.75rem;
   }
 
   .hud-sum-badge strong {
-    color: #38bdf8;
+    color: var(--accent-blue);
   }
 
   /* Attached Roll Toolbar */
@@ -446,7 +461,7 @@
     gap: 0.5rem;
     padding: 0.65rem 0.75rem;
     background: rgba(17, 24, 39, 0.85);
-    border: 1px solid rgba(75, 85, 99, 0.4);
+    border: 1px solid var(--border-color);
     border-radius: 0.5rem;
   }
 
@@ -466,26 +481,22 @@
   .primary-btn {
     flex: 2;
     min-inline-size: 130px;
-    background: linear-gradient(
-      135deg,
-      var(--primary-blue, #0369a1) 0%,
-      var(--primary-blue-dark, #075985) 100%
-    );
-    border: 1px solid #38bdf8;
-    color: #ffffff;
+    background: linear-gradient(135deg, var(--primary-blue) 0%, var(--primary-blue-dark) 100%);
+    border: 1px solid var(--accent-blue);
+    color: var(--text-white);
     box-shadow: 0 4px 12px rgba(3, 105, 161, 0.35);
   }
 
   .primary-btn:hover:not(:disabled) {
-    background: linear-gradient(135deg, #075985 0%, #0c4a6e 100%);
+    background: linear-gradient(135deg, var(--primary-blue-dark) 0%, #0c4a6e 100%);
   }
 
   .secondary-btn {
     flex: 1;
     min-inline-size: 90px;
-    background: #1e293b;
-    border: 1px solid #475569;
-    color: #f1f5f9;
+    background: var(--surface-slate);
+    border: 1px solid var(--border-slate);
+    color: var(--text-bright);
   }
 
   .secondary-btn:hover:not(:disabled) {
@@ -495,14 +506,14 @@
   .secondary-btn.auto-active {
     background: #be123c;
     border-color: #f43f5e;
-    color: #ffffff;
+    color: var(--text-white);
     animation: pulse 1.5s infinite;
   }
 
   .btn-skip {
     background: transparent;
-    border: 1px solid #ca8a04;
-    color: #facc15;
+    border: 1px solid var(--color-yellow-600);
+    color: var(--color-gold);
     padding: 0.5rem 0.75rem;
   }
 
@@ -526,7 +537,7 @@
   }
 
   button:focus-visible {
-    outline: 2px solid #38bdf8;
+    outline: 2px solid var(--accent-blue);
     outline-offset: 2px;
   }
 

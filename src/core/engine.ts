@@ -3,6 +3,7 @@ import { LocalCryptoRollProvider, type IRollProvider } from './provider';
 import type {
   CoinSeriesStats,
   CoinSide,
+  DeltaDirection,
   DieFaces,
   FaceDistributionEntry,
   ModeStat,
@@ -12,15 +13,80 @@ import type {
   QuickRollStats,
   RollConfig,
   RoundResult,
+  SampleReliability,
   SeriesAnalytics,
   SeriesSummary,
 } from './types';
+
+let roundIdSequence = 0;
+
+function generateRoundId(timestamp: number): string {
+  roundIdSequence += 1;
+  const uuid = typeof crypto !== 'undefined' ? crypto.randomUUID?.() : undefined;
+  return uuid ?? `round-${timestamp}-${roundIdSequence}`;
+}
+
+const SAMPLE_RELIABILITY_LABELS: Record<SampleReliability, string> = {
+  empty: 'No Rolls',
+  small: 'Small sample (<10)',
+  moderate: 'Moderate sample (10–29)',
+  solid: 'Solid sample (30+)',
+};
+
+/**
+ * Returns the human-readable badge label for a series sample reliability tier.
+ */
+export function getSampleReliabilityLabel(reliability: SampleReliability): string {
+  return SAMPLE_RELIABILITY_LABELS[reliability];
+}
+
+/**
+ * Returns the qualitative verdict string for coin toss z-score balance deviation.
+ */
+export function getCoinZQualitative(zScore: number, sampleReliability: SampleReliability): string {
+  if (sampleReliability === 'empty') {
+    return 'No data';
+  }
+  if (Math.abs(zScore) < 1.0) {
+    return 'Within normal variance';
+  }
+  return zScore > 0 ? 'Heads-leaning' : 'Tails-leaning';
+}
+
+/**
+ * Classifies a percentage delta against a symmetric deadband threshold.
+ */
+export function classifyDelta(delta: number, threshold: number = 0.05): DeltaDirection {
+  if (delta > threshold) {
+    return 'positive';
+  }
+  if (delta < -threshold) {
+    return 'negative';
+  }
+  return 'neutral';
+}
+
+/**
+ * Resolves coin Heads/Tails counts and percentages with safe fallbacks for persisted summaries.
+ */
+export function getCoinSplitPercentages(
+  summary: Pick<SeriesSummary, 'analytics' | 'totalHeads' | 'totalTails'>,
+): { headsPct: number; tailsPct: number; headsCount: number; tailsCount: number } {
+  const coinStats = summary.analytics.coinStats;
+  const totalCoins = summary.analytics.totalDiceRolled || 1;
+  const headsCount = coinStats?.headsCount ?? summary.totalHeads ?? 0;
+  const tailsCount = coinStats?.tailsCount ?? summary.totalTails ?? 0;
+  const headsPct = coinStats ? coinStats.headsPercentage : (headsCount / totalCoins) * 100;
+  const tailsPct = coinStats ? coinStats.tailsPercentage : (tailsCount / totalCoins) * 100;
+  return { headsPct, tailsPct, headsCount, tailsCount };
+}
 
 export function computeRoundResult(
   roundIndex: number,
   values: number[],
   faces: DieFaces,
   timestamp: number = Date.now(),
+  id: string = generateRoundId(timestamp),
 ): RoundResult {
   const sum = values.reduce((acc, v) => acc + v, 0);
   const max = values.length > 0 ? Math.max(...values) : 0;
@@ -33,6 +99,7 @@ export function computeRoundResult(
       headsCount > tailsCount ? 'HEADS' : tailsCount > headsCount ? 'TAILS' : 'TIE';
 
     return {
+      id,
       roundIndex,
       values: [...values],
       sum,
@@ -46,6 +113,7 @@ export function computeRoundResult(
   }
 
   return {
+    id,
     roundIndex,
     values: [...values],
     sum,
@@ -226,7 +294,14 @@ export function computeSeriesAnalytics(config: RollConfig, rounds: RoundResult[]
   }
 
   const expectedPercentage = 100 / config.faces;
-  const distribution: FaceDistributionEntry[] = [];
+  const rawDistribution: Array<{
+    face: number;
+    label: string;
+    count: number;
+    percentage: number;
+    expectedPercentage: number;
+    deltaPercentage: number;
+  }> = [];
 
   for (let face = 1; face <= config.faces; face++) {
     const count = freqMap.get(face) ?? 0;
@@ -234,7 +309,7 @@ export function computeSeriesAnalytics(config: RollConfig, rounds: RoundResult[]
     const deltaPercentage = percentage - expectedPercentage;
     const label = config.faces === 2 ? (face === 1 ? 'HEADS' : 'TAILS') : `${face}`;
 
-    distribution.push({
+    rawDistribution.push({
       face,
       label,
       count,
@@ -246,11 +321,11 @@ export function computeSeriesAnalytics(config: RollConfig, rounds: RoundResult[]
 
   // Distribution peak percentage for proportional bar and expected-marker scaling
   const maxEmpiricalPercentage =
-    distribution.length > 0 ? Math.max(...distribution.map((d) => d.percentage)) : 0;
+    rawDistribution.length > 0 ? Math.max(...rawDistribution.map((d) => d.percentage)) : 0;
   const distributionPeakPercentage = Math.max(maxEmpiricalPercentage, expectedPercentage * 1.4, 1);
 
   // Sample reliability classification
-  let sampleReliability: 'empty' | 'small' | 'moderate' | 'solid' = 'empty';
+  let sampleReliability: SampleReliability = 'empty';
   if (totalDiceRolled === 0) {
     sampleReliability = 'empty';
   } else if (totalDiceRolled < 10) {
@@ -260,6 +335,7 @@ export function computeSeriesAnalytics(config: RollConfig, rounds: RoundResult[]
   } else {
     sampleReliability = 'solid';
   }
+  const sampleReliabilityLabel = getSampleReliabilityLabel(sampleReliability);
 
   // Standardized z-score calculation
   let zScore = 0;
@@ -280,15 +356,26 @@ export function computeSeriesAnalytics(config: RollConfig, rounds: RoundResult[]
   // Hottest and coldest faces
   let hottestFaces: number[] = [];
   let coldestFaces: number[] = [];
-  if (totalDiceRolled > 0 && distribution.length > 0) {
-    const counts = distribution.map((d) => d.count);
+  if (totalDiceRolled > 0 && rawDistribution.length > 0) {
+    const counts = rawDistribution.map((d) => d.count);
     const maxCount = Math.max(...counts);
     const minCount = Math.min(...counts);
     if (maxCount > minCount) {
-      hottestFaces = distribution.filter((d) => d.count === maxCount).map((d) => d.face);
-      coldestFaces = distribution.filter((d) => d.count === minCount).map((d) => d.face);
+      hottestFaces = rawDistribution.filter((d) => d.count === maxCount).map((d) => d.face);
+      coldestFaces = rawDistribution.filter((d) => d.count === minCount).map((d) => d.face);
     }
   }
+
+  const distribution: FaceDistributionEntry[] = rawDistribution.map((entry) => ({
+    ...entry,
+    barWidthPercentage: Math.min(100, (entry.percentage / distributionPeakPercentage) * 100),
+    expectedMarkerPercentage: Math.min(
+      100,
+      (entry.expectedPercentage / distributionPeakPercentage) * 100,
+    ),
+    deltaDirection: classifyDelta(entry.deltaPercentage, 0.05),
+    isHot: hottestFaces.includes(entry.face),
+  }));
 
   // Coin-specific statistics
   let coinStats: CoinSeriesStats | undefined = undefined;
@@ -313,6 +400,7 @@ export function computeSeriesAnalytics(config: RollConfig, rounds: RoundResult[]
       headsRoundsWon,
       tailsRoundsWon,
       tieRounds,
+      zQualitative: getCoinZQualitative(zScore, sampleReliability),
     };
   }
 
@@ -340,6 +428,7 @@ export function computeSeriesAnalytics(config: RollConfig, rounds: RoundResult[]
     theoreticalRoundStdDev,
     zScore,
     sampleReliability,
+    sampleReliabilityLabel,
     distributionPeakPercentage,
     hottestFaces,
     coldestFaces,

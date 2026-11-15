@@ -1,13 +1,7 @@
 <script lang="ts">
+  import { getCoinSplitPercentages } from '../core/engine';
+  import { dieLabel, formatTime } from '../lib/format';
   import { rollState } from './rollState.svelte';
-
-  function formatTime(timestamp: number): string {
-    return new Date(timestamp).toLocaleTimeString([], {
-      hour: '2-digit',
-      minute: '2-digit',
-      second: '2-digit',
-    });
-  }
 
   const leaderboard = $derived(rollState.leaderboard);
   let isCollapsed = $state(false);
@@ -136,7 +130,7 @@
 
                 <div class="series-config-desc">
                   <strong>
-                    {item.config.faces === 2 ? 'Coin d2' : `d${item.config.faces}`}
+                    {dieLabel(item.config.faces)}
                   </strong>
                   <span>
                     × {item.config.countPerRoll}
@@ -150,9 +144,7 @@
 
                 <div class="history-outcome">
                   {#if item.config.faces === 2}
-                    {@const totalCoins = item.analytics.totalDiceRolled || 1}
-                    {@const headsPct = ((item.totalHeads ?? 0) / totalCoins) * 100}
-                    {@const tailsPct = ((item.totalTails ?? 0) / totalCoins) * 100}
+                    {@const coinSplit = getCoinSplitPercentages(item)}
                     <div class="coin-outcome-block">
                       <span class="coin-outcome">
                         {#if item.coinSeriesWinner === 'TIE'}
@@ -164,8 +156,8 @@
                         {/if}
                       </span>
                       <span class="coin-history-pct" data-testid="history-coin-pct">
-                        {headsPct.toFixed(1)}% Heads / {tailsPct.toFixed(1)}% Tails ({item.totalHeads ??
-                          0}H / {item.totalTails ?? 0}T coins)
+                        {coinSplit.headsPct.toFixed(1)}% Heads / {coinSplit.tailsPct.toFixed(1)}%
+                        Tails ({coinSplit.headsCount}H / {coinSplit.tailsCount}T coins)
                       </span>
                     </div>
                   {:else}
@@ -191,8 +183,8 @@
     flex-direction: column;
     gap: 0.85rem;
     padding: 1.25rem;
-    background: rgba(17, 24, 39, 0.75);
-    border: 1px solid rgba(75, 85, 99, 0.4);
+    background: var(--surface-panel);
+    border: 1px solid var(--border-color);
     border-radius: 0.75rem;
     backdrop-filter: blur(8px);
   }
@@ -208,7 +200,7 @@
     margin: 0;
     font-size: 1.15rem;
     font-weight: 700;
-    color: #f3f4f6;
+    color: var(--text-heading);
   }
 
   .header-action-group {
@@ -231,23 +223,23 @@
     padding: 0.25rem 0.5rem;
     min-block-size: 28px;
     background: transparent;
-    border: 1px solid #4b5563;
+    border: 1px solid var(--border-muted);
     border-radius: 0.375rem;
     font-size: 0.75rem;
-    color: #9ca3af;
+    color: var(--text-secondary);
     cursor: pointer;
   }
 
   .clear-btn:hover {
-    background: #1f2937;
-    color: #f87171;
-    border-color: #ef4444;
+    background: var(--surface-elevated);
+    color: var(--color-danger);
+    border-color: var(--color-danger-bold);
   }
 
   .empty-history {
     margin: 0;
     font-size: 0.85rem;
-    color: var(--text-secondary, #9ca3af);
+    color: var(--text-secondary);
     font-style: italic;
     padding: 0.75rem 0;
   }
@@ -271,12 +263,12 @@
     margin: 0;
     font-size: 0.95rem;
     font-weight: 700;
-    color: #f3f4f6;
+    color: var(--text-heading);
   }
 
   .leaderboard-sub {
     font-size: 0.7rem;
-    color: #9ca3af;
+    color: var(--text-secondary);
   }
 
   .leaderboard-grid {
@@ -293,8 +285,8 @@
     flex-direction: column;
     gap: 0.35rem;
     padding: 0.5rem 0.65rem;
-    background: #111827;
-    border: 1px solid #374151;
+    background: var(--surface-dark);
+    border: 1px solid var(--border-subtle);
     border-radius: 0.5rem;
   }
 
@@ -318,7 +310,7 @@
 
   .player-name {
     font-size: 0.85rem;
-    color: #f3f4f6;
+    color: var(--text-heading);
   }
 
   .luck-badge {
@@ -330,13 +322,13 @@
 
   .luck-badge.luck-hot {
     background: rgba(245, 158, 11, 0.2);
-    color: #fbbf24;
+    color: var(--color-amber);
     border: 1px solid rgba(245, 158, 11, 0.4);
   }
 
   .luck-badge.luck-cold {
     background: rgba(56, 189, 248, 0.15);
-    color: #38bdf8;
+    color: var(--accent-blue);
     border: 1px solid rgba(56, 189, 248, 0.3);
   }
 
@@ -353,22 +345,22 @@
   }
 
   .mini-label {
-    color: var(--text-secondary, #9ca3af);
+    color: var(--text-secondary);
     font-size: 0.68rem;
     text-transform: uppercase;
   }
 
   .mini-val {
     font-weight: 700;
-    color: #e5e7eb;
+    color: var(--text-body);
   }
 
   .highlight-crit {
-    color: #facc15;
+    color: var(--color-gold);
   }
 
   .highlight-gold {
-    color: #fde047;
+    color: var(--color-gold-light);
   }
 
   /* Series Log Section */
@@ -382,7 +374,7 @@
     margin: 0;
     font-size: 0.875rem;
     font-weight: 600;
-    color: #d1d5db;
+    color: var(--text-light);
   }
 
   .history-list-wrapper {
@@ -392,7 +384,7 @@
   }
 
   .history-list-wrapper:focus-visible {
-    outline: 2px solid #38bdf8;
+    outline: 2px solid var(--accent-blue);
     outline-offset: 1px;
   }
 
@@ -410,8 +402,8 @@
     flex-direction: column;
     gap: 0.35rem;
     padding: 0.65rem 0.75rem;
-    background: #1f2937;
-    border: 1px solid #374151;
+    background: var(--surface-elevated);
+    border: 1px solid var(--border-subtle);
     border-radius: 0.5rem;
     font-size: 0.825rem;
   }
@@ -424,30 +416,30 @@
 
   .player-tag {
     font-weight: 700;
-    color: #38bdf8;
+    color: var(--accent-blue);
   }
 
   .timestamp-tag {
     font-size: 0.75rem;
-    color: #9ca3af;
+    color: var(--text-secondary);
   }
 
   .series-config-desc {
     display: flex;
     gap: 0.4rem;
     align-items: baseline;
-    color: #d1d5db;
+    color: var(--text-light);
   }
 
   .rounds-tag {
-    color: #9ca3af;
+    color: var(--text-secondary);
     font-size: 0.75rem;
   }
 
   .history-outcome {
     font-size: 0.8rem;
-    color: #9ca3af;
-    border-top: 1px solid rgba(75, 85, 99, 0.4);
+    color: var(--text-secondary);
+    border-top: 1px solid var(--border-color);
     padding-top: 0.35rem;
   }
 
@@ -458,16 +450,16 @@
   }
 
   .coin-outcome {
-    color: #e5e7eb;
+    color: var(--text-body);
   }
 
   .coin-history-pct {
     font-size: 0.72rem;
-    color: #cbd5e1;
+    color: var(--text-soft);
   }
 
   .winner-name {
-    color: #fde047;
+    color: var(--color-gold-light);
   }
 
   .dice-outcome {
@@ -476,11 +468,11 @@
   }
 
   .dice-outcome strong {
-    color: #f3f4f6;
+    color: var(--text-heading);
   }
 
   button:focus-visible {
-    outline: 2px solid #38bdf8;
+    outline: 2px solid var(--accent-blue);
     outline-offset: 2px;
   }
 </style>
