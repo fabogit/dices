@@ -26,8 +26,9 @@ test.describe('Production Boot & Baseline Sanity', () => {
     await expect(favicon).toHaveAttribute('href', '/favicon.svg');
 
     // Verify header branding
-    const titleText = page.locator('.title-gradient');
-    await expect(titleText).toHaveText('Dices');
+    const titleText = page.getByRole('heading', { level: 1, name: /Dices/ });
+    await expect(titleText).toBeVisible();
+    await expect(titleText).toContainText('Dices');
 
     // Verify semantic footer version, build year, license, and author links
     const footer = page.getByRole('contentinfo');
@@ -47,7 +48,7 @@ test.describe('Production Boot & Baseline Sanity', () => {
     );
 
     // Verify 3D canvas is mounted with non-zero dimensions
-    const canvas = page.locator('canvas.three-canvas');
+    const canvas = page.getByTestId('dice-canvas');
     await expect(canvas).toBeVisible();
 
     const box = await canvas.boundingBox();

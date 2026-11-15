@@ -69,7 +69,7 @@
 
   <div class="arena-body" class:collapsed={isCollapsed}>
     <div class="arena-viewport" role="region" aria-label="3D Dice Arena Viewport">
-      <canvas bind:this={canvasElement} class="three-canvas"></canvas>
+      <canvas bind:this={canvasElement} class="three-canvas" data-testid="dice-canvas"></canvas>
 
       <!-- WebGL Context Loss Banner -->
       {#if rollState.contextLost}
