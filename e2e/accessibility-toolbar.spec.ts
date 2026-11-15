@@ -8,12 +8,12 @@ test.describe('Accessibility & Arena Toolbar (Issue #9)', () => {
     const toolbar = page.getByRole('toolbar', { name: 'Roll controls' });
     await expect(toolbar).toBeVisible();
 
-    const rollBtn = toolbar.locator('.primary-btn');
+    const rollBtn = toolbar.getByRole('button', { name: /Roll Round|Roll \d+d\d+|Flip|Series Complete/ });
     await expect(rollBtn).toBeVisible();
 
     // Verify keyboard focus traversal to skip link and within the toolbar
     await page.keyboard.press('Tab');
-    const skipLink = page.locator('.skip-link');
+    const skipLink = page.getByRole('link', { name: 'Skip to main content' });
     await expect(skipLink).toBeFocused();
 
     // Verify direct focus and Tab traversal across toolbar interactive elements
@@ -21,25 +21,26 @@ test.describe('Accessibility & Arena Toolbar (Issue #9)', () => {
     await expect(rollBtn).toBeFocused();
 
     await page.keyboard.press('Tab');
-    const autoRollBtn = toolbar.locator('.secondary-btn').first();
+    const autoRollBtn = toolbar.getByRole('button', { name: /Auto-Roll Series/i });
     await expect(autoRollBtn).toBeFocused();
 
     // Verify centralized ARIA live region updates
-    const liveRegion = page.locator('[aria-live="polite"]');
+    const liveRegion = page.getByRole('status');
     await expect(liveRegion).toBeAttached();
 
     // Switch mode to Quick Roll to test announcement update
-    const quickModeBtn = page.locator('.mode-switch-group').getByRole('button', { name: /Quick Roll/i });
+    const modeGroup = page.getByRole('group', { name: 'Application mode' });
+    const quickModeBtn = modeGroup.getByRole('button', { name: /Quick Roll/i });
     await quickModeBtn.click();
     await expect(liveRegion).toHaveText('Switched to Quick Roll mode.');
 
     // Switch back to Series mode
-    const seriesModeBtn = page.locator('.mode-switch-group').getByRole('button', { name: /Series/i });
+    const seriesModeBtn = modeGroup.getByRole('button', { name: /Series/i });
     await seriesModeBtn.click();
     await expect(liveRegion).toHaveText('Switched to Series mode.');
 
     // Enable Fast mode and trigger a roll in Series mode to test round announcement
-    const fastModeBtn = page.locator('.instant-toggle-btn');
+    const fastModeBtn = page.getByRole('button', { name: /Fast: (ON|OFF)/ });
     if (!(await fastModeBtn.getAttribute('aria-pressed') === 'true')) {
       await fastModeBtn.click();
     }

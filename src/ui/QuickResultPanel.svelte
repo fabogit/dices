@@ -95,14 +95,14 @@
               </span>
             </div>
 
-            <p class="quick-insight-narrative">{stats.insight}</p>
+            <p class="quick-insight-narrative" data-testid="quick-insight">{stats.insight}</p>
           </div>
         {:else}
           <!-- Polyhedral Dice Hero Display -->
           <div class="dice-hero-display">
             <div class="sum-display-block">
               <span class="sum-label">TOTAL SUM</span>
-              <span class="sum-big-number">{latest.sum}</span>
+              <span class="sum-big-number" data-testid="hero-sum">{latest.sum}</span>
             </div>
 
             <div class="dice-chips-row">
@@ -144,7 +144,7 @@
               {/if}
             </div>
 
-            <p class="quick-insight-narrative">{stats.insight}</p>
+            <p class="quick-insight-narrative" data-testid="quick-insight">{stats.insight}</p>
           </div>
         {/if}
       </div>
@@ -239,6 +239,7 @@
                   <span class="feed-index">#{rollState.quickRolls.length - idx}</span>
                   <span
                     class="feed-die-badge"
+                    data-testid="feed-die-badge"
                     class:coin-die={itemFaces === 2}
                   >
                     {itemFaces === 2 ? 'Coin' : `d${itemFaces}`}
@@ -246,19 +247,28 @@
                   <div class="feed-values">
                     {#if itemFaces === 2}
                       {#each item.values as v, i (i)}
-                        <span class="mini-coin" class:heads={v === 1} class:tails={v === 2}>
+                        <span
+                          class="mini-coin"
+                          data-testid="mini-coin"
+                          class:heads={v === 1}
+                          class:tails={v === 2}
+                        >
                           {v === 1 ? 'H' : 'T'}
                         </span>
                       {/each}
                     {:else}
-                      <span class="dice-values-string">{item.values.join(', ')}</span>
+                      <span class="dice-values-string" data-testid="dice-values">{item.values.join(', ')}</span>
                     {/if}
                   </div>
                 </div>
 
                 <div class="feed-item-right">
                   {#if itemFaces === 2}
-                    <span class="feed-outcome" class:tie={item.roundWinnerSide === 'TIE'}>
+                    <span
+                      class="feed-outcome"
+                      data-testid="feed-outcome"
+                      class:tie={item.roundWinnerSide === 'TIE'}
+                    >
                       {item.roundWinnerSide}
                     </span>
                   {:else}
