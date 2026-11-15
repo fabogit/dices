@@ -102,7 +102,7 @@
           <div class="dice-hero-display">
             <div class="sum-display-block">
               <span class="sum-label">TOTAL SUM</span>
-              <span class="sum-big-number">{latest.sum}</span>
+              <span class="sum-big-number" data-testid="hero-sum">{latest.sum}</span>
             </div>
 
             <div class="dice-chips-row">
