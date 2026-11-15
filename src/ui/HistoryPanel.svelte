@@ -53,13 +53,13 @@
         <span class="leaderboard-sub">Normalized across all dice domains (100% = fair baseline)</span>
       </div>
 
-      <div class="leaderboard-grid">
+      <ul class="leaderboard-grid" role="list" aria-label="Player leaderboard">
         {#each leaderboard as player (player.playerId)}
-          <div class="player-card">
+          <li class="player-card">
             <div class="player-header-row">
               <div class="player-identity">
                 <span class="player-dot" style:background-color={player.color}></span>
-                <strong class="player-name">{player.playerName}</strong>
+                <strong class="player-name" data-testid="player-name">{player.playerName}</strong>
               </div>
               <span
                 class="luck-badge"
@@ -89,7 +89,7 @@
               {#if player.coinSeriesWon > 0}
                 <div class="metric-mini">
                   <span class="mini-label">Coins Won</span>
-                  <span class="mini-val highlight-gold">{player.coinSeriesWon}</span>
+                  <span class="mini-val highlight-gold" data-testid="coin-series-won">{player.coinSeriesWon}</span>
                 </div>
               {/if}
               {#if player.coinHeadsRate !== undefined}
@@ -99,9 +99,9 @@
                 </div>
               {/if}
             </div>
-          </div>
+          </li>
         {/each}
-      </div>
+      </ul>
     </div>
 
     <!-- Chronological Past Series Log -->
@@ -266,6 +266,9 @@
   }
 
   .leaderboard-grid {
+    list-style: none;
+    margin: 0;
+    padding: 0;
     display: flex;
     flex-direction: column;
     gap: 0.45rem;
