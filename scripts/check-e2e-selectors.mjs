@@ -13,7 +13,7 @@ const E2E_DIR = join(ROOT_DIR, 'e2e');
  * Reduce counts here as specs are migrated to semantic/ARIA locators.
  */
 const BASELINE_MAX_COUNTS = Object.freeze({
-  'stats-analytics.spec.ts': 42,
+  'stats-analytics.spec.ts': 0,
   'players-history.spec.ts': 28,
   'arena-workflows.spec.ts': 22,
   'quick-roll.spec.ts': 11,
