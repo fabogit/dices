@@ -583,26 +583,86 @@ describe('RollState Controller', () => {
     state.setArena(arena);
     state.instantMode = false;
     state.setSeriesLength(2);
+    state.addPlayer('Alice');
 
     const inFlight = state.rollNextRound();
     await vi.waitFor(() => expect(isAnimating()).toBe(true));
-    expect(state.isSeriesInProgress).toBe(true);
+    expect(state.isRolling).toBe(true);
+    expect(state.isSeriesInProgress).toBe(false);
+    expect(state.isConfigLocked).toBe(false);
 
-    // Switching mode settles the animation and announces only the mode change
+    // Direct calls during flight are ignored without emitting "Series in progress"
+    state.setFaces(20);
+    state.setCountPerRoll(4);
+    state.setSeriesLength(5);
+    state.setActivePlayer('player-1');
+    state.addPlayer('Bob');
     state.setMode('quick');
-    expect(state.announcerMessage).toBe('Switched to Quick Roll mode.');
+
+    expect(state.faces).toBe(6);
+    expect(state.countPerRoll).toBe(1);
+    expect(state.seriesLength).toBe(2);
+    expect(state.activePlayer.name).toBe('Alice');
+    expect(state.players).toHaveLength(2);
+    expect(state.mode).toBe('series');
+    expect(state.announcerMessage).not.toContain('Series in progress');
+
     land();
     await inFlight;
-    expect(state.announcerMessage).toBe('Switched to Quick Roll mode.');
+    expect(state.rounds).toHaveLength(1);
+    expect(state.isSeriesInProgress).toBe(true);
+    expect(state.isConfigLocked).toBe(true);
+    expect(state.announcerMessage).toContain('Round 1 of 2');
 
-    // Same isolation in reverse when returning to Series while a Quick Roll lands
+    // Quick Roll in flight also ignores direct mode and setup changes until landed
+    state.resetCurrentSeries();
+    state.setMode('quick');
     const quickInFlight = state.executeQuickRoll();
     await vi.waitFor(() => expect(isAnimating()).toBe(true));
+    state.setFaces(20);
     state.setMode('series');
+    expect(state.faces).toBe(6);
+    expect(state.mode).toBe('quick');
+    expect(state.announcerMessage).not.toContain('Series in progress');
+
     land();
     await quickInFlight;
-    expect(state.announcerMessage).toBe('Switched to Series mode.');
+    expect(state.announcerMessage).toContain('Quick roll:');
+
+    state.setMode('series');
+    expect(state.mode).toBe('series');
     state.setArena(null);
+  });
+
+  it('blocks mode switching during the auto-roll inter-round pause until stopped', async () => {
+    vi.useFakeTimers();
+    try {
+      state.instantMode = false;
+      state.setSeriesLength(4);
+
+      const auto = state.autoRollSeries();
+      await vi.advanceTimersByTimeAsync(0);
+      expect(state.rounds).toHaveLength(1);
+      expect(state.isRolling).toBe(false);
+      expect(state.isAutoRolling).toBe(true);
+
+      // Mode switching stays blocked while auto-roll is paused between rounds
+      state.setMode('quick');
+      expect(state.mode).toBe('series');
+      expect(state.isAutoRolling).toBe(true);
+
+      // Stopping auto-roll unlocks mode switching cleanly
+      state.stopAutoRoll();
+      expect(state.isAutoRolling).toBe(false);
+      state.setMode('quick');
+      expect(state.mode).toBe('quick');
+
+      await vi.advanceTimersByTimeAsync(450);
+      await auto;
+      expect(state.rounds).toHaveLength(1);
+    } finally {
+      vi.useRealTimers();
+    }
   });
 
   it('reveals results only after the dice have landed', async () => {

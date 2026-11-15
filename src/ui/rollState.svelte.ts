@@ -132,11 +132,9 @@ export class RollState {
     return this.rounds.length >= this.seriesLength;
   }
 
-  // A series with at least one round (or Round 1 currently in flight) and rounds still to play
+  // A series with at least one round and rounds still to play
   get isSeriesInProgress(): boolean {
-    return (
-      (this.rounds.length > 0 || (this.mode === 'series' && this.isRolling)) && !this.isComplete
-    );
+    return this.rounds.length > 0 && !this.isComplete;
   }
 
   // Dice setup is frozen in Series mode until the running series completes or is reset
@@ -171,9 +169,7 @@ export class RollState {
 
   // Mode switching
   setMode(mode: AppMode): void {
-    if (this.mode === mode) return;
-    this.stopAutoRoll();
-    this.skipAnimation();
+    if (this.isRolling || this.isAutoRolling || this.mode === mode) return;
     if (mode === 'series') {
       if (this.rounds.length > 0) {
         // Series has at least one round (in progress or completed): resume with its own setup
@@ -221,6 +217,7 @@ export class RollState {
 
   // Configuration updates
   setFaces(faces: DieFaces): void {
+    if (this.isRolling) return;
     if (this.faces === faces) return;
     if (this.rejectWhileSeriesRuns(this.isConfigLocked)) return;
     this.faces = faces;
@@ -228,6 +225,7 @@ export class RollState {
   }
 
   setCountPerRoll(count: number): void {
+    if (this.isRolling) return;
     if (!Number.isFinite(count)) return;
     const clamped = Math.min(10, Math.max(1, Math.round(count)));
     if (this.countPerRoll === clamped) return;
@@ -237,6 +235,7 @@ export class RollState {
   }
 
   setSeriesLength(length: number): void {
+    if (this.isRolling) return;
     if (!Number.isFinite(length)) return;
     const clamped = Math.min(21, Math.max(1, Math.round(length)));
     if (this.seriesLength === clamped) return;
@@ -251,6 +250,7 @@ export class RollState {
 
   // Player Management
   addPlayer(name: string): void {
+    if (this.isRolling) return;
     const trimmed = name.trim();
     if (!trimmed) return;
     if (this.rejectWhileSeriesRuns(this.isSeriesInProgress)) return;
@@ -267,6 +267,7 @@ export class RollState {
   }
 
   setActivePlayer(id: string): void {
+    if (this.isRolling) return;
     if (this.activePlayerId === id) return;
     const exists = this.players.some((p) => p.id === id);
     if (!exists) return;

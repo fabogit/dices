@@ -74,7 +74,7 @@
           class="mode-btn"
           class:active={rollState.mode === 'quick'}
           aria-pressed={rollState.mode === 'quick'}
-          disabled={rollState.isRolling}
+          disabled={rollState.isRolling || rollState.isAutoRolling}
           onclick={() => rollState.setMode('quick')}
         >
           ⚡ Quick Roll
@@ -84,7 +84,7 @@
           class="mode-btn"
           class:active={rollState.mode === 'series'}
           aria-pressed={rollState.mode === 'series'}
-          disabled={rollState.isRolling}
+          disabled={rollState.isRolling || rollState.isAutoRolling}
           onclick={() => rollState.setMode('series')}
         >
           📊 Series
