@@ -8,28 +8,27 @@ const ROOT_DIR = fileURLToPath(new URL('..', import.meta.url));
 const E2E_DIR = join(ROOT_DIR, 'e2e');
 
 /**
- * Decreasing per-file baseline ratchet for forbidden CSS class/id `.locator(...)`
- * selectors in E2E specs. Any new `.spec.ts` file defaults to 0.
- * Reduce counts here as specs are migrated to semantic/ARIA locators.
+ * Zero-tolerance baseline map for forbidden CSS class/id `.locator(...)`
+ * selectors in E2E specs. All specs must stay at 0; any new `.spec.ts` file
+ * defaults to 0.
  */
 const BASELINE_MAX_COUNTS = Object.freeze({
   'stats-analytics.spec.ts': 0,
   'players-history.spec.ts': 0,
   'arena-workflows.spec.ts': 0,
-  'quick-roll.spec.ts': 11,
-  'accessibility-toolbar.spec.ts': 6,
-  'mobile-viewport.spec.ts': 6,
-  'series-mode.spec.ts': 5,
-  'production-boot.spec.ts': 1,
+  'quick-roll.spec.ts': 0,
+  'accessibility-toolbar.spec.ts': 0,
+  'mobile-viewport.spec.ts': 0,
+  'series-mode.spec.ts': 0,
+  'production-boot.spec.ts': 0,
 });
 
 /**
- * Matches `.locator('...')`, `.locator("...")`, or `.locator(\`...\`)`
- * where the selector begins with `.` (class) or `#` (id).
- * Attribute selectors like `link[rel="icon"]` or `[data-testid="..."]`
- * and tag selectors are intentionally allowed.
+ * Matches `.locator('...')`, `.locator("...")`, or `.locator(\`...\`)` and extracts
+ * the selector argument so any CSS class (`.foo`, `canvas.three-canvas`) or id
+ * (`#bar`, `input#bar`) outside bracketed `[attr=...]` clauses is rejected.
  */
-const FORBIDDEN_SELECTOR_PATTERN = /\.locator\(\s*(['"`])\s*([.#][^'"`\r\n]*)/g;
+const LOCATOR_CALL_PATTERN = /\.locator\(\s*(['"`])([^'"`\r\n]*)\1/g;
 
 /**
  * Finds all forbidden `.locator(...)` calls in a source string.
@@ -42,13 +41,17 @@ export function findForbiddenSelectors(source) {
 
   for (let idx = 0; idx < lines.length; idx++) {
     const lineText = lines[idx];
-    FORBIDDEN_SELECTOR_PATTERN.lastIndex = 0;
+    LOCATOR_CALL_PATTERN.lastIndex = 0;
     let match;
-    while ((match = FORBIDDEN_SELECTOR_PATTERN.exec(lineText)) !== null) {
-      matches.push({
-        line: idx + 1,
-        selector: match[2],
-      });
+    while ((match = LOCATOR_CALL_PATTERN.exec(lineText)) !== null) {
+      const selector = match[2];
+      const withoutAttrs = selector.replace(/\[[^\]]*\]/g, '');
+      if (/[.#]/.test(withoutAttrs)) {
+        matches.push({
+          line: idx + 1,
+          selector,
+        });
+      }
     }
   }
 
@@ -99,12 +102,17 @@ function runSelfTest() {
       expectedCount: 1,
     },
     {
+      name: 'rejects tag-qualified class and id selectors',
+      source: `const c = page.locator('canvas.three-canvas');\nconst i = page.locator('input#new-player');`,
+      expectedCount: 2,
+    },
+    {
       name: 'allows attribute, tag, and semantic locators',
       source: [
         `const favicon = page.locator('link[rel="icon"]');`,
         `const testId = page.locator('[data-testid="roll-btn"]');`,
-        `const live = page.locator('[aria-live="polite"]');`,
-        `const canvas = page.locator('canvas.three-canvas');`,
+        `const dottedAttr = page.locator('[data-testid="a.b"]');`,
+        `const canvas = page.locator('canvas');`,
         `const roleBtn = page.getByRole('button', { name: 'Roll' });`,
       ].join('\n'),
       expectedCount: 0,
