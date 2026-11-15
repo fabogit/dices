@@ -298,7 +298,7 @@ pnpm run preview
 # Run the full static gate: tsc --noEmit, svelte-check, oxlint (type-aware), and oxfmt --check
 pnpm run check
 
-# Execute comprehensive Vitest unit/state test suite (127 tests across core, formatters, 3D, and state)
+# Execute comprehensive Vitest unit/state test suite (128 tests across core, formatters, 3D, and state)
 pnpm test
 
 # Run Vitest test suite with V8 code coverage and threshold enforcement
