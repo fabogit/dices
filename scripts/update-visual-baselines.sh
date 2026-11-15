@@ -30,19 +30,25 @@ echo "Updating Playwright visual baselines using container: ${PLAYWRIGHT_IMAGE}"
 echo "Repository root: ${REPO_ROOT}"
 echo "Isolated node_modules volume: ${NODE_MODULES_VOLUME}"
 
+HOST_UID="$(id -u)"
+HOST_GID="$(id -g)"
+
 docker run --rm --ipc=host \
   -v "${REPO_ROOT}:/work" \
   -v "${NODE_MODULES_VOLUME}:/work/node_modules" \
-  -v "${PNPM_STORE_VOLUME}:/root/.local/share/pnpm/store" \
+  -v "${PNPM_STORE_VOLUME}:/pnpm-store" \
   -w /work \
   -e CI=true \
+  -e HOST_UID="${HOST_UID}" \
+  -e HOST_GID="${HOST_GID}" \
   "${PLAYWRIGHT_IMAGE}" \
   bash -lc '
     set -euo pipefail
+    trap '\''chown -R "${HOST_UID}:${HOST_GID}" /work/e2e /work/test-results /work/playwright-report /work/dist 2>/dev/null || true'\'' EXIT
     if ! command -v pnpm >/dev/null 2>&1; then
-      corepack enable >/dev/null 2>&1 || npm install -g pnpm
+      corepack enable >/dev/null 2>&1 || npm install -g pnpm@11.21.0
     fi
-    pnpm install --frozen-lockfile
+    pnpm install --frozen-lockfile --store-dir /pnpm-store
     pnpm run build
-    pnpm exec playwright test --update-snapshots "$@"
+    pnpm exec playwright test --update-snapshots=all "$@"
   ' -- "$@"
