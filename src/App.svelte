@@ -18,6 +18,9 @@
   let newPlayerName = $state('');
   let rightPanelTab = $state<RightPanelTab>('scoreboard');
 
+  // A series belongs to one player: switching mid-series would discard its rounds
+  const playerControlsDisabled = $derived(rollState.isRolling || rollState.isSeriesInProgress);
+
   function handleTabKeyDown(e: KeyboardEvent) {
     const currentIndex = RIGHT_TABS.indexOf(rightPanelTab);
     let nextIndex = -1;
@@ -71,6 +74,7 @@
           class="mode-btn"
           class:active={rollState.mode === 'quick'}
           aria-pressed={rollState.mode === 'quick'}
+          disabled={rollState.isRolling || rollState.isAutoRolling}
           onclick={() => rollState.setMode('quick')}
         >
           ⚡ Quick Roll
@@ -80,6 +84,7 @@
           class="mode-btn"
           class:active={rollState.mode === 'series'}
           aria-pressed={rollState.mode === 'series'}
+          disabled={rollState.isRolling || rollState.isAutoRolling}
           onclick={() => rollState.setMode('series')}
         >
           📊 Series
@@ -94,6 +99,7 @@
             id="player-select"
             class="player-select"
             value={rollState.activePlayerId}
+            disabled={playerControlsDisabled}
             onchange={(e) => rollState.setActivePlayer((e.target as HTMLSelectElement).value)}
           >
             {#each rollState.players as p (p.id)}
@@ -104,6 +110,7 @@
           <button
             type="button"
             class="btn-add-player"
+            disabled={playerControlsDisabled}
             onclick={() => (showAddPlayerModal = true)}
             aria-label="Add new local player"
           >
@@ -380,8 +387,13 @@
     transition: all 0.15s ease;
   }
 
-  .mode-btn:hover {
+  .mode-btn:hover:not(.active):not(:disabled) {
     color: var(--text-primary);
+  }
+
+  .mode-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
   }
 
   .mode-btn.active {
@@ -426,9 +438,15 @@
     transition: all 0.15s ease;
   }
 
-  .btn-add-player:hover {
+  .btn-add-player:hover:not(:disabled) {
     border-color: var(--accent-blue);
     background: rgba(56, 189, 248, 0.1);
+  }
+
+  .player-select:disabled,
+  .btn-add-player:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
   }
 
   .instant-toggle-btn {

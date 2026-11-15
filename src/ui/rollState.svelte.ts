@@ -7,7 +7,13 @@ import {
   type RoundResult,
   type SeriesSummary,
 } from '../core/types';
-import { computePlayerLeaderboard, computeRoundResult, RollSeriesEngine } from '../core/engine';
+import {
+  computePlayerLeaderboard,
+  computeRoundResult,
+  computeSeriesSummary,
+  RollSeriesEngine,
+} from '../core/engine';
+import { sanitizePersistedHistory } from '../core/persistence';
 import { LocalCryptoRollProvider } from '../core/provider';
 import type { DiceArena3D } from '../three/DiceArena3D';
 
@@ -30,8 +36,7 @@ function loadHistoryFromStorage(): SeriesSummary[] {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (!raw) return [];
-    const parsed = JSON.parse(raw);
-    return Array.isArray(parsed) ? parsed : [];
+    return sanitizePersistedHistory(JSON.parse(raw));
   } catch {
     return [];
   }
@@ -74,14 +79,17 @@ export class RollState {
   history: SeriesSummary[] = $state(loadHistoryFromStorage());
   rounds: RoundResult[] = $state([]);
 
-  // Session-only Quick Rolls (Quick mode, capped at 25)
+  // Session-only Quick Rolls (Quick mode, feed capped at 25)
   quickRolls: RoundResult[] = $state([]);
+  // Total quick rolls thrown this session; keeps counting past the feed cap
+  quickRollCount: number = $state(0);
 
   // Internal Engine
   private engine: RollSeriesEngine;
   private summaryRevision: number = $state(0);
   private arena: DiceArena3D | null = null;
-  private autoRollAborted: boolean = false;
+  // Identifies the active auto-roll loop; bumping it retires any loop still awaiting
+  private autoRollRun: number = 0;
   private cryptoProvider: LocalCryptoRollProvider = new LocalCryptoRollProvider();
 
   constructor() {
@@ -124,6 +132,16 @@ export class RollState {
     return this.rounds.length >= this.seriesLength;
   }
 
+  // A series with at least one round and rounds still to play
+  get isSeriesInProgress(): boolean {
+    return this.rounds.length > 0 && !this.isComplete;
+  }
+
+  // Dice setup is frozen in Series mode until the running series completes or is reset
+  get isConfigLocked(): boolean {
+    return this.mode === 'series' && this.isSeriesInProgress;
+  }
+
   get latestRound(): RoundResult | null {
     return this.rounds.length > 0 ? this.rounds[this.rounds.length - 1] : null;
   }
@@ -132,30 +150,36 @@ export class RollState {
     return this.quickRolls.length > 0 ? this.quickRolls[0] : null;
   }
 
-  get summary(): SeriesSummary {
-    // Track reactive dependencies so Svelte 5 $derived consumers re-evaluate on rounds/config changes.
+  // Built from the published rounds, never from the engine's own list: a round still in
+  // flight stays out of the summary until its dice have landed. The engine itself is not
+  // reactive, so summaryRevision signals when it is replaced (new setup or player).
+  readonly summary: SeriesSummary = $derived.by(() => {
     void this.summaryRevision;
-    void this.rounds.length;
-    void this.faces;
-    void this.countPerRoll;
-    void this.seriesLength;
-    void this.activePlayerId;
-    return this.engine.getSummary();
-  }
+    const { id, config, playerName } = this.engine;
+    return computeSeriesSummary(id, config, playerName, this.rounds);
+  });
 
   get progressPercent(): number {
     return Math.min(100, Math.round((this.rounds.length / this.seriesLength) * 100));
   }
 
-  get leaderboard(): PlayerLeaderboardEntry[] {
-    return computePlayerLeaderboard(this.history, this.players);
-  }
+  readonly leaderboard: PlayerLeaderboardEntry[] = $derived(
+    computePlayerLeaderboard(this.history, this.players),
+  );
 
   // Mode switching
   setMode(mode: AppMode): void {
-    if (this.mode === mode) return;
-    this.stopAutoRoll();
-    this.skipAnimation();
+    if (this.isRolling || this.isAutoRolling || this.mode === mode) return;
+    if (mode === 'series') {
+      if (this.rounds.length > 0) {
+        // Series has at least one round (in progress or completed): resume with its own setup
+        this.faces = this.engine.config.faces;
+        this.countPerRoll = this.engine.config.countPerRoll;
+      } else {
+        // Series is empty: recreate it silently with the current setup
+        this.resetCurrentSeries({ announce: false });
+      }
+    }
     this.mode = mode;
     this.announcerMessage =
       mode === 'quick' ? 'Switched to Quick Roll mode.' : 'Switched to Series mode.';
@@ -170,25 +194,54 @@ export class RollState {
     this.contextLost = isLost;
   }
 
+  // Rejects a change that would silently discard the rounds already rolled
+  private rejectWhileSeriesRuns(locked: boolean): boolean {
+    if (locked) {
+      this.announcerMessage = 'Series in progress. Reset the series to change the setup.';
+    }
+    return locked;
+  }
+
+  // Rebuilds the series for a new dice setup. In Quick Roll mode any existing series
+  // (in progress or completed) is never touched; an empty series is kept silently aligned.
+  private applyDiceSetupChange(): void {
+    if (this.mode === 'quick') {
+      if (this.rounds.length === 0) {
+        this.resetCurrentSeries({ announce: false });
+      }
+      return;
+    }
+    if (this.isSeriesInProgress) return;
+    this.resetCurrentSeries({ announce: true });
+  }
+
   // Configuration updates
   setFaces(faces: DieFaces): void {
+    if (this.isRolling) return;
     if (this.faces === faces) return;
+    if (this.rejectWhileSeriesRuns(this.isConfigLocked)) return;
     this.faces = faces;
-    this.resetCurrentSeries();
+    this.applyDiceSetupChange();
   }
 
   setCountPerRoll(count: number): void {
+    if (this.isRolling) return;
+    if (!Number.isFinite(count)) return;
     const clamped = Math.min(10, Math.max(1, Math.round(count)));
     if (this.countPerRoll === clamped) return;
+    if (this.rejectWhileSeriesRuns(this.isConfigLocked)) return;
     this.countPerRoll = clamped;
-    this.resetCurrentSeries();
+    this.applyDiceSetupChange();
   }
 
   setSeriesLength(length: number): void {
+    if (this.isRolling) return;
+    if (!Number.isFinite(length)) return;
     const clamped = Math.min(21, Math.max(1, Math.round(length)));
     if (this.seriesLength === clamped) return;
+    if (this.rejectWhileSeriesRuns(this.isSeriesInProgress)) return;
     this.seriesLength = clamped;
-    this.resetCurrentSeries();
+    this.resetCurrentSeries({ announce: this.mode === 'series' });
   }
 
   toggleInstantMode(): void {
@@ -197,8 +250,10 @@ export class RollState {
 
   // Player Management
   addPlayer(name: string): void {
+    if (this.isRolling) return;
     const trimmed = name.trim();
     if (!trimmed) return;
+    if (this.rejectWhileSeriesRuns(this.isSeriesInProgress)) return;
     const nextIndex = this.players.length;
     const color = PLAYER_PALETTE[nextIndex % PLAYER_PALETTE.length];
     const newPlayer: Player = {
@@ -212,9 +267,11 @@ export class RollState {
   }
 
   setActivePlayer(id: string): void {
+    if (this.isRolling) return;
     if (this.activePlayerId === id) return;
     const exists = this.players.some((p) => p.id === id);
     if (!exists) return;
+    if (this.rejectWhileSeriesRuns(this.isSeriesInProgress)) return;
     this.activePlayerId = id;
     this.resetCurrentSeries();
   }
@@ -227,24 +284,26 @@ export class RollState {
 
     this.isRolling = true;
     try {
-      const values = await this.cryptoProvider.rollRound(this.faces, this.countPerRoll);
-      const round = computeRoundResult(this.quickRolls.length, values, this.faces);
-      round.faces = this.faces;
+      const faces = this.faces;
+      const values = await this.cryptoProvider.rollRound(faces, this.countPerRoll);
+
+      // The result stays hidden until the dice have landed
+      await this.playVisual(faces, values);
+
+      const round = computeRoundResult(this.quickRollCount, values, faces);
+      round.faces = faces;
+      this.quickRollCount += 1;
       this.quickRolls = [round, ...this.quickRolls.slice(0, 24)];
 
-      if (this.arena) {
-        await this.arena.rollVisual(this.faces, round.values, {
-          skipAnimation: this.instantMode,
-        });
-      }
-
-      if (this.faces === 2) {
-        const sideNames = round.values.map((v) => (v === 1 ? 'Heads' : 'Tails')).join(', ');
-        const outcome =
-          round.roundWinnerSide === 'TIE' ? 'Tied.' : `${round.roundWinnerSide} wins.`;
-        this.announcerMessage = `Quick roll: ${sideNames}. ${outcome}`;
-      } else {
-        this.announcerMessage = `Quick roll: Rolled ${round.values.join(', ')}. Sum: ${round.sum}.`;
+      if (this.mode === 'quick') {
+        if (faces === 2) {
+          const sideNames = round.values.map((v) => (v === 1 ? 'Heads' : 'Tails')).join(', ');
+          const outcome =
+            round.roundWinnerSide === 'TIE' ? 'Tied.' : `${round.roundWinnerSide} wins.`;
+          this.announcerMessage = `Quick roll: ${sideNames}. ${outcome}`;
+        } else {
+          this.announcerMessage = `Quick roll: Rolled ${round.values.join(', ')}. Sum: ${round.sum}.`;
+        }
       }
 
       return round;
@@ -255,6 +314,7 @@ export class RollState {
 
   clearQuickRolls(): void {
     this.quickRolls = [];
+    this.quickRollCount = 0;
     this.announcerMessage = 'Quick roll feed cleared.';
   }
 
@@ -266,47 +326,57 @@ export class RollState {
 
     this.isRolling = true;
     try {
-      const round = await this.engine.rollNextRound();
-      this.rounds = [...this.engine.rounds];
+      const engine = this.engine;
+      const faces = engine.config.faces;
+      const round = await engine.rollNextRound();
+
+      // The result stays hidden until the dice have landed
+      await this.playVisual(faces, round.values);
+
+      if (engine !== this.engine) {
+        // The series was reset while this round was in flight: the round is discarded
+        return null;
+      }
+      this.rounds = [...engine.rounds];
       this.summaryRevision++;
 
-      // Visual 3D roll
-      if (this.arena) {
-        await this.arena.rollVisual(this.faces, round.values, {
-          skipAnimation: this.instantMode,
-        });
-      }
-
-      // Generate a11y announcement
-      const roundNum = round.roundIndex + 1;
-      let roundAnnounce = '';
-      if (this.faces === 2) {
-        const sideNames = round.values.map((v) => (v === 1 ? 'Heads' : 'Tails')).join(', ');
-        const outcome =
-          round.roundWinnerSide === 'TIE' ? 'Round tied.' : `${round.roundWinnerSide} wins round.`;
-        roundAnnounce = `Round ${roundNum} of ${this.seriesLength}: ${sideNames}. ${outcome}`;
-      } else {
-        roundAnnounce = `Round ${roundNum} of ${this.seriesLength}: Rolled ${round.values.join(', ')}. Sum: ${round.sum}.`;
-      }
-
+      let completedSummary: SeriesSummary | null = null;
       if (this.isComplete) {
-        const sumry = this.engine.getSummary();
-        this.history = [sumry, ...this.history.slice(0, 49)];
+        completedSummary = engine.getSummary();
+        this.history = [completedSummary, ...this.history.slice(0, 49)];
         saveHistoryToStorage(this.history);
+      }
 
-        let seriesAnnounce = '';
-        if (this.faces === 2) {
-          seriesAnnounce = ` Series complete! ${
-            sumry.coinSeriesWinner === 'TIE'
-              ? 'Series ended in a tie'
-              : sumry.coinSeriesWinner + ' wins series'
-          } with ${sumry.headsRoundsWon} Heads rounds to ${sumry.tailsRoundsWon} Tails rounds.`;
+      if (this.mode === 'series') {
+        // Generate a11y announcement
+        const roundNum = round.roundIndex + 1;
+        let roundAnnounce = '';
+        if (faces === 2) {
+          const sideNames = round.values.map((v) => (v === 1 ? 'Heads' : 'Tails')).join(', ');
+          const outcome =
+            round.roundWinnerSide === 'TIE'
+              ? 'Round tied.'
+              : `${round.roundWinnerSide} wins round.`;
+          roundAnnounce = `Round ${roundNum} of ${this.seriesLength}: ${sideNames}. ${outcome}`;
         } else {
-          seriesAnnounce = ` Series complete for ${this.activePlayer.name}! Total sum: ${sumry.totalSum}, Average: ${sumry.average.toFixed(1)}, Best round: ${sumry.bestRoundIndex + 1}.`;
+          roundAnnounce = `Round ${roundNum} of ${this.seriesLength}: Rolled ${round.values.join(', ')}. Sum: ${round.sum}.`;
         }
-        this.announcerMessage = roundAnnounce + seriesAnnounce;
-      } else {
-        this.announcerMessage = roundAnnounce;
+
+        if (completedSummary) {
+          let seriesAnnounce = '';
+          if (faces === 2) {
+            seriesAnnounce = ` Series complete! ${
+              completedSummary.coinSeriesWinner === 'TIE'
+                ? 'Series ended in a tie'
+                : completedSummary.coinSeriesWinner + ' wins series'
+            } with ${completedSummary.headsRoundsWon} Heads rounds to ${completedSummary.tailsRoundsWon} Tails rounds.`;
+          } else {
+            seriesAnnounce = ` Series complete for ${this.activePlayer.name}! Total sum: ${completedSummary.totalSum}, Average: ${completedSummary.average.toFixed(1)}, Best round: ${completedSummary.bestRoundIndex + 1}.`;
+          }
+          this.announcerMessage = roundAnnounce + seriesAnnounce;
+        } else {
+          this.announcerMessage = roundAnnounce;
+        }
       }
 
       return round;
@@ -315,31 +385,50 @@ export class RollState {
     }
   }
 
+  // Plays the 3D roll. A rendering failure must never lose a result that was already rolled.
+  private async playVisual(faces: DieFaces, values: number[]): Promise<void> {
+    if (!this.arena) return;
+    try {
+      await this.arena.rollVisual(faces, values, { skipAnimation: this.instantMode });
+    } catch (err) {
+      console.error('3D roll animation failed:', err);
+    }
+  }
+
   async autoRollSeries(): Promise<void> {
     if (this.isRolling || this.isAutoRolling || this.isComplete) {
       return;
     }
 
+    // A stop followed by a restart during the inter-round pause must not revive the
+    // stopped loop, so each loop only continues while it still owns the current run id.
+    const run = ++this.autoRollRun;
+    const isActive = (): boolean => run === this.autoRollRun;
     this.isAutoRolling = true;
-    this.autoRollAborted = false;
 
     try {
-      while (!this.isComplete && !this.autoRollAborted) {
-        await this.rollNextRound();
+      while (!this.isComplete && isActive()) {
+        const round = await this.rollNextRound();
+        if (!round) {
+          // Another roll is in flight (e.g. a manual roll started during the pause):
+          // yield to it instead of spinning on the busy guard.
+          break;
+        }
 
-        if (!this.isComplete && !this.autoRollAborted && !this.instantMode) {
+        if (!this.isComplete && isActive() && !this.instantMode) {
           // Brief pause between animated rounds
           await new Promise((resolve) => setTimeout(resolve, 450));
         }
       }
     } finally {
-      this.isAutoRolling = false;
-      this.autoRollAborted = false;
+      if (isActive()) {
+        this.isAutoRolling = false;
+      }
     }
   }
 
   stopAutoRoll(): void {
-    this.autoRollAborted = true;
+    this.autoRollRun += 1;
     this.isAutoRolling = false;
   }
 
@@ -349,13 +438,15 @@ export class RollState {
     }
   }
 
-  resetCurrentSeries(): void {
+  resetCurrentSeries(options: { announce?: boolean } = {}): void {
     this.stopAutoRoll();
     this.skipAnimation();
     this.engine = this.createEngine();
     this.rounds = [];
     this.summaryRevision++;
-    this.announcerMessage = `Series reset for ${this.activePlayer.name}. Ready to roll.`;
+    if (options.announce !== false) {
+      this.announcerMessage = `Series reset for ${this.activePlayer.name}. Ready to roll.`;
+    }
   }
 
   clearHistory(): void {

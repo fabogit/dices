@@ -134,8 +134,10 @@ test.describe('Statistics Alignment & Descriptive Insights (Issue #12 & #13)', (
     await page.addInitScript(() => {
       const mockValues = [1, 3, 5, 5];
       let callCount = 0;
-      const originalGetRandomValues = window.crypto.getRandomValues.bind(window.crypto);
-      window.crypto.getRandomValues = function <T extends ArrayBufferView | null>(array: T): T {
+      const originalGetRandomValues: Crypto['getRandomValues'] = window.crypto.getRandomValues.bind(
+        window.crypto,
+      );
+      const patchedGetRandomValues: Crypto['getRandomValues'] = (array) => {
         if (array instanceof Uint32Array) {
           for (let i = 0; i < array.length; i++) {
             array[i] = mockValues[callCount % mockValues.length]!;
@@ -145,6 +147,7 @@ test.describe('Statistics Alignment & Descriptive Insights (Issue #12 & #13)', (
         }
         return originalGetRandomValues(array);
       };
+      window.crypto.getRandomValues = patchedGetRandomValues;
     });
 
     await page.goto('/');
@@ -276,8 +279,21 @@ test.describe('Statistics Alignment & Descriptive Insights (Issue #12 & #13)', (
     await rollBtn.click();
     await expect(reliabilityChip).toContainText('Moderate sample (10–29)');
 
+    // The setup is locked while the series is in progress (2 of 3 rounds rolled)
+    const d20Radio = page.getByRole('radio', { name: 'd20' });
+    const setupPanel = page.getByRole('region', { name: 'Dice & Series Setup' });
+    await expect(d20Radio).toBeDisabled();
+    await expect(page.getByRole('button', { name: 'Increase quantity' })).toBeDisabled();
+    await expect(page.getByLabel('Player:')).toBeDisabled();
+    await expect(setupPanel.getByRole('note')).toContainText('Series in progress');
+
+    // Resetting the series unlocks it
+    await toolbar.getByRole('button', { name: /Reset/ }).click();
+    await expect(setupPanel.getByRole('note')).toHaveCount(0);
+    await expect(d20Radio).toBeEnabled();
+
     // Dynamic instrument switching: switch to d20
-    await page.getByRole('radio', { name: 'd20' }).click();
+    await d20Radio.click();
     await expect(page.getByRole('heading', { name: /Statistical Breakdown/ })).toHaveText(
       'Statistical Breakdown (d20)',
     );
