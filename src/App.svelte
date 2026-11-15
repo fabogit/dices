@@ -4,6 +4,8 @@
   import SeriesScoreboard from './ui/SeriesScoreboard.svelte';
   import HistoryPanel from './ui/HistoryPanel.svelte';
   import QuickResultPanel from './ui/QuickResultPanel.svelte';
+  import Dialog from './ui/primitives/Dialog.svelte';
+  import Tabs from './ui/primitives/Tabs.svelte';
   import { rollState } from './ui/rollState.svelte';
 
   const appVersion = typeof __APP_VERSION__ !== 'undefined' ? __APP_VERSION__ : '1.0.2';
@@ -12,7 +14,6 @@
     typeof __BUILD_YEAR__ !== 'undefined' ? __BUILD_YEAR__ : new Date().getFullYear().toString();
 
   type RightPanelTab = 'scoreboard' | 'analytics' | 'history';
-  const RIGHT_TABS: RightPanelTab[] = ['scoreboard', 'analytics', 'history'];
 
   let showAddPlayerModal = $state(false);
   let newPlayerName = $state('');
@@ -21,29 +22,33 @@
   // A series belongs to one player: switching mid-series would discard its rounds
   const playerControlsDisabled = $derived(rollState.isRolling || rollState.isSeriesInProgress);
 
-  function handleTabKeyDown(e: KeyboardEvent) {
-    const currentIndex = RIGHT_TABS.indexOf(rightPanelTab);
-    let nextIndex = -1;
-    if (e.key === 'ArrowRight') nextIndex = (currentIndex + 1) % RIGHT_TABS.length;
-    else if (e.key === 'ArrowLeft')
-      nextIndex = (currentIndex - 1 + RIGHT_TABS.length) % RIGHT_TABS.length;
-    else if (e.key === 'Home') nextIndex = 0;
-    else if (e.key === 'End') nextIndex = RIGHT_TABS.length - 1;
+  const rightPanelTabs = $derived([
+    {
+      id: 'scoreboard',
+      label: 'Scoreboard',
+      badge:
+        rollState.rounds.length > 0
+          ? `${rollState.rounds.length}/${rollState.seriesLength}`
+          : undefined,
+    },
+    { id: 'analytics', label: 'Breakdown' },
+    {
+      id: 'history',
+      label: 'History',
+      badge: rollState.history.length > 0 ? rollState.history.length : undefined,
+    },
+  ]);
 
-    if (nextIndex !== -1) {
-      e.preventDefault();
-      const nextTab = RIGHT_TABS[nextIndex]!;
-      rightPanelTab = nextTab;
-      document.getElementById(`tab-${nextTab}`)?.focus();
-    }
+  function closeAddPlayerModal() {
+    showAddPlayerModal = false;
+    newPlayerName = '';
   }
 
   function handleAddPlayerSubmit(e: Event) {
     e.preventDefault();
     if (newPlayerName.trim()) {
       rollState.addPlayer(newPlayerName.trim());
-      newPlayerName = '';
-      showAddPlayerModal = false;
+      closeAddPlayerModal();
     }
   }
 </script>
@@ -135,38 +140,28 @@
   </header>
 
   <!-- Add Player Dialog / Modal -->
-  {#if showAddPlayerModal}
-    <div class="modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="add-player-title">
-      <div class="modal-content">
-        <h2 id="add-player-title" class="modal-title">Add Local Player</h2>
-        <form onsubmit={handleAddPlayerSubmit} class="modal-form">
-          <label for="new-player-input" class="modal-label">Player Name:</label>
-          <input
-            id="new-player-input"
-            type="text"
-            maxlength="24"
-            bind:value={newPlayerName}
-            placeholder="e.g. Robin"
-            required
-            class="modal-input"
-          />
-          <div class="modal-actions">
-            <button
-              type="button"
-              class="modal-btn cancel"
-              onclick={() => {
-                showAddPlayerModal = false;
-                newPlayerName = '';
-              }}
-            >
-              Cancel
-            </button>
-            <button type="submit" class="modal-btn confirm"> Add Player </button>
-          </div>
-        </form>
+  <Dialog open={showAddPlayerModal} title="Add Local Player" onClose={closeAddPlayerModal}>
+    <form onsubmit={handleAddPlayerSubmit} class="modal-form">
+      <label for="new-player-input" class="modal-label">Player Name:</label>
+      <!-- svelte-ignore a11y_autofocus -->
+      <input
+        id="new-player-input"
+        type="text"
+        maxlength="24"
+        bind:value={newPlayerName}
+        placeholder="e.g. Robin"
+        required
+        autofocus
+        class="modal-input"
+      />
+      <div class="modal-actions">
+        <button type="button" class="modal-btn cancel" onclick={closeAddPlayerModal}>
+          Cancel
+        </button>
+        <button type="submit" class="modal-btn confirm"> Add Player </button>
       </div>
-    </div>
-  {/if}
+    </form>
+  </Dialog>
 
   <!-- Main Landmark -->
   <main id="main-content" class="app-main">
@@ -186,56 +181,16 @@
         {#if rollState.mode === 'quick'}
           <QuickResultPanel />
         {:else}
-          <div class="right-panel-tabs" role="tablist" aria-label="Series analysis views">
-            <button
-              id="tab-scoreboard"
-              type="button"
-              role="tab"
-              class="panel-tab-btn"
-              class:active={rightPanelTab === 'scoreboard'}
-              aria-selected={rightPanelTab === 'scoreboard'}
-              aria-controls="tabpanel-scoreboard"
-              tabindex={rightPanelTab === 'scoreboard' ? 0 : -1}
-              onkeydown={handleTabKeyDown}
-              onclick={() => (rightPanelTab = 'scoreboard')}
-            >
-              <span>Scoreboard</span>
-              {#if rollState.rounds.length > 0}
-                <span class="tab-badge">{rollState.rounds.length}/{rollState.seriesLength}</span>
-              {/if}
-            </button>
-            <button
-              id="tab-analytics"
-              type="button"
-              role="tab"
-              class="panel-tab-btn"
-              class:active={rightPanelTab === 'analytics'}
-              aria-selected={rightPanelTab === 'analytics'}
-              aria-controls="tabpanel-analytics"
-              tabindex={rightPanelTab === 'analytics' ? 0 : -1}
-              onkeydown={handleTabKeyDown}
-              onclick={() => (rightPanelTab = 'analytics')}
-            >
-              <span>Breakdown</span>
-            </button>
-            <button
-              id="tab-history"
-              type="button"
-              role="tab"
-              class="panel-tab-btn"
-              class:active={rightPanelTab === 'history'}
-              aria-selected={rightPanelTab === 'history'}
-              aria-controls="tabpanel-history"
-              tabindex={rightPanelTab === 'history' ? 0 : -1}
-              onkeydown={handleTabKeyDown}
-              onclick={() => (rightPanelTab = 'history')}
-            >
-              <span>History</span>
-              {#if rollState.history.length > 0}
-                <span class="tab-badge">{rollState.history.length}</span>
-              {/if}
-            </button>
-          </div>
+          <Tabs
+            tabs={rightPanelTabs}
+            activeTab={rightPanelTab}
+            ariaLabel="Series analysis views"
+            onSelect={(id) => {
+              if (id === 'scoreboard' || id === 'analytics' || id === 'history') {
+                rightPanelTab = id;
+              }
+            }}
+          />
 
           <div
             id="tabpanel-scoreboard"
@@ -480,35 +435,7 @@
     font-size: 0.95rem;
   }
 
-  /* Modal */
-  .modal-backdrop {
-    position: fixed;
-    inset: 0;
-    background: rgba(3, 7, 18, 0.75);
-    backdrop-filter: blur(4px);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    z-index: 100;
-    padding: 1rem;
-  }
-
-  .modal-content {
-    background: var(--surface-elevated);
-    border: 1px solid var(--border-subtle);
-    border-radius: 0.75rem;
-    padding: 1.5rem;
-    width: 100%;
-    max-width: 360px;
-    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
-  }
-
-  .modal-title {
-    margin: 0 0 1rem 0;
-    font-size: 1.15rem;
-    color: var(--text-primary);
-  }
-
+  /* Modal Form */
   .modal-form {
     display: flex;
     flex-direction: column;
@@ -590,58 +517,6 @@
     display: flex;
     flex-direction: column;
     gap: 0.75rem;
-  }
-
-  .right-panel-tabs {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 0.25rem;
-    padding: 0.25rem;
-    background: var(--surface-dark);
-    border: 1px solid var(--border-color);
-    border-radius: 0.65rem;
-  }
-
-  .panel-tab-btn {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    gap: 0.35rem;
-    min-block-size: 34px;
-    padding: 0.35rem 0.5rem;
-    background: transparent;
-    border: 1px solid transparent;
-    border-radius: 0.45rem;
-    color: var(--text-secondary);
-    font-size: 0.8rem;
-    font-weight: 700;
-    cursor: pointer;
-    transition: all 0.15s ease;
-  }
-
-  .panel-tab-btn:hover {
-    color: var(--text-primary);
-    background: rgba(31, 41, 55, 0.7);
-  }
-
-  .panel-tab-btn.active {
-    background: var(--primary-blue);
-    border-color: var(--accent-blue);
-    color: var(--text-white);
-  }
-
-  .tab-badge {
-    padding: 0.05rem 0.35rem;
-    border-radius: 9999px;
-    font-size: 0.68rem;
-    font-weight: 700;
-    background: var(--surface-elevated);
-    color: var(--accent-blue);
-  }
-
-  .panel-tab-btn.active .tab-badge {
-    background: rgba(255, 255, 255, 0.2);
-    color: var(--text-white);
   }
 
   /* Semantic Footer */

@@ -1,6 +1,10 @@
 <script lang="ts">
   import { getCoinSplitPercentages } from '../core/engine';
   import { dieLabel, formatSigned } from '../lib/format';
+  import CoinPills from './primitives/CoinPills.svelte';
+  import CollapsiblePanel from './primitives/CollapsiblePanel.svelte';
+  import DeltaBadge from './primitives/DeltaBadge.svelte';
+  import StatBox from './primitives/StatBox.svelte';
   import { rollState } from './rollState.svelte';
 
   let { section = 'all' }: { section?: 'all' | 'scoreboard' | 'analytics' } = $props();
@@ -15,26 +19,19 @@
   aria-labelledby={section === 'analytics' ? 'analytics-heading' : 'scoreboard-heading'}
 >
   {#if section === 'all' || section === 'scoreboard'}
-    <div class="scoreboard-header">
-      <div class="title-with-badge">
-        <h2 id="scoreboard-heading" class="scoreboard-title">Live Series Scoreboard</h2>
+    <CollapsiblePanel
+      as="div"
+      variant="scoreboard"
+      headingId="scoreboard-heading"
+      title="Live Series Scoreboard"
+      collapsed={isScoreboardCollapsed}
+      onToggle={() => (isScoreboardCollapsed = !isScoreboardCollapsed)}
+    >
+      {#snippet badge()}
         <span class="series-badge">
           Round {rollState.rounds.length} of {rollState.seriesLength}
         </span>
-      </div>
-      <button
-        type="button"
-        class="collapse-toggle-btn"
-        aria-expanded={!isScoreboardCollapsed}
-        onclick={() => (isScoreboardCollapsed = !isScoreboardCollapsed)}
-        aria-label="{isScoreboardCollapsed ? 'Show' : 'Hide'} Live Series Scoreboard"
-      >
-        <span class="chevron" aria-hidden="true">{isScoreboardCollapsed ? '▸' : '▾'}</span>
-        <span>{isScoreboardCollapsed ? 'Show' : 'Hide'}</span>
-      </button>
-    </div>
-
-    <div class="scoreboard-body" class:collapsed={isScoreboardCollapsed}>
+      {/snippet}
       <!-- Progress Bar -->
       <div class="progress-container">
         <div
@@ -177,11 +174,7 @@
                   <td class="values-cell">
                     {#if rollState.faces === 2}
                       <span class="coin-pills">
-                        {#each r.values as v, i (i)}
-                          <span class="mini-coin" class:heads={v === 1} class:tails={v === 2}>
-                            {v === 1 ? 'H' : 'T'}
-                          </span>
-                        {/each}
+                        <CoinPills values={r.values} />
                       </span>
                     {:else}
                       <span class="dice-values-text">{r.values.join(', ')}</span>
@@ -213,269 +206,206 @@
           </tbody>
         </table>
       </div>
-    </div>
+    </CollapsiblePanel>
   {/if}
 
   {#if section === 'all' || section === 'analytics'}
     <!-- Advanced Statistical Breakdown (Issue #7 & #12) -->
-    <div class="analytics-section" class:analytics-standalone={section === 'analytics'}>
-      <div class="section-title-row">
-        <div class="title-with-badge">
-          <svelte:element
-            this={section === 'analytics' ? 'h2' : 'h3'}
-            id={section === 'analytics' ? 'analytics-heading' : undefined}
-            class="section-subtitle"
-            class:scoreboard-title={section === 'analytics'}
+    <CollapsiblePanel
+      as="div"
+      variant={section === 'analytics' ? 'analytics' : 'analytics-nested'}
+      headingLevel={section === 'analytics' ? 'h2' : 'h3'}
+      headingId={section === 'analytics' ? 'analytics-heading' : undefined}
+      title="Statistical Breakdown ({dieLabel(rollState.faces)})"
+      collapsed={isAnalyticsCollapsed}
+      onToggle={() => (isAnalyticsCollapsed = !isAnalyticsCollapsed)}
+      expandAriaLabel="Show Statistical Breakdown & Distribution"
+      collapseAriaLabel="Hide Statistical Breakdown & Distribution"
+      bodyTestId="analytics-body"
+    >
+      {#snippet badge()}
+        <span class="dice-count-tag">
+          {`${analytics.totalDiceRolled} ${analytics.totalDiceRolled === 1 ? 'die' : 'dice'} rolled`}
+        </span>
+      {/snippet}
+      <!-- Statistical Insight Banner -->
+      <div class="insight-banner">
+        <div class="insight-header">
+          <div class="insight-title-group">
+            <span class="insight-icon" aria-hidden="true">💡</span>
+            <h4 class="insight-title">Statistical Verdict</h4>
+          </div>
+          <span
+            class="reliability-chip reliability-{analytics.sampleReliability}"
+            data-testid="sample-reliability"
           >
-            Statistical Breakdown ({dieLabel(rollState.faces)})
-          </svelte:element>
-          <span class="dice-count-tag">
-            {`${analytics.totalDiceRolled} ${analytics.totalDiceRolled === 1 ? 'die' : 'dice'} rolled`}
+            {analytics.sampleReliabilityLabel}
           </span>
         </div>
-        <button
-          type="button"
-          class="collapse-toggle-btn"
-          aria-expanded={!isAnalyticsCollapsed}
-          onclick={() => (isAnalyticsCollapsed = !isAnalyticsCollapsed)}
-          aria-label="{isAnalyticsCollapsed ? 'Show' : 'Hide'} Statistical Breakdown & Distribution"
+        <p class="insight-text" data-testid="insight-text">{analytics.insightSummary}</p>
+      </div>
+
+      <!-- Analytics Key Metrics Grid -->
+      {#if rollState.faces === 2}
+        {@const coinStats = analytics.coinStats}
+        {@const headsPct = coinStats?.headsPercentage ?? 0}
+        {@const tailsPct = coinStats?.tailsPercentage ?? 0}
+        {@const headsDelta = coinStats?.headsDeltaPercentage ?? 0}
+        {@const tailsDelta = coinStats?.tailsDeltaPercentage ?? 0}
+        {@const zQualitative = coinStats?.zQualitative ?? 'No data'}
+
+        <div
+          class="analytics-metrics-grid coin-analytics-grid"
+          data-testid="analytics-metrics"
+          data-variant="coin"
         >
-          <span class="chevron" aria-hidden="true">{isAnalyticsCollapsed ? '▸' : '▾'}</span>
-          <span>{isAnalyticsCollapsed ? 'Show' : 'Hide'}</span>
-        </button>
-      </div>
+          <!-- Heads Share -->
+          <StatBox label="Heads Share" value="{headsPct.toFixed(1)}%" valueTone="heads">
+            {#if analytics.totalDiceRolled > 0}
+              <DeltaBadge
+                tone={headsDelta >= 0 ? 'positive' : 'negative'}
+                text="{formatSigned(headsDelta, 1)}% vs 50%"
+              />
+            {/if}
+          </StatBox>
 
-      <div
-        class="analytics-body"
-        class:collapsed={isAnalyticsCollapsed}
-        data-testid="analytics-body"
-      >
-        <!-- Statistical Insight Banner -->
-        <div class="insight-banner">
-          <div class="insight-header">
-            <div class="insight-title-group">
-              <span class="insight-icon" aria-hidden="true">💡</span>
-              <h4 class="insight-title">Statistical Verdict</h4>
-            </div>
-            <span
-              class="reliability-chip reliability-{analytics.sampleReliability}"
-              data-testid="sample-reliability"
-            >
-              {analytics.sampleReliabilityLabel}
-            </span>
-          </div>
-          <p class="insight-text" data-testid="insight-text">{analytics.insightSummary}</p>
+          <!-- Tails Share -->
+          <StatBox label="Tails Share" value="{tailsPct.toFixed(1)}%" valueTone="tails">
+            {#if analytics.totalDiceRolled > 0}
+              <DeltaBadge
+                tone={tailsDelta >= 0 ? 'positive' : 'negative'}
+                text="{formatSigned(tailsDelta, 1)}% vs 50%"
+              />
+            {/if}
+          </StatBox>
+
+          <!-- Balance Deviation (z) -->
+          <StatBox
+            label="Balance Deviation (z)"
+            value={analytics.totalDiceRolled > 0 ? formatSigned(analytics.zScore, 2) : '0.00'}
+            subtext={zQualitative}
+          />
+
+          <!-- Round Split -->
+          <StatBox
+            label="Round Split"
+            value="{coinStats?.headsRoundsWon ?? 0}H / {coinStats?.tailsRoundsWon ??
+              0}T{(coinStats?.tieRounds ?? 0) > 0 ? ` / ${coinStats?.tieRounds} Tie` : ''}"
+            subtext="across {rollState.rounds.length} rounds"
+          />
         </div>
+      {:else}
+        <!-- Polyhedral d4..d20 Analytics Grid -->
+        <div
+          class="analytics-metrics-grid"
+          data-testid="analytics-metrics"
+          data-variant="polyhedral"
+        >
+          <!-- Expected vs Actual Round Average -->
+          <StatBox label="Expected Avg (E[X])" value={analytics.expectedRoundAverage.toFixed(1)}>
+            {#if rollState.rounds.length > 0}
+              <DeltaBadge
+                tone={analytics.averageDelta >= 0 ? 'positive' : 'negative'}
+                text="{formatSigned(analytics.averageDelta, 1)} Δ"
+              />
+              <span class="zscore-tag">
+                (z: {formatSigned(analytics.zScore, 2)})
+              </span>
+            {/if}
+          </StatBox>
 
-        <!-- Analytics Key Metrics Grid -->
-        {#if rollState.faces === 2}
-          {@const coinStats = analytics.coinStats}
-          {@const headsPct = coinStats?.headsPercentage ?? 0}
-          {@const tailsPct = coinStats?.tailsPercentage ?? 0}
-          {@const headsDelta = coinStats?.headsDeltaPercentage ?? 0}
-          {@const tailsDelta = coinStats?.tailsDeltaPercentage ?? 0}
-          {@const zQualitative = coinStats?.zQualitative ?? 'No data'}
+          <!-- Population Standard Deviation of Round Sums -->
+          <StatBox
+            label="Std Deviation (σ)"
+            value={rollState.rounds.length > 0 ? analytics.standardDeviation.toFixed(2) : '0.00'}
+            subtext="across round sums (σ)"
+          />
 
-          <div
-            class="analytics-metrics-grid coin-analytics-grid"
-            data-testid="analytics-metrics"
-            data-variant="coin"
-          >
-            <!-- Heads Share -->
-            <div class="stat-box">
-              <span class="stat-box-label">Heads Share</span>
-              <div class="stat-box-value-row">
-                <span class="stat-main-num highlight-heads">{headsPct.toFixed(1)}%</span>
-                {#if analytics.totalDiceRolled > 0}
+          <!-- Critical Max Rate (= N) -->
+          <StatBox
+            label="Crit Max (= {rollState.faces})"
+            value="{analytics.criticalMaxRate.toFixed(1)}%"
+            valueTone="crit-max"
+            subtext="({analytics.criticalMaxCount}/{analytics.totalDiceRolled})"
+          />
+
+          <!-- Critical Min Rate (= 1) -->
+          <StatBox
+            label="Crit Min (= 1)"
+            value="{analytics.criticalMinRate.toFixed(1)}%"
+            valueTone="crit-min"
+            subtext="({analytics.criticalMinCount}/{analytics.totalDiceRolled})"
+          />
+        </div>
+      {/if}
+
+      <!-- Face Frequency Distribution (Bar Chart vs Theoretical Line) wrapped in semantic figure -->
+      <figure class="distribution-card">
+        <figcaption class="dist-header">
+          <span class="dist-title">Empirical vs Expected Distribution</span>
+          <span class="expected-legend">
+            <span class="legend-line" aria-hidden="true"></span>
+            <span>Expected: {analytics.distribution[0]?.expectedPercentage.toFixed(1)}%</span>
+          </span>
+        </figcaption>
+
+        <div class="bars-container" role="group" aria-label="Face frequency distribution bars">
+          {#each analytics.distribution as item (item.face)}
+            {@const showHot = item.isHot && rollState.faces > 2}
+            <div class="dist-row" data-testid="dist-row">
+              <span
+                class="face-label"
+                class:coin-label={rollState.faces === 2}
+                class:hot-face-label={showHot}
+                data-testid={showHot ? 'hot-face' : undefined}
+              >
+                {item.label}
+                {#if showHot}
                   <span
-                    class="delta-tag"
-                    class:positive={headsDelta >= 0}
-                    class:negative={headsDelta < 0}
-                  >
-                    {formatSigned(headsDelta, 1)}% vs 50%
-                  </span>
-                {/if}
-              </div>
-            </div>
-
-            <!-- Tails Share -->
-            <div class="stat-box">
-              <span class="stat-box-label">Tails Share</span>
-              <div class="stat-box-value-row">
-                <span class="stat-main-num highlight-tails">{tailsPct.toFixed(1)}%</span>
-                {#if analytics.totalDiceRolled > 0}
-                  <span
-                    class="delta-tag"
-                    class:positive={tailsDelta >= 0}
-                    class:negative={tailsDelta < 0}
-                  >
-                    {formatSigned(tailsDelta, 1)}% vs 50%
-                  </span>
-                {/if}
-              </div>
-            </div>
-
-            <!-- Balance Deviation (z) -->
-            <div class="stat-box">
-              <span class="stat-box-label">Balance Deviation (z)</span>
-              <div class="stat-box-value-row">
-                <span class="stat-main-num">
-                  {analytics.totalDiceRolled > 0 ? formatSigned(analytics.zScore, 2) : '0.00'}
-                </span>
-                <span class="sub-label">{zQualitative}</span>
-              </div>
-            </div>
-
-            <!-- Round Split -->
-            <div class="stat-box">
-              <span class="stat-box-label">Round Split</span>
-              <div class="stat-box-value-row">
-                <span class="stat-main-num">
-                  {coinStats?.headsRoundsWon ?? 0}H / {coinStats?.tailsRoundsWon ?? 0}T
-                  {#if (coinStats?.tieRounds ?? 0) > 0}
-                    / {coinStats?.tieRounds} Tie
-                  {/if}
-                </span>
-                <span class="sub-label">across {rollState.rounds.length} rounds</span>
-              </div>
-            </div>
-          </div>
-        {:else}
-          <!-- Polyhedral d4..d20 Analytics Grid -->
-          <div
-            class="analytics-metrics-grid"
-            data-testid="analytics-metrics"
-            data-variant="polyhedral"
-          >
-            <!-- Expected vs Actual Round Average -->
-            <div class="stat-box">
-              <span class="stat-box-label">Expected Avg (E[X])</span>
-              <div class="stat-box-value-row">
-                <span class="stat-main-num">{analytics.expectedRoundAverage.toFixed(1)}</span>
-                {#if rollState.rounds.length > 0}
-                  <span
-                    class="delta-tag"
-                    class:positive={analytics.averageDelta >= 0}
-                    class:negative={analytics.averageDelta < 0}
-                  >
-                    {formatSigned(analytics.averageDelta, 1)} Δ
-                  </span>
-                  <span class="zscore-tag">
-                    (z: {formatSigned(analytics.zScore, 2)})
-                  </span>
-                {/if}
-              </div>
-            </div>
-
-            <!-- Population Standard Deviation of Round Sums -->
-            <div class="stat-box">
-              <span class="stat-box-label">Std Deviation (σ)</span>
-              <div class="stat-box-value-row">
-                <span class="stat-main-num">
-                  {rollState.rounds.length > 0 ? analytics.standardDeviation.toFixed(2) : '0.00'}
-                </span>
-                <span class="sub-label">across round sums (σ)</span>
-              </div>
-            </div>
-
-            <!-- Critical Max Rate (= N) -->
-            <div class="stat-box">
-              <span class="stat-box-label">Crit Max (= {rollState.faces})</span>
-              <div class="stat-box-value-row">
-                <span class="stat-main-num highlight-crit"
-                  >{analytics.criticalMaxRate.toFixed(1)}%</span
-                >
-                <span class="sub-label"
-                  >({analytics.criticalMaxCount}/{analytics.totalDiceRolled})</span
-                >
-              </div>
-            </div>
-
-            <!-- Critical Min Rate (= 1) -->
-            <div class="stat-box">
-              <span class="stat-box-label">Crit Min (= 1)</span>
-              <div class="stat-box-value-row">
-                <span class="stat-main-num highlight-min"
-                  >{analytics.criticalMinRate.toFixed(1)}%</span
-                >
-                <span class="sub-label"
-                  >({analytics.criticalMinCount}/{analytics.totalDiceRolled})</span
-                >
-              </div>
-            </div>
-          </div>
-        {/if}
-
-        <!-- Face Frequency Distribution (Bar Chart vs Theoretical Line) wrapped in semantic figure -->
-        <figure class="distribution-card">
-          <figcaption class="dist-header">
-            <span class="dist-title">Empirical vs Expected Distribution</span>
-            <span class="expected-legend">
-              <span class="legend-line" aria-hidden="true"></span>
-              <span>Expected: {analytics.distribution[0]?.expectedPercentage.toFixed(1)}%</span>
-            </span>
-          </figcaption>
-
-          <div class="bars-container" role="group" aria-label="Face frequency distribution bars">
-            {#each analytics.distribution as item (item.face)}
-              {@const showHot = item.isHot && rollState.faces > 2}
-              <div class="dist-row" data-testid="dist-row">
-                <span
-                  class="face-label"
-                  class:coin-label={rollState.faces === 2}
-                  class:hot-face-label={showHot}
-                  data-testid={showHot ? 'hot-face' : undefined}
-                >
-                  {item.label}
-                  {#if showHot}
-                    <span
-                      class="hot-badge"
-                      data-testid="hot-badge"
-                      aria-hidden="true"
-                      title="Hot face">🔥</span
-                    >
-                  {/if}
-                </span>
-
-                <div class="bar-track">
-                  <!-- Theoretical Expected Line Marker scaled relative to distributionPeakPercentage -->
-                  <div
-                    class="expected-marker"
-                    style:left="{item.expectedMarkerPercentage}%"
+                    class="hot-badge"
+                    data-testid="hot-badge"
                     aria-hidden="true"
-                  ></div>
-
-                  <!-- Actual Measured Bar scaled relative to distributionPeakPercentage -->
-                  <div
-                    class="empirical-bar"
-                    class:coin-heads={rollState.faces === 2 && item.face === 1}
-                    class:coin-tails={rollState.faces === 2 && item.face === 2}
-                    class:hot-bar={showHot}
-                    style:width="{item.barWidthPercentage}%"
-                    role="img"
-                    aria-label="Face {item.label}: {item.count} rolls, {item.percentage.toFixed(
-                      1,
-                    )}% (expected {item.expectedPercentage.toFixed(1)}%)"
-                  ></div>
-                </div>
-
-                <div class="dist-stats">
-                  <span class="count-text" data-testid="dist-count">{item.count}</span>
-                  <span class="pct-text" data-testid="dist-pct">{item.percentage.toFixed(1)}%</span>
-                  <span
-                    class="delta-pct"
-                    class:delta-pos={item.deltaDirection === 'positive'}
-                    class:delta-neg={item.deltaDirection === 'negative'}
+                    title="Hot face">🔥</span
                   >
-                    {formatSigned(item.deltaPercentage, 1)}%
-                  </span>
-                </div>
+                {/if}
+              </span>
+
+              <div class="bar-track">
+                <!-- Theoretical Expected Line Marker scaled relative to distributionPeakPercentage -->
+                <div
+                  class="expected-marker"
+                  style:left="{item.expectedMarkerPercentage}%"
+                  aria-hidden="true"
+                ></div>
+
+                <!-- Actual Measured Bar scaled relative to distributionPeakPercentage -->
+                <div
+                  class="empirical-bar"
+                  class:coin-heads={rollState.faces === 2 && item.face === 1}
+                  class:coin-tails={rollState.faces === 2 && item.face === 2}
+                  class:hot-bar={showHot}
+                  style:width="{item.barWidthPercentage}%"
+                  role="img"
+                  aria-label="Face {item.label}: {item.count} rolls, {item.percentage.toFixed(
+                    1,
+                  )}% (expected {item.expectedPercentage.toFixed(1)}%)"
+                ></div>
               </div>
-            {/each}
-          </div>
-        </figure>
-      </div>
-    </div>
+
+              <div class="dist-stats">
+                <span class="count-text" data-testid="dist-count">{item.count}</span>
+                <span class="pct-text" data-testid="dist-pct">{item.percentage.toFixed(1)}%</span>
+                <DeltaBadge
+                  tone={item.deltaDirection}
+                  text="{formatSigned(item.deltaPercentage, 1)}%"
+                  variant="dist"
+                />
+              </div>
+            </div>
+          {/each}
+        </div>
+      </figure>
+    </CollapsiblePanel>
   {/if}
 </section>
 
@@ -489,46 +419,6 @@
     border: 1px solid var(--border-color);
     border-radius: 0.75rem;
     backdrop-filter: blur(8px);
-  }
-
-  .scoreboard-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-  }
-
-  .title-with-badge {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    flex-wrap: wrap;
-  }
-
-  .scoreboard-title {
-    margin: 0;
-    font-size: 1.15rem;
-    font-weight: 700;
-    color: var(--text-heading);
-  }
-
-  .scoreboard-body {
-    display: flex;
-    flex-direction: column;
-    gap: 1rem;
-  }
-
-  .scoreboard-body.collapsed {
-    display: none;
-  }
-
-  .analytics-body {
-    display: flex;
-    flex-direction: column;
-    gap: 0.75rem;
-  }
-
-  .analytics-body.collapsed {
-    display: none;
   }
 
   .series-badge {
@@ -701,38 +591,6 @@
   }
 
   /* Advanced Analytics Section */
-  .analytics-section {
-    display: flex;
-    flex-direction: column;
-    gap: 0.75rem;
-    padding-top: 0.5rem;
-    border-top: 1px solid rgba(75, 85, 99, 0.3);
-  }
-
-  .analytics-section.analytics-standalone {
-    padding-top: 0;
-    border-top: none;
-  }
-
-  .section-title-row {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-  }
-
-  .section-subtitle {
-    margin: 0;
-    font-size: 0.95rem;
-    font-weight: 700;
-    color: var(--text-body);
-    letter-spacing: -0.01em;
-  }
-
-  .section-subtitle.scoreboard-title {
-    font-size: 1.15rem;
-    color: var(--text-heading);
-  }
-
   .dice-count-tag {
     font-size: 0.75rem;
     color: var(--text-secondary);
@@ -819,76 +677,8 @@
     gap: 0.5rem;
   }
 
-  .stat-box {
-    display: flex;
-    flex-direction: column;
-    gap: 0.2rem;
-    padding: 0.5rem 0.65rem;
-    background: var(--surface-dark);
-    border: 1px solid var(--border-subtle);
-    border-radius: 0.375rem;
-  }
-
-  .stat-box-label {
-    font-size: 0.7rem;
-    font-weight: 600;
-    color: var(--text-secondary);
-    text-transform: uppercase;
-  }
-
-  .stat-box-value-row {
-    display: flex;
-    align-items: baseline;
-    gap: 0.4rem;
-    flex-wrap: wrap;
-  }
-
-  .stat-main-num {
-    font-size: 1rem;
-    font-weight: 700;
-    color: var(--text-heading);
-  }
-
-  .highlight-heads {
-    color: var(--color-gold);
-  }
-
-  .highlight-tails {
-    color: var(--text-muted);
-  }
-
-  .highlight-crit {
-    color: var(--color-gold);
-  }
-
-  .highlight-min {
-    color: var(--color-danger);
-  }
-
-  .delta-tag {
-    font-size: 0.72rem;
-    font-weight: 700;
-    padding: 0.1rem 0.3rem;
-    border-radius: 0.25rem;
-  }
-
-  .delta-tag.positive {
-    background: rgba(16, 185, 129, 0.2);
-    color: var(--color-emerald);
-  }
-
-  .delta-tag.negative {
-    background: rgba(239, 68, 68, 0.2);
-    color: var(--color-danger);
-  }
-
   .zscore-tag {
     font-size: 0.7rem;
-    color: var(--text-secondary);
-  }
-
-  .sub-label {
-    font-size: 0.72rem;
     color: var(--text-secondary);
   }
 
@@ -1024,19 +814,6 @@
     color: var(--text-secondary);
   }
 
-  .delta-pct {
-    font-size: 0.68rem;
-    color: var(--text-secondary);
-  }
-
-  .delta-pct.delta-pos {
-    color: var(--color-emerald);
-  }
-
-  .delta-pct.delta-neg {
-    color: var(--color-danger);
-  }
-
   /* Responsive Table - Modern Web Guidance */
   .table-wrapper {
     overflow-x: auto;
@@ -1107,28 +884,6 @@
     padding: 1.5rem !important;
     color: var(--text-secondary);
     font-style: italic;
-  }
-
-  .mini-coin {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 18px;
-    height: 18px;
-    border-radius: 50%;
-    font-size: 0.65rem;
-    font-weight: 800;
-    margin-right: 2px;
-  }
-
-  .mini-coin.heads {
-    background: var(--color-yellow-500);
-    color: var(--color-brown-deep);
-  }
-
-  .mini-coin.tails {
-    background: var(--text-muted);
-    color: var(--surface-deep);
   }
 
   .outcome-pill {

@@ -1,4 +1,5 @@
 <script lang="ts">
+  import CollapsiblePanel from './primitives/CollapsiblePanel.svelte';
   import { onMount } from 'svelte';
   import type { DiceArena3D } from '../three/DiceArena3D';
   import { rollState } from './rollState.svelte';
@@ -50,210 +51,171 @@
   }
 </script>
 
-<section class="arena-section" aria-labelledby="arena-heading">
-  <div class="section-header">
-    <h2 id="arena-heading" class="section-title">3D Dice Arena</h2>
-    <button
-      type="button"
-      class="collapse-toggle-btn"
-      aria-expanded={!isCollapsed}
-      onclick={toggleCollapse}
-      aria-label="{isCollapsed ? 'Show Arena' : 'Hide Arena'} for 3D Dice"
-    >
-      <span class="chevron" aria-hidden="true">{isCollapsed ? '▸' : '▾'}</span>
-      <span>{isCollapsed ? 'Show Arena' : 'Hide Arena'}</span>
-    </button>
-  </div>
+<CollapsiblePanel
+  title="3D Dice Arena"
+  collapsed={isCollapsed}
+  onToggle={toggleCollapse}
+  variant="arena"
+  headingId="arena-heading"
+  expandText="Show Arena"
+  collapseText="Hide Arena"
+  expandAriaLabel="Show Arena for 3D Dice"
+  collapseAriaLabel="Hide Arena for 3D Dice"
+>
+  <div class="arena-viewport" role="region" aria-label="3D Dice Arena Viewport">
+    <canvas bind:this={canvasElement} class="three-canvas" data-testid="dice-canvas"></canvas>
 
-  <div class="arena-body" class:collapsed={isCollapsed}>
-    <div class="arena-viewport" role="region" aria-label="3D Dice Arena Viewport">
-      <canvas bind:this={canvasElement} class="three-canvas" data-testid="dice-canvas"></canvas>
-
-      <!-- WebGL Context Loss Banner -->
-      {#if rollState.contextLost}
-        <div class="context-loss-overlay" role="alert">
-          <div class="context-loss-card">
-            <span class="warning-icon" aria-hidden="true">⚠️</span>
-            <div>
-              <h3>WebGL Context Suspended</h3>
-              <p>Graphics context was lost. The browser will automatically restore it shortly.</p>
-            </div>
+    <!-- WebGL Context Loss Banner -->
+    {#if rollState.contextLost}
+      <div class="context-loss-overlay" role="alert">
+        <div class="context-loss-card">
+          <span class="warning-icon" aria-hidden="true">⚠️</span>
+          <div>
+            <h3>WebGL Context Suspended</h3>
+            <p>Graphics context was lost. The browser will automatically restore it shortly.</p>
           </div>
         </div>
-      {/if}
+      </div>
+    {/if}
 
-      <!-- Overlay HUD -->
-      <div class="hud-overlay" aria-hidden="true">
-        <div class="hud-top">
-          <div class="hud-pill round-badge">
-            {#if rollState.mode === 'quick'}
-              <span class="status-dot green"></span>
-              <span>Quick Roll (Free)</span>
-            {:else if rollState.isComplete}
-              <span class="status-dot green"></span>
-              <span>Series Complete ({rollState.rounds.length}/{rollState.seriesLength})</span>
-            {:else if rollState.rounds.length === 0}
-              <span class="status-dot gray"></span>
-              <span>Ready to Roll</span>
-            {:else}
-              <span class="status-dot blue"></span>
-              <span>Round {rollState.rounds.length} of {rollState.seriesLength}</span>
-            {/if}
-          </div>
-
-          {#if rollState.instantMode}
-            <div class="hud-pill instant-badge">⚡ Fast Roll (No Anim)</div>
+    <!-- Overlay HUD -->
+    <div class="hud-overlay" aria-hidden="true">
+      <div class="hud-top">
+        <div class="hud-pill round-badge">
+          {#if rollState.mode === 'quick'}
+            <span class="status-dot green"></span>
+            <span>Quick Roll (Free)</span>
+          {:else if rollState.isComplete}
+            <span class="status-dot green"></span>
+            <span>Series Complete ({rollState.rounds.length}/{rollState.seriesLength})</span>
+          {:else if rollState.rounds.length === 0}
+            <span class="status-dot gray"></span>
+            <span>Ready to Roll</span>
+          {:else}
+            <span class="status-dot blue"></span>
+            <span>Round {rollState.rounds.length} of {rollState.seriesLength}</span>
           {/if}
         </div>
 
-        <!-- Latest Values Banner at Bottom of Viewport -->
-        <!-- Hidden while dice are in the air so the previous result never sits under a new throw -->
-        {#if currentRoll && !rollState.isRolling}
-          <div class="hud-bottom">
-            <div class="results-hud-card">
-              <span class="results-title">
-                {rollState.mode === 'quick'
-                  ? 'Quick Roll:'
-                  : `Round #${currentRoll.roundIndex + 1}:`}
-              </span>
-
-              <div class="hud-values-row">
-                {#each currentRoll.values as val, idx (idx)}
-                  {#if currentRollFaces === 2}
-                    <span
-                      class="hud-value-badge coin"
-                      class:heads={val === 1}
-                      class:tails={val === 2}
-                    >
-                      {val === 1 ? 'HEADS' : 'TAILS'}
-                    </span>
-                  {:else}
-                    <span class="hud-value-badge die">
-                      {val}
-                    </span>
-                  {/if}
-                {/each}
-              </div>
-
-              {#if currentRollFaces !== 2 && currentRoll.values.length > 1}
-                <span class="hud-sum-badge">
-                  Sum: <strong>{currentRoll.sum}</strong>
-                </span>
-              {/if}
-            </div>
-          </div>
+        {#if rollState.instantMode}
+          <div class="hud-pill instant-badge">⚡ Fast Roll (No Anim)</div>
         {/if}
       </div>
-    </div>
 
-    <!-- Attached Roll Control Toolbar (Issue #9) -->
-    <div class="arena-toolbar" role="toolbar" aria-label="Roll controls">
-      {#if rollState.mode === 'quick'}
-        <button
-          type="button"
-          class="action-btn primary-btn"
-          disabled={rollState.isRolling}
-          onclick={() => rollState.executeQuickRoll()}
-        >
-          {#if rollState.faces === 2}
-            🪙 Flip {rollState.countPerRoll === 1 ? 'Coin' : `${rollState.countPerRoll} Coins`}
-          {:else}
-            🎲 Roll {rollState.countPerRoll}d{rollState.faces}
-          {/if}
-        </button>
+      <!-- Latest Values Banner at Bottom of Viewport -->
+      <!-- Hidden while dice are in the air so the previous result never sits under a new throw -->
+      {#if currentRoll && !rollState.isRolling}
+        <div class="hud-bottom">
+          <div class="results-hud-card">
+            <span class="results-title">
+              {rollState.mode === 'quick' ? 'Quick Roll:' : `Round #${currentRoll.roundIndex + 1}:`}
+            </span>
 
-        <button
-          type="button"
-          class="action-btn secondary-btn btn-clear-quick"
-          disabled={rollState.isRolling || rollState.quickRolls.length === 0}
-          onclick={() => rollState.clearQuickRolls()}
-          aria-label="Clear quick roll feed"
-        >
-          ↺ Clear Feed
-        </button>
-      {:else}
-        <button
-          type="button"
-          class="action-btn primary-btn"
-          disabled={rollState.isRolling || rollState.isComplete}
-          onclick={() => rollState.rollNextRound()}
-        >
-          {#if rollState.isComplete}
-            Series Complete ({rollState.rounds.length}/{rollState.seriesLength})
-          {:else}
-            Roll Round ({rollState.rounds.length + 1}/{rollState.seriesLength})
-          {/if}
-        </button>
+            <div class="hud-values-row">
+              {#each currentRoll.values as val, idx (idx)}
+                {#if currentRollFaces === 2}
+                  <span
+                    class="hud-value-badge coin"
+                    class:heads={val === 1}
+                    class:tails={val === 2}
+                  >
+                    {val === 1 ? 'HEADS' : 'TAILS'}
+                  </span>
+                {:else}
+                  <span class="hud-value-badge die">
+                    {val}
+                  </span>
+                {/if}
+              {/each}
+            </div>
 
-        <button
-          type="button"
-          class="action-btn secondary-btn"
-          class:auto-active={rollState.isAutoRolling}
-          disabled={(rollState.isRolling && !rollState.isAutoRolling) || rollState.isComplete}
-          onclick={() => {
-            if (rollState.isAutoRolling) {
-              rollState.stopAutoRoll();
-            } else {
-              rollState.autoRollSeries();
-            }
-          }}
-        >
-          {rollState.isAutoRolling
-            ? '⏹ Stop Auto-Roll'
-            : `⚡ Auto-Roll Series (${rollState.seriesLength})`}
-        </button>
-
-        <button
-          type="button"
-          class="action-btn secondary-btn btn-reset-series"
-          disabled={rollState.isRolling}
-          onclick={() => rollState.resetCurrentSeries()}
-        >
-          ↺ Reset
-        </button>
-      {/if}
-
-      {#if rollState.isRolling && !rollState.instantMode}
-        <button type="button" class="action-btn btn-skip" onclick={() => rollState.skipAnimation()}>
-          ⏩ Skip Animation
-        </button>
+            {#if currentRollFaces !== 2 && currentRoll.values.length > 1}
+              <span class="hud-sum-badge">
+                Sum: <strong>{currentRoll.sum}</strong>
+              </span>
+            {/if}
+          </div>
+        </div>
       {/if}
     </div>
   </div>
-</section>
+
+  <!-- Attached Roll Control Toolbar (Issue #9) -->
+  <div class="arena-toolbar" role="toolbar" aria-label="Roll controls">
+    {#if rollState.mode === 'quick'}
+      <button
+        type="button"
+        class="action-btn primary-btn"
+        disabled={rollState.isRolling}
+        onclick={() => rollState.executeQuickRoll()}
+      >
+        {#if rollState.faces === 2}
+          🪙 Flip {rollState.countPerRoll === 1 ? 'Coin' : `${rollState.countPerRoll} Coins`}
+        {:else}
+          🎲 Roll {rollState.countPerRoll}d{rollState.faces}
+        {/if}
+      </button>
+
+      <button
+        type="button"
+        class="action-btn secondary-btn btn-clear-quick"
+        disabled={rollState.isRolling || rollState.quickRolls.length === 0}
+        onclick={() => rollState.clearQuickRolls()}
+        aria-label="Clear quick roll feed"
+      >
+        ↺ Clear Feed
+      </button>
+    {:else}
+      <button
+        type="button"
+        class="action-btn primary-btn"
+        disabled={rollState.isRolling || rollState.isComplete}
+        onclick={() => rollState.rollNextRound()}
+      >
+        {#if rollState.isComplete}
+          Series Complete ({rollState.rounds.length}/{rollState.seriesLength})
+        {:else}
+          Roll Round ({rollState.rounds.length + 1}/{rollState.seriesLength})
+        {/if}
+      </button>
+
+      <button
+        type="button"
+        class="action-btn secondary-btn"
+        class:auto-active={rollState.isAutoRolling}
+        disabled={(rollState.isRolling && !rollState.isAutoRolling) || rollState.isComplete}
+        onclick={() => {
+          if (rollState.isAutoRolling) {
+            rollState.stopAutoRoll();
+          } else {
+            rollState.autoRollSeries();
+          }
+        }}
+      >
+        {rollState.isAutoRolling
+          ? '⏹ Stop Auto-Roll'
+          : `⚡ Auto-Roll Series (${rollState.seriesLength})`}
+      </button>
+
+      <button
+        type="button"
+        class="action-btn secondary-btn btn-reset-series"
+        disabled={rollState.isRolling}
+        onclick={() => rollState.resetCurrentSeries()}
+      >
+        ↺ Reset
+      </button>
+    {/if}
+
+    {#if rollState.isRolling && !rollState.instantMode}
+      <button type="button" class="action-btn btn-skip" onclick={() => rollState.skipAnimation()}>
+        ⏩ Skip Animation
+      </button>
+    {/if}
+  </div>
+</CollapsiblePanel>
 
 <style>
-  .arena-section {
-    display: flex;
-    flex-direction: column;
-    gap: 0.5rem;
-    width: 100%;
-  }
-
-  .section-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-  }
-
-  .section-title {
-    margin: 0;
-    font-size: 1.15rem;
-    font-weight: 700;
-    color: var(--text-heading);
-  }
-
-  .arena-body {
-    width: 100%;
-    display: flex;
-    flex-direction: column;
-    gap: 0.65rem;
-  }
-
-  .arena-body.collapsed {
-    display: none;
-  }
-
   .arena-viewport {
     position: relative;
     width: 100%;

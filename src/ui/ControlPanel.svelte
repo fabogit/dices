@@ -3,6 +3,8 @@
   import { DIE_THEMES } from '../lib/dieThemes';
   import { dieLabel } from '../lib/format';
   import { rollState } from './rollState.svelte';
+  import CollapsiblePanel from './primitives/CollapsiblePanel.svelte';
+  import RangeStepper from './primitives/RangeStepper.svelte';
 
   const PRESETS: Array<{ label: string; length: number }> = [
     { label: 'Single (1)', length: 1 },
@@ -16,107 +18,70 @@
   const controlsDisabled = $derived(rollState.isRolling || rollState.isConfigLocked);
 </script>
 
-<section class="control-panel" aria-labelledby="control-panel-heading">
-  <div class="panel-header-row">
-    <h2 id="control-panel-heading" class="panel-heading">Dice & Series Setup</h2>
-    <button
-      type="button"
-      class="collapse-toggle-btn"
-      aria-expanded={!isCollapsed}
-      onclick={() => (isCollapsed = !isCollapsed)}
-      aria-label="{isCollapsed ? 'Show' : 'Hide'} Dice & Series Setup"
-    >
-      <span class="chevron" aria-hidden="true">{isCollapsed ? '▸' : '▾'}</span>
-      <span>{isCollapsed ? 'Show' : 'Hide'}</span>
-    </button>
-  </div>
+<CollapsiblePanel
+  title="Dice & Series Setup"
+  collapsed={isCollapsed}
+  onToggle={() => (isCollapsed = !isCollapsed)}
+  variant="control"
+>
+  {#if rollState.isConfigLocked}
+    <p class="lock-hint" role="note">Series in progress. Reset the series to change the setup.</p>
+  {/if}
 
-  <div class="panel-body" class:collapsed={isCollapsed}>
-    {#if rollState.isConfigLocked}
-      <p class="lock-hint" role="note">Series in progress. Reset the series to change the setup.</p>
-    {/if}
-
-    <!-- Instrument Selector -->
-    <fieldset class="field-group">
-      <legend class="field-label">Choose Instrument</legend>
-      <div class="faces-grid" role="radiogroup" aria-label="Die face selector">
-        {#each ALLOWED_FACES as f (f)}
-          {@const theme = DIE_THEMES[f]}
-          {@const isSelected = rollState.faces === f}
-          <button
-            type="button"
-            role="radio"
-            aria-checked={isSelected}
-            class="face-badge-button"
-            class:selected={isSelected}
-            style:--badge-accent={theme.accentColor}
-            style:--badge-primary={theme.primaryColor}
-            onclick={() => rollState.setFaces(f)}
-            disabled={controlsDisabled}
-          >
-            <span class="badge-dot" style:background-color={theme.accentColor}></span>
-            <span class="badge-text">{dieLabel(f, 'parens')}</span>
-          </button>
-        {/each}
-      </div>
-    </fieldset>
-
-    <!-- Quantity Per Throw (M) -->
-    <div class="field-group">
-      <div class="field-label-row">
-        <label for="count-slider" class="field-label">
-          Quantity Per Roll (M):
-          <strong class="count-value">{rollState.countPerRoll}</strong>
-        </label>
-        <span class="field-hint">1 to 10 {rollState.faces === 2 ? 'coins' : 'dice'}</span>
-      </div>
-      <div class="slider-controls">
+  <!-- Instrument Selector -->
+  <fieldset class="field-group">
+    <legend class="field-label">Choose Instrument</legend>
+    <div class="faces-grid" role="radiogroup" aria-label="Die face selector">
+      {#each ALLOWED_FACES as f (f)}
+        {@const theme = DIE_THEMES[f]}
+        {@const isSelected = rollState.faces === f}
         <button
           type="button"
-          class="stepper-btn"
-          aria-label="Decrease quantity"
-          disabled={rollState.countPerRoll <= 1 || controlsDisabled}
-          onclick={() => rollState.setCountPerRoll(rollState.countPerRoll - 1)}
-        >
-          −
-        </button>
-        <input
-          id="count-slider"
-          type="range"
-          min="1"
-          max="10"
-          step="1"
-          value={rollState.countPerRoll}
+          role="radio"
+          aria-checked={isSelected}
+          class="face-badge-button"
+          class:selected={isSelected}
+          style:--badge-accent={theme.accentColor}
+          style:--badge-primary={theme.primaryColor}
+          onclick={() => rollState.setFaces(f)}
           disabled={controlsDisabled}
-          aria-valuemin="1"
-          aria-valuemax="10"
-          aria-valuenow={rollState.countPerRoll}
-          oninput={(e) => rollState.setCountPerRoll(Number((e.target as HTMLInputElement).value))}
-          class="range-slider"
-        />
-        <button
-          type="button"
-          class="stepper-btn"
-          aria-label="Increase quantity"
-          disabled={rollState.countPerRoll >= 10 || controlsDisabled}
-          onclick={() => rollState.setCountPerRoll(rollState.countPerRoll + 1)}
         >
-          +
+          <span class="badge-dot" style:background-color={theme.accentColor}></span>
+          <span class="badge-text">{dieLabel(f, 'parens')}</span>
         </button>
-      </div>
+      {/each}
     </div>
+  </fieldset>
 
-    <!-- Series Length (K) - Shown only in Series mode -->
-    {#if rollState.mode === 'series'}
-      <div class="field-group">
-        <div class="field-label-row">
-          <label for="series-length-slider" class="field-label">
-            Series Rounds (K):
-            <strong class="count-value">{rollState.seriesLength}</strong>
-          </label>
-          <span class="field-hint">1 to 21 rounds</span>
-        </div>
+  <!-- Quantity Per Throw (M) -->
+  <RangeStepper
+    id="count-slider"
+    label="Quantity Per Roll (M):"
+    value={rollState.countPerRoll}
+    min={1}
+    max={10}
+    hint="1 to 10 {rollState.faces === 2 ? 'coins' : 'dice'}"
+    disabled={controlsDisabled}
+    decreaseAriaLabel="Decrease quantity"
+    increaseAriaLabel="Increase quantity"
+    onChange={(val) => rollState.setCountPerRoll(val)}
+  />
 
+  <!-- Series Length (K) - Shown only in Series mode -->
+  {#if rollState.mode === 'series'}
+    <RangeStepper
+      id="series-length-slider"
+      label="Series Rounds (K):"
+      value={rollState.seriesLength}
+      min={1}
+      max={21}
+      hint="1 to 21 rounds"
+      disabled={controlsDisabled}
+      decreaseAriaLabel="Decrease series rounds"
+      increaseAriaLabel="Increase series rounds"
+      onChange={(val) => rollState.setSeriesLength(val)}
+    >
+      {#snippet beforeSlider()}
         <!-- Presets -->
         <div class="preset-buttons" role="group" aria-label="Series length presets">
           {#each PRESETS as preset (preset.length)}
@@ -131,43 +96,9 @@
             </button>
           {/each}
         </div>
+      {/snippet}
 
-        <!-- Range Slider + Steppers for Series Length -->
-        <div class="slider-controls">
-          <button
-            type="button"
-            class="stepper-btn"
-            aria-label="Decrease series rounds"
-            disabled={rollState.seriesLength <= 1 || controlsDisabled}
-            onclick={() => rollState.setSeriesLength(rollState.seriesLength - 1)}
-          >
-            −
-          </button>
-          <input
-            id="series-length-slider"
-            type="range"
-            min="1"
-            max="21"
-            step="1"
-            value={rollState.seriesLength}
-            disabled={controlsDisabled}
-            aria-valuemin="1"
-            aria-valuemax="21"
-            aria-valuenow={rollState.seriesLength}
-            oninput={(e) => rollState.setSeriesLength(Number((e.target as HTMLInputElement).value))}
-            class="range-slider"
-          />
-          <button
-            type="button"
-            class="stepper-btn"
-            aria-label="Increase series rounds"
-            disabled={rollState.seriesLength >= 21 || controlsDisabled}
-            onclick={() => rollState.setSeriesLength(rollState.seriesLength + 1)}
-          >
-            +
-          </button>
-        </div>
-
+      {#snippet afterSlider()}
         <div class="stepper-row">
           <label for="series-length-input" class="sr-only">Custom series length (1 to 21)</label>
           <input
@@ -183,10 +114,10 @@
           />
           <span class="unit-text">rounds (custom 1..21)</span>
         </div>
-      </div>
-    {/if}
-  </div>
-</section>
+      {/snippet}
+    </RangeStepper>
+  {/if}
+</CollapsiblePanel>
 
 <style>
   .lock-hint {
@@ -200,41 +131,6 @@
     line-height: 1.4;
   }
 
-  .control-panel {
-    display: flex;
-    flex-direction: column;
-    gap: 1rem;
-    padding: 1.25rem;
-    background: var(--surface-panel);
-    border: 1px solid var(--border-color);
-    border-radius: 0.75rem;
-    backdrop-filter: blur(8px);
-  }
-
-  .panel-header-row {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-  }
-
-  .panel-heading {
-    margin: 0;
-    font-size: 1.15rem;
-    font-weight: 700;
-    color: var(--text-heading);
-    letter-spacing: -0.01em;
-  }
-
-  .panel-body {
-    display: flex;
-    flex-direction: column;
-    gap: 1.25rem;
-  }
-
-  .panel-body.collapsed {
-    display: none;
-  }
-
   .field-group {
     display: flex;
     flex-direction: column;
@@ -244,26 +140,10 @@
     margin: 0;
   }
 
-  .field-label-row {
-    display: flex;
-    justify-content: space-between;
-    align-items: baseline;
-  }
-
   .field-label {
     font-size: 0.875rem;
     font-weight: 600;
     color: var(--text-body);
-  }
-
-  .field-hint {
-    font-size: 0.75rem;
-    color: var(--text-secondary);
-  }
-
-  .count-value {
-    color: var(--accent-blue);
-    margin-left: 0.25rem;
   }
 
   .faces-grid {
@@ -306,38 +186,6 @@
     height: 9px;
     border-radius: 50%;
     flex-shrink: 0;
-  }
-
-  .slider-controls {
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-  }
-
-  .stepper-btn {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    min-inline-size: 32px;
-    min-block-size: 32px;
-    background: var(--surface-hover);
-    border: 1px solid var(--border-muted);
-    border-radius: 0.375rem;
-    color: var(--text-heading);
-    font-size: 1.1rem;
-    font-weight: bold;
-    cursor: pointer;
-  }
-
-  .stepper-btn:hover:not(:disabled) {
-    background: var(--border-muted);
-  }
-
-  .range-slider {
-    flex: 1;
-    min-block-size: 24px;
-    accent-color: var(--accent-blue);
-    cursor: pointer;
   }
 
   .preset-buttons {

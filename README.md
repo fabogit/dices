@@ -298,13 +298,13 @@ pnpm run preview
 # Run the full static gate: tsc --noEmit, svelte-check, oxlint (type-aware), and oxfmt --check
 pnpm run check
 
-# Execute comprehensive Vitest unit/state test suite (128 tests across core, formatters, 3D, and state)
+# Execute comprehensive Vitest unit/state test suite (139 tests across core, formatters, 3D, state, and UI primitives)
 pnpm test
 
 # Run Vitest test suite with V8 code coverage and threshold enforcement
 pnpm run test:coverage
 
-# Execute Chromium Playwright E2E test suite against the built production preview (16 tests across 9 specs, including visual regression baselines)
+# Execute Chromium Playwright E2E test suite against the built production preview (17 tests across 9 specs, including visual regression baselines)
 pnpm run test:e2e
 ```
 

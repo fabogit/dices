@@ -2,6 +2,10 @@
   import { rollState } from './rollState.svelte';
   import { computeQuickRollSessionStats, computeQuickRollStats } from '../core/engine';
   import { dieLabel, formatSigned, formatTime } from '../lib/format';
+  import CoinPills from './primitives/CoinPills.svelte';
+  import CollapsiblePanel from './primitives/CollapsiblePanel.svelte';
+  import DeltaBadge from './primitives/DeltaBadge.svelte';
+  import EmptyState from './primitives/EmptyState.svelte';
 
   let isCollapsed = $state(false);
 
@@ -10,305 +14,248 @@
   );
 </script>
 
-<section class="quick-result-panel" aria-labelledby="quick-result-heading">
-  <div class="panel-header">
-    <div class="title-with-badge">
-      <h2 id="quick-result-heading" class="panel-title">Quick Roll Feed</h2>
-      <span class="count-badge">{rollState.quickRollCount} in session</span>
-    </div>
+<CollapsiblePanel
+  title="Quick Roll Feed"
+  collapsed={isCollapsed}
+  onToggle={() => (isCollapsed = !isCollapsed)}
+  variant="quick"
+>
+  {#snippet badge()}
+    <span class="count-badge">{rollState.quickRollCount} in session</span>
+  {/snippet}
 
-    <button
-      type="button"
-      class="collapse-toggle-btn"
-      aria-expanded={!isCollapsed}
-      onclick={() => (isCollapsed = !isCollapsed)}
-      aria-label="{isCollapsed ? 'Show' : 'Hide'} Quick Roll Feed"
-    >
-      <span class="chevron" aria-hidden="true">{isCollapsed ? '▸' : '▾'}</span>
-      <span>{isCollapsed ? 'Show' : 'Hide'}</span>
-    </button>
-  </div>
+  <!-- Prominent Latest Quick Result Hero Card -->
+  {#if rollState.latestQuickRoll}
+    {@const latest = rollState.latestQuickRoll}
+    {@const heroFaces = latest.faces ?? rollState.faces}
+    {@const stats = computeQuickRollStats(latest, heroFaces)}
+    <div class="latest-hero-card" role="region" aria-label="Latest Quick Roll Result">
+      <div class="hero-top-row">
+        <span class="hero-instrument">
+          {dieLabel(heroFaces)}
+          × {latest.values.length}
+        </span>
+        <span class="hero-time">{formatTime(latest.timestamp)}</span>
+      </div>
 
-  <div class="panel-body" class:collapsed={isCollapsed}>
-    <!-- Prominent Latest Quick Result Hero Card -->
-    {#if rollState.latestQuickRoll}
-      {@const latest = rollState.latestQuickRoll}
-      {@const heroFaces = latest.faces ?? rollState.faces}
-      {@const stats = computeQuickRollStats(latest, heroFaces)}
-      <div class="latest-hero-card" role="region" aria-label="Latest Quick Roll Result">
-        <div class="hero-top-row">
-          <span class="hero-instrument">
-            {dieLabel(heroFaces)}
-            × {latest.values.length}
-          </span>
-          <span class="hero-time">{formatTime(latest.timestamp)}</span>
+      {#if heroFaces === 2}
+        {@const headsPct = stats.headsPercentage ?? 0}
+        {@const tailsPct = stats.tailsPercentage ?? 0}
+        <!-- Coin d2 Hero Display -->
+        <div class="coin-hero-display">
+          <div class="coin-winner-title">
+            {#if latest.roundWinnerSide === 'TIE'}
+              <span class="winner-tie">⚖️ Tied Result</span>
+            {:else}
+              <span class="winner-side">🏆 {latest.roundWinnerSide} Wins</span>
+            {/if}
+          </div>
+
+          <div class="coin-chips-row">
+            {#each latest.values as v, idx (idx)}
+              <span class="coin-chip" class:heads={v === 1} class:tails={v === 2}>
+                {v === 1 ? 'HEADS' : 'TAILS'}
+              </span>
+            {/each}
+          </div>
+
+          <!-- Proportional Coin Split Bar -->
+          <div
+            class="coin-bar-track"
+            role="img"
+            aria-label="Split: {headsPct.toFixed(0)}% Heads, {tailsPct.toFixed(0)}% Tails"
+          >
+            <div class="coin-bar-heads" style:width="{headsPct}%"></div>
+            <div class="coin-bar-tails" style:width="{tailsPct}%"></div>
+          </div>
+
+          <div class="coin-counts-row">
+            <span class="coin-count-stat heads-color">
+              Heads: <strong>{stats.headsCount ?? 0}</strong> ({headsPct.toFixed(0)}%)
+            </span>
+            <span class="stat-bullet">•</span>
+            <span class="coin-count-stat tails-color">
+              Tails: <strong>{stats.tailsCount ?? 0}</strong> ({tailsPct.toFixed(0)}%)
+            </span>
+          </div>
+
+          <p class="quick-insight-narrative" data-testid="quick-insight">{stats.insight}</p>
         </div>
-
-        {#if heroFaces === 2}
-          {@const headsPct = stats.headsPercentage ?? 0}
-          {@const tailsPct = stats.tailsPercentage ?? 0}
-          <!-- Coin d2 Hero Display -->
-          <div class="coin-hero-display">
-            <div class="coin-winner-title">
-              {#if latest.roundWinnerSide === 'TIE'}
-                <span class="winner-tie">⚖️ Tied Result</span>
-              {:else}
-                <span class="winner-side">🏆 {latest.roundWinnerSide} Wins</span>
-              {/if}
-            </div>
-
-            <div class="coin-chips-row">
-              {#each latest.values as v, idx (idx)}
-                <span class="coin-chip" class:heads={v === 1} class:tails={v === 2}>
-                  {v === 1 ? 'HEADS' : 'TAILS'}
-                </span>
-              {/each}
-            </div>
-
-            <!-- Proportional Coin Split Bar -->
-            <div
-              class="coin-bar-track"
-              role="img"
-              aria-label="Split: {headsPct.toFixed(0)}% Heads, {tailsPct.toFixed(0)}% Tails"
-            >
-              <div class="coin-bar-heads" style:width="{headsPct}%"></div>
-              <div class="coin-bar-tails" style:width="{tailsPct}%"></div>
-            </div>
-
-            <div class="coin-counts-row">
-              <span class="coin-count-stat heads-color">
-                Heads: <strong>{stats.headsCount ?? 0}</strong> ({headsPct.toFixed(0)}%)
-              </span>
-              <span class="stat-bullet">•</span>
-              <span class="coin-count-stat tails-color">
-                Tails: <strong>{stats.tailsCount ?? 0}</strong> ({tailsPct.toFixed(0)}%)
-              </span>
-            </div>
-
-            <p class="quick-insight-narrative" data-testid="quick-insight">{stats.insight}</p>
+      {:else}
+        <!-- Polyhedral Dice Hero Display -->
+        <div class="dice-hero-display">
+          <div class="sum-display-block">
+            <span class="sum-label">TOTAL SUM</span>
+            <span class="sum-big-number" data-testid="hero-sum">{latest.sum}</span>
           </div>
-        {:else}
-          <!-- Polyhedral Dice Hero Display -->
-          <div class="dice-hero-display">
-            <div class="sum-display-block">
-              <span class="sum-label">TOTAL SUM</span>
-              <span class="sum-big-number" data-testid="hero-sum">{latest.sum}</span>
-            </div>
 
-            <div class="dice-chips-row">
-              {#each latest.values as val, idx (idx)}
-                <span
-                  class="die-value-chip"
-                  class:crit-max={val === heroFaces}
-                  class:crit-min={val === 1}
-                >
-                  {val}
-                </span>
-              {/each}
-            </div>
-
-            <!-- Descriptive Metric Strip -->
-            <div class="dice-sub-stats">
-              <span>Expected: <strong>{stats.expectedSum?.toFixed(1)}</strong></span>
-              <span class="stat-bullet">•</span>
+          <div class="dice-chips-row">
+            {#each latest.values as val, idx (idx)}
               <span
-                class="delta-indicator"
-                class:pos={(stats.sumDelta ?? 0) >= 0}
-                class:neg={(stats.sumDelta ?? 0) < 0}
+                class="die-value-chip"
+                class:crit-max={val === heroFaces}
+                class:crit-min={val === 1}
               >
-                Δ: <strong>{formatSigned(stats.sumDelta ?? 0)}</strong>
+                {val}
               </span>
-              {#if latest.values.length > 1}
-                <span class="stat-bullet">•</span>
-                <span>High: <strong>{latest.max}</strong></span>
-                <span class="stat-bullet">•</span>
-                <span>Low: <strong>{latest.min}</strong></span>
-              {/if}
-              {#if (stats.criticalMaxCount ?? 0) > 0}
-                <span class="stat-bullet">•</span>
-                <span class="crit-highlight">{stats.criticalMaxCount}x crit ({heroFaces})</span>
-              {/if}
-              {#if (stats.criticalMinCount ?? 0) > 0}
-                <span class="stat-bullet">•</span>
-                <span class="min-highlight">{stats.criticalMinCount}x nat 1</span>
-              {/if}
-            </div>
-
-            <p class="quick-insight-narrative" data-testid="quick-insight">{stats.insight}</p>
+            {/each}
           </div>
+
+          <!-- Descriptive Metric Strip -->
+          <div class="dice-sub-stats">
+            <span>Expected: <strong>{stats.expectedSum?.toFixed(1)}</strong></span>
+            <span class="stat-bullet">•</span>
+            <DeltaBadge
+              tone={(stats.sumDelta ?? 0) >= 0 ? 'positive' : 'negative'}
+              prefix="Δ: "
+              text={formatSigned(stats.sumDelta ?? 0)}
+              variant="inline"
+            />
+            {#if latest.values.length > 1}
+              <span class="stat-bullet">•</span>
+              <span>High: <strong>{latest.max}</strong></span>
+              <span class="stat-bullet">•</span>
+              <span>Low: <strong>{latest.min}</strong></span>
+            {/if}
+            {#if (stats.criticalMaxCount ?? 0) > 0}
+              <span class="stat-bullet">•</span>
+              <span class="crit-highlight">{stats.criticalMaxCount}x crit ({heroFaces})</span>
+            {/if}
+            {#if (stats.criticalMinCount ?? 0) > 0}
+              <span class="stat-bullet">•</span>
+              <span class="min-highlight">{stats.criticalMinCount}x nat 1</span>
+            {/if}
+          </div>
+
+          <p class="quick-insight-narrative" data-testid="quick-insight">{stats.insight}</p>
+        </div>
+      {/if}
+    </div>
+  {:else}
+    <EmptyState variant="card" icon="🎲" title="Ready to Roll">
+      Click <strong>Roll</strong> in the 3D Arena below the viewport for continuous instant rolls.
+    </EmptyState>
+  {/if}
+
+  <!-- Active Die Session Summary Strip (Issue #12) -->
+  {#if sessionStats.matchingThrows >= 2}
+    <div class="session-summary-strip" role="group" aria-label="Session summary for active die">
+      <div class="session-strip-header">
+        <span class="session-strip-title">
+          Session Summary ({dieLabel(rollState.faces)})
+        </span>
+        <span class="session-strip-count">
+          {sessionStats.matchingThrows} throws • {sessionStats.totalDiceCount}
+          {rollState.faces === 2 ? 'coins' : 'dice'}
+        </span>
+      </div>
+
+      <div class="session-strip-metrics">
+        {#if rollState.faces === 2}
+          <span class="session-pill pill-heads">
+            {sessionStats.headsPercentage?.toFixed(1)}% Heads ({sessionStats.totalHeads})
+          </span>
+          <span class="session-pill pill-tails">
+            {sessionStats.tailsPercentage?.toFixed(1)}% Tails ({sessionStats.totalTails})
+          </span>
+          <span class="session-pill pill-verdict">
+            {sessionStats.balanceVerdict}
+          </span>
+        {:else}
+          <span class="session-pill pill-avg">
+            Die Avg: {sessionStats.actualAverage?.toFixed(2)}
+          </span>
+          <DeltaBadge
+            tone={(sessionStats.averageDelta ?? 0) >= 0 ? 'positive' : 'negative'}
+            text="{formatSigned(sessionStats.averageDelta ?? 0, 2)} Δ"
+            variant="pill"
+          />
+          {#if (sessionStats.criticalMaxCount ?? 0) > 0}
+            <span class="session-pill pill-crit">
+              {sessionStats.criticalMaxCount}x crit ({rollState.faces})
+            </span>
+          {/if}
+          {#if (sessionStats.criticalMinCount ?? 0) > 0}
+            <span class="session-pill pill-min">
+              {sessionStats.criticalMinCount}x nat 1
+            </span>
+          {/if}
         {/if}
       </div>
-    {:else}
-      <div class="empty-quick-state">
-        <span class="empty-icon" aria-hidden="true">🎲</span>
-        <p class="empty-title">Ready to Roll</p>
-        <p class="empty-desc">
-          Click <strong>Roll</strong> in the 3D Arena below the viewport for continuous instant rolls.
-        </p>
-      </div>
-    {/if}
 
-    <!-- Active Die Session Summary Strip (Issue #12) -->
-    {#if sessionStats.matchingThrows >= 2}
-      <div class="session-summary-strip" role="group" aria-label="Session summary for active die">
-        <div class="session-strip-header">
-          <span class="session-strip-title">
-            Session Summary ({dieLabel(rollState.faces)})
-          </span>
-          <span class="session-strip-count">
-            {sessionStats.matchingThrows} throws • {sessionStats.totalDiceCount}
-            {rollState.faces === 2 ? 'coins' : 'dice'}
-          </span>
-        </div>
+      <p class="session-strip-insight">{sessionStats.insight}</p>
+    </div>
+  {/if}
 
-        <div class="session-strip-metrics">
-          {#if rollState.faces === 2}
-            <span class="session-pill pill-heads">
-              {sessionStats.headsPercentage?.toFixed(1)}% Heads ({sessionStats.totalHeads})
-            </span>
-            <span class="session-pill pill-tails">
-              {sessionStats.tailsPercentage?.toFixed(1)}% Tails ({sessionStats.totalTails})
-            </span>
-            <span class="session-pill pill-verdict">
-              {sessionStats.balanceVerdict}
-            </span>
-          {:else}
-            <span class="session-pill pill-avg">
-              Die Avg: {sessionStats.actualAverage?.toFixed(2)}
-            </span>
-            <span
-              class="session-pill pill-delta"
-              class:pos={(sessionStats.averageDelta ?? 0) >= 0}
-              class:neg={(sessionStats.averageDelta ?? 0) < 0}
-            >
-              {formatSigned(sessionStats.averageDelta ?? 0, 2)} Δ
-            </span>
-            {#if (sessionStats.criticalMaxCount ?? 0) > 0}
-              <span class="session-pill pill-crit">
-                {sessionStats.criticalMaxCount}x crit ({rollState.faces})
-              </span>
-            {/if}
-            {#if (sessionStats.criticalMinCount ?? 0) > 0}
-              <span class="session-pill pill-min">
-                {sessionStats.criticalMinCount}x nat 1
-              </span>
-            {/if}
-          {/if}
-        </div>
-
-        <p class="session-strip-insight">{sessionStats.insight}</p>
-      </div>
-    {/if}
-
-    <!-- Session Feed History -->
-    {#if rollState.quickRolls.length > 0}
-      <div class="session-feed-section">
-        <div class="feed-header">
-          <span class="feed-title">Recent Throws</span>
-          <button
-            type="button"
-            class="clear-feed-btn"
-            onclick={() => rollState.clearQuickRolls()}
-            aria-label="Clear quick roll feed"
-          >
-            Clear
-          </button>
-        </div>
-
-        <!-- svelte-ignore a11y_no_noninteractive_tabindex -->
-        <div
-          class="feed-scroll-wrapper"
-          tabindex="0"
-          role="region"
-          aria-label="Recent quick rolls feed"
+  <!-- Session Feed History -->
+  {#if rollState.quickRolls.length > 0}
+    <div class="session-feed-section">
+      <div class="feed-header">
+        <span class="feed-title">Recent Throws</span>
+        <button
+          type="button"
+          class="clear-feed-btn"
+          onclick={() => rollState.clearQuickRolls()}
+          aria-label="Clear quick roll feed"
         >
-          <ul class="feed-list" role="list">
-            {#each rollState.quickRolls as item (item.id)}
-              {@const itemFaces = item.faces ?? rollState.faces}
-              <li class="feed-item">
-                <div class="feed-item-left">
-                  <span class="feed-index">#{item.roundIndex + 1}</span>
-                  <span
-                    class="feed-die-badge"
-                    data-testid="feed-die-badge"
-                    class:coin-die={itemFaces === 2}
-                  >
-                    {dieLabel(itemFaces, 'short')}
-                  </span>
-                  <div class="feed-values">
-                    {#if itemFaces === 2}
-                      {#each item.values as v, i (i)}
-                        <span
-                          class="mini-coin"
-                          data-testid="mini-coin"
-                          class:heads={v === 1}
-                          class:tails={v === 2}
-                        >
-                          {v === 1 ? 'H' : 'T'}
-                        </span>
-                      {/each}
-                    {:else}
-                      <span class="dice-values-string" data-testid="dice-values"
-                        >{item.values.join(', ')}</span
-                      >
-                    {/if}
-                  </div>
-                </div>
-
-                <div class="feed-item-right">
-                  {#if itemFaces === 2}
-                    <span
-                      class="feed-outcome"
-                      data-testid="feed-outcome"
-                      class:tie={item.roundWinnerSide === 'TIE'}
-                    >
-                      {item.roundWinnerSide}
-                    </span>
-                  {:else}
-                    <strong class="feed-sum">{item.sum}</strong>
-                  {/if}
-                  <span class="feed-time">{formatTime(item.timestamp)}</span>
-                </div>
-              </li>
-            {/each}
-          </ul>
-        </div>
+          Clear
+        </button>
       </div>
-    {/if}
-  </div>
-</section>
+
+      <!-- svelte-ignore a11y_no_noninteractive_tabindex -->
+      <div
+        class="feed-scroll-wrapper"
+        tabindex="0"
+        role="region"
+        aria-label="Recent quick rolls feed"
+      >
+        <ul class="feed-list" role="list">
+          {#each rollState.quickRolls as item (item.id)}
+            {@const itemFaces = item.faces ?? rollState.faces}
+            <li class="feed-item">
+              <div class="feed-item-left">
+                <span class="feed-index">#{item.roundIndex + 1}</span>
+                <span
+                  class="feed-die-badge"
+                  data-testid="feed-die-badge"
+                  class:coin-die={itemFaces === 2}
+                >
+                  {dieLabel(itemFaces, 'short')}
+                </span>
+                <div class="feed-values">
+                  {#if itemFaces === 2}
+                    <CoinPills values={item.values} itemTestId="mini-coin" />
+                  {:else}
+                    <span class="dice-values-string" data-testid="dice-values"
+                      >{item.values.join(', ')}</span
+                    >
+                  {/if}
+                </div>
+              </div>
+
+              <div class="feed-item-right">
+                {#if itemFaces === 2}
+                  <span
+                    class="feed-outcome"
+                    data-testid="feed-outcome"
+                    class:tie={item.roundWinnerSide === 'TIE'}
+                  >
+                    {item.roundWinnerSide}
+                  </span>
+                {:else}
+                  <strong class="feed-sum">{item.sum}</strong>
+                {/if}
+                <span class="feed-time">{formatTime(item.timestamp)}</span>
+              </div>
+            </li>
+          {/each}
+        </ul>
+      </div>
+    </div>
+  {/if}
+</CollapsiblePanel>
 
 <style>
-  .quick-result-panel {
-    display: flex;
-    flex-direction: column;
-    gap: 0.85rem;
-    padding: 1.25rem;
-    background: var(--surface-panel);
-    border: 1px solid var(--border-color);
-    border-radius: 0.75rem;
-    backdrop-filter: blur(8px);
-  }
-
-  .panel-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-  }
-
-  .title-with-badge {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-  }
-
-  .panel-title {
-    margin: 0;
-    font-size: 1.15rem;
-    font-weight: 700;
-    color: var(--text-heading);
-  }
-
   .count-badge {
     padding: 0.2rem 0.5rem;
     background: var(--surface-elevated);
@@ -316,16 +263,6 @@
     border-radius: 9999px;
     font-size: 0.72rem;
     color: var(--text-secondary);
-  }
-
-  .panel-body {
-    display: flex;
-    flex-direction: column;
-    gap: 1rem;
-  }
-
-  .panel-body.collapsed {
-    display: none;
   }
 
   /* Latest Hero Card */
@@ -439,14 +376,6 @@
 
   .dice-sub-stats strong {
     color: var(--text-body);
-  }
-
-  .delta-indicator.pos strong {
-    color: var(--color-emerald);
-  }
-
-  .delta-indicator.neg strong {
-    color: var(--color-danger);
   }
 
   .stat-bullet {
@@ -621,21 +550,6 @@
     border: 1px solid var(--border-subtle);
   }
 
-  .pill-delta {
-    background: var(--surface-elevated);
-    border: 1px solid var(--border-subtle);
-  }
-
-  .pill-delta.pos {
-    color: var(--color-emerald);
-    border-color: rgba(16, 185, 129, 0.4);
-  }
-
-  .pill-delta.neg {
-    color: var(--color-danger);
-    border-color: rgba(239, 68, 68, 0.4);
-  }
-
   .pill-crit {
     background: rgba(234, 179, 8, 0.15);
     color: var(--color-gold);
@@ -653,41 +567,6 @@
     font-size: 0.75rem;
     color: var(--text-secondary);
     line-height: 1.35;
-  }
-
-  /* Empty State */
-  .empty-quick-state {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    text-align: center;
-    padding: 2rem 1rem;
-    background: var(--surface-dark);
-    border: 1px dashed var(--border-subtle);
-    border-radius: 0.5rem;
-  }
-
-  .empty-icon {
-    font-size: 2.25rem;
-    margin-bottom: 0.5rem;
-  }
-
-  .empty-title {
-    margin: 0 0 0.25rem 0;
-    font-size: 1rem;
-    font-weight: 700;
-    color: var(--text-body);
-  }
-
-  .empty-desc {
-    margin: 0;
-    font-size: 0.8rem;
-    color: var(--text-secondary);
-    max-width: 260px;
-  }
-
-  .empty-desc strong {
-    color: var(--accent-blue);
   }
 
   /* Session Feed List */
@@ -784,28 +663,6 @@
   .feed-die-badge.coin-die {
     border-color: var(--color-yellow-600);
     color: var(--color-gold);
-  }
-
-  .mini-coin {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 18px;
-    height: 18px;
-    border-radius: 50%;
-    font-size: 0.65rem;
-    font-weight: 800;
-    margin-right: 2px;
-  }
-
-  .mini-coin.heads {
-    background: var(--color-yellow-500);
-    color: var(--color-brown-deep);
-  }
-
-  .mini-coin.tails {
-    background: var(--text-muted);
-    color: var(--surface-deep);
   }
 
   .dice-values-string {

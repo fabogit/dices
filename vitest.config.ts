@@ -19,6 +19,7 @@ export default mergeConfig(
           'src/three/geometries.ts',
           'src/three/DiceArena3D.ts',
           'src/ui/rollState.svelte.ts',
+          'src/ui/primitives/**/*.svelte',
         ],
         thresholds: {
           statements: 90,

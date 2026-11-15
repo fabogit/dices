@@ -37,8 +37,8 @@
           {
             "patterns": [
               {
-                "group": ["*rollState*"],
-                "message": "Presentational primitives must not import rollState; pass typed props and callbacks instead."
+                "group": ["*rollState*", "**/lib/*", "../lib/*", "../../lib/*"],
+                "message": "Presentational primitives must not import rollState or lib helpers; pass typed props and callbacks instead."
               }
             ]
           }
