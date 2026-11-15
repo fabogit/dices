@@ -150,7 +150,7 @@
                         Winner: <strong class="winner-name">{item.coinSeriesWinner}</strong> ({item.headsRoundsWon}H / {item.tailsRoundsWon}T rounds)
                       {/if}
                     </span>
-                    <span class="coin-history-pct">
+                    <span class="coin-history-pct" data-testid="history-coin-pct">
                       {headsPct.toFixed(1)}% Heads / {tailsPct.toFixed(1)}% Tails ({item.totalHeads ?? 0}H / {item.totalTails ?? 0}T coins)
                     </span>
                   </div>

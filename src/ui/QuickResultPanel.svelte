@@ -95,7 +95,7 @@
               </span>
             </div>
 
-            <p class="quick-insight-narrative">{stats.insight}</p>
+            <p class="quick-insight-narrative" data-testid="quick-insight">{stats.insight}</p>
           </div>
         {:else}
           <!-- Polyhedral Dice Hero Display -->
@@ -144,7 +144,7 @@
               {/if}
             </div>
 
-            <p class="quick-insight-narrative">{stats.insight}</p>
+            <p class="quick-insight-narrative" data-testid="quick-insight">{stats.insight}</p>
           </div>
         {/if}
       </div>
@@ -239,6 +239,7 @@
                   <span class="feed-index">#{rollState.quickRolls.length - idx}</span>
                   <span
                     class="feed-die-badge"
+                    data-testid="feed-die-badge"
                     class:coin-die={itemFaces === 2}
                   >
                     {itemFaces === 2 ? 'Coin' : `d${itemFaces}`}
