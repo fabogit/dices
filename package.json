@@ -21,12 +21,12 @@
     "check": "tsc --noEmit"
   },
   "dependencies": {
-    "three": "^0.170.0"
+    "three": "^0.187.0"
   },
   "devDependencies": {
     "@playwright/test": "^1.65.0",
     "@sveltejs/vite-plugin-svelte": "^5.0.0",
-    "@types/three": "^0.170.0",
+    "@types/three": "^0.187.0",
     "@vitest/coverage-v8": "^2.1.9",
     "svelte": "^5.15.0",
     "typescript": "^7.0.2",
