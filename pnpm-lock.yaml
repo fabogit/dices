@@ -43,7 +43,7 @@ importers:
         specifier: ^7.0.2007
         version: 7.0.2007
       svelte:
-        specifier: ^5.15.0
+        specifier: ^5.20.0
         version: 5.57.3
       svelte-check:
         specifier: ^4.7.8
