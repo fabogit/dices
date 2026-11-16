@@ -1,10 +1,8 @@
 <script lang="ts">
-  import { ALLOWED_FACES } from '../core/types';
-  import { DIE_THEMES } from '../lib/dieThemes';
-  import { dieLabel } from '../lib/format';
-  import { rollState } from './state/rollState.svelte';
-  import CollapsiblePanel from './primitives/CollapsiblePanel.svelte';
-  import RangeStepper from './primitives/RangeStepper.svelte';
+  import CollapsiblePanel from '../primitives/CollapsiblePanel.svelte';
+  import RangeStepper from '../primitives/RangeStepper.svelte';
+  import { rollState } from '../state/rollState.svelte';
+  import FaceSelector from './FaceSelector.svelte';
 
   const PRESETS: Array<{ label: string; length: number }> = [
     { label: 'Single (1)', length: 1 },
@@ -28,30 +26,11 @@
     <p class="lock-hint" role="note">Series in progress. Reset the series to change the setup.</p>
   {/if}
 
-  <!-- Instrument Selector -->
-  <fieldset class="field-group">
-    <legend class="field-label">Choose Instrument</legend>
-    <div class="faces-grid" role="radiogroup" aria-label="Die face selector">
-      {#each ALLOWED_FACES as f (f)}
-        {@const theme = DIE_THEMES[f]}
-        {@const isSelected = rollState.faces === f}
-        <button
-          type="button"
-          role="radio"
-          aria-checked={isSelected}
-          class="face-badge-button"
-          class:selected={isSelected}
-          style:--badge-accent={theme.accentColor}
-          style:--badge-primary={theme.primaryColor}
-          onclick={() => rollState.setFaces(f)}
-          disabled={controlsDisabled}
-        >
-          <span class="badge-dot" style:background-color={theme.accentColor}></span>
-          <span class="badge-text">{dieLabel(f, 'parens')}</span>
-        </button>
-      {/each}
-    </div>
-  </fieldset>
+  <FaceSelector
+    selectedFaces={rollState.faces}
+    disabled={controlsDisabled}
+    onSelect={(faces) => rollState.setFaces(faces)}
+  />
 
   <!-- Quantity Per Throw (M) -->
   <RangeStepper
@@ -129,63 +108,6 @@
     color: var(--text-light);
     font-size: 0.8rem;
     line-height: 1.4;
-  }
-
-  .field-group {
-    display: flex;
-    flex-direction: column;
-    gap: 0.5rem;
-    border: none;
-    padding: 0;
-    margin: 0;
-  }
-
-  .field-label {
-    font-size: 0.875rem;
-    font-weight: 600;
-    color: var(--text-body);
-  }
-
-  .faces-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(88px, 1fr));
-    gap: 0.5rem;
-  }
-
-  .face-badge-button {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.4rem;
-    padding: 0.5rem 0.65rem;
-    min-block-size: 38px;
-    background: var(--surface-elevated);
-    border: 1px solid rgba(156, 163, 175, 0.25);
-    border-radius: 0.5rem;
-    color: var(--text-light);
-    font-size: 0.825rem;
-    font-weight: 600;
-    cursor: pointer;
-    transition: all 0.15s ease;
-  }
-
-  .face-badge-button:hover:not(:disabled) {
-    background: var(--surface-hover);
-    border-color: var(--badge-accent, var(--accent-blue-soft));
-    color: var(--text-white);
-  }
-
-  .face-badge-button.selected {
-    background: rgba(30, 41, 59, 0.9);
-    border-color: var(--badge-accent, var(--accent-blue));
-    box-shadow: 0 0 0 1px var(--badge-accent, var(--accent-blue));
-    color: var(--text-white);
-  }
-
-  .badge-dot {
-    width: 9px;
-    height: 9px;
-    border-radius: 50%;
-    flex-shrink: 0;
   }
 
   .preset-buttons {
