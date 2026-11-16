@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { describe, it, expect, beforeEach, vi } from 'vite-plus/test';
 import { computeRoundResult, computeSeriesSummary } from '../../../core/engine';
 import type { PersistedStateV2, RollStorage } from '../../../core/persistence';
 import type { IRollProvider } from '../../../core/provider';

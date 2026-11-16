@@ -78,11 +78,11 @@ The architecture cleanly decouples mathematical random generation, domain statis
 
 ## 🛠 Tech Stack
 
-- **Runtime & Framework:** [Svelte 5](https://svelte.dev/) (`^5.15.0`) utilizing Svelte 5 Runes (`$state`, `$derived`, `$effect`)
+- **Runtime & Framework:** [Svelte 5](https://svelte.dev/) (`^5.46.4`) utilizing Svelte 5 Runes (`$state`, `$derived`, `$effect`)
 - **3D Graphics & Rendering:** [Three.js](https://threejs.org/) (`^0.187.0`), `@types/three` (`^0.187.0`)
 - **Language & Typings:** [TypeScript](https://www.typescriptlang.org/) (`^6.0.3`), ECMAScript 2022 Target
-- **Build Tooling & Bundler:** [Vite 6](https://vite.dev/) (`^6.4.0`), `@sveltejs/vite-plugin-svelte` (`^5.0.0`), with manual chunk splitting for `three`
-- **Testing & Quality:** [Vitest](https://vitest.dev/) (`^5.1.0`) with `@vitest/coverage-v8`, [Playwright](https://playwright.dev/) (`^1.65.0`, Chromium E2E), GitHub Actions CI, and a `pnpm run check` gate combining `tsc --noEmit`, `svelte-check`, `oxlint` (type-aware), and `oxfmt --check`
+- **Build Tooling & Bundler:** [Vite 8](https://vite.dev/) (Rolldown) via [Vite+](https://viteplus.dev/) (`^1.6.0`), `@sveltejs/vite-plugin-svelte` (`^7.3.1`), with `codeSplitting` groups isolating `three`
+- **Testing & Quality:** `vite-plus/test` ([Vitest](https://vitest.dev/) `5.1.0`) with `@vitest/coverage-v8`, [Playwright](https://playwright.dev/) (`^1.65.0`, Chromium E2E), GitHub Actions CI, and a `pnpm run check` gate combining `tsc --noEmit`, `svelte-check`, and `vp check` (`oxfmt`, `oxlint`, type-check)
 - **Package Management & Engine:** [pnpm](https://pnpm.io/) (`pnpm@11.21.0`), Node.js `>=26.13.1` (pinned via `.node-version`)
 - **Cloud Infrastructure & Security:** [Cloudflare Pages](https://pages.cloudflare.com/) (`wrangler.jsonc`, `compatibility_date: 2026-11-01`), strict security headers via `public/_headers`
 
@@ -287,7 +287,7 @@ pnpm install
 # Start Vite local development server with Hot Module Replacement (HMR)
 pnpm run dev
 
-# Build for production (Vite bundle with Three.js chunking; type checks run via `pnpm run check`)
+# Build for production (Vite 8 / Rolldown bundle with Three.js chunking; type checks run via `pnpm run check`)
 pnpm run build
 
 # Preview the production build locally
@@ -297,16 +297,16 @@ pnpm run preview
 ### Verification & Testing
 
 ```bash
-# Run the full static gate: tsc --noEmit, svelte-check, oxlint (type-aware), and oxfmt --check
+# Run the full static gate: tsc --noEmit, svelte-check, and vp check (oxfmt + oxlint + type-check)
 pnpm run check
 
-# Execute comprehensive Vitest unit/state test suite (146 tests across core, formatters, 3D, state, and UI primitives)
+# Execute comprehensive Vitest unit/component test suite (171 tests across core, formatters, 3D, state, and UI components)
 pnpm test
 
-# Run Vitest test suite with V8 code coverage and threshold enforcement
+# Run Vitest test suite with V8 code coverage and per-area threshold enforcement
 pnpm run test:coverage
 
-# Execute Chromium Playwright E2E test suite against the built production preview (17 tests across 9 specs, including visual regression baselines)
+# Execute Chromium Playwright E2E test suite against the built production preview (18 tests across 10 specs, including visual regression baselines)
 pnpm run test:e2e
 ```
 

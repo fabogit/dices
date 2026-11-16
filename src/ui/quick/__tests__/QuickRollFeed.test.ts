@@ -1,4 +1,4 @@
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect, vi } from 'vite-plus/test';
 import { render, fireEvent, within } from '@testing-library/svelte';
 import { computeRoundResult } from '../../../core/engine';
 import QuickRollFeed from '../QuickRollFeed.svelte';

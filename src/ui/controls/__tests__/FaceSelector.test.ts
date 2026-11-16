@@ -1,4 +1,4 @@
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect, vi } from 'vite-plus/test';
 import type { ComponentProps } from 'svelte';
 import { render, fireEvent } from '@testing-library/svelte';
 import type { DieFaces } from '../../../core/types';

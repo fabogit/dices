@@ -54,7 +54,7 @@ jobs:
           console.log(`Playwright version verified: v${imgVer}`);
           EOF
 
-      - name: Type check
+      - name: Lint, format & type check
         run: pnpm run check
 
       - name: Run unit tests with V8 coverage

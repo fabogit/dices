@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect } from 'vite-plus/test';
 import { render } from '@testing-library/svelte';
 import type { RoundResult } from '../../../core/types';
 import ArenaHud from '../ArenaHud.svelte';
