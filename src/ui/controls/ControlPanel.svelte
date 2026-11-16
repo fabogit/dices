@@ -1,6 +1,7 @@
 <script lang="ts">
   import CollapsiblePanel from '../primitives/CollapsiblePanel.svelte';
   import RangeStepper from '../primitives/RangeStepper.svelte';
+  import { COUNT_PER_ROLL_LIMITS, SERIES_LENGTH_LIMITS } from '../../core/limits';
   import { rollState } from '../state/rollState.svelte';
   import FaceSelector from './FaceSelector.svelte';
 
@@ -14,6 +15,16 @@
 
   // Setup is frozen while dice are in the air and while a series is under way
   const controlsDisabled = $derived(rollState.isRolling || rollState.isConfigLocked);
+
+  // The numeric input is one-way (value={...}): when the setter clamps to the value already in
+  // state, Svelte sees no change and never rewrites the DOM, so we re-sync explicitly after every
+  // change. Empty input is ignored (field snaps back to the current value, not silently set to 1).
+  function commitCustomLength(e: Event & { currentTarget: HTMLInputElement }): void {
+    const input = e.currentTarget;
+    const raw = input.value.trim();
+    if (raw !== '') rollState.setSeriesLength(Number(raw));
+    input.value = String(rollState.seriesLength);
+  }
 </script>
 
 <CollapsiblePanel
@@ -37,9 +48,11 @@
     id="count-slider"
     label="Quantity Per Roll (M):"
     value={rollState.countPerRoll}
-    min={1}
-    max={10}
-    hint="1 to 10 {rollState.faces === 2 ? 'coins' : 'dice'}"
+    min={COUNT_PER_ROLL_LIMITS.min}
+    max={COUNT_PER_ROLL_LIMITS.max}
+    hint="{COUNT_PER_ROLL_LIMITS.min} to {COUNT_PER_ROLL_LIMITS.max} {rollState.faces === 2
+      ? 'coins'
+      : 'dice'}"
     disabled={controlsDisabled}
     decreaseAriaLabel="Decrease quantity"
     increaseAriaLabel="Increase quantity"
@@ -52,9 +65,9 @@
       id="series-length-slider"
       label="Series Rounds (K):"
       value={rollState.seriesLength}
-      min={1}
-      max={21}
-      hint="1 to 21 rounds"
+      min={SERIES_LENGTH_LIMITS.min}
+      max={SERIES_LENGTH_LIMITS.max}
+      hint="{SERIES_LENGTH_LIMITS.min} to {SERIES_LENGTH_LIMITS.max} rounds"
       disabled={controlsDisabled}
       decreaseAriaLabel="Decrease series rounds"
       increaseAriaLabel="Increase series rounds"
@@ -79,19 +92,22 @@
 
       {#snippet afterSlider()}
         <div class="stepper-row">
-          <label for="series-length-input" class="sr-only">Custom series length (1 to 21)</label>
+          <label for="series-length-input" class="sr-only"
+            >Custom series length ({SERIES_LENGTH_LIMITS.min} to {SERIES_LENGTH_LIMITS.max})</label
+          >
           <input
             id="series-length-input"
             type="number"
-            min="1"
-            max="21"
+            min={SERIES_LENGTH_LIMITS.min}
+            max={SERIES_LENGTH_LIMITS.max}
             value={rollState.seriesLength}
             disabled={controlsDisabled}
-            onchange={(e) =>
-              rollState.setSeriesLength(Number((e.target as HTMLInputElement).value))}
+            onchange={commitCustomLength}
             class="numeric-input"
           />
-          <span class="unit-text">rounds (custom 1..21)</span>
+          <span class="unit-text"
+            >rounds (custom {SERIES_LENGTH_LIMITS.min}..{SERIES_LENGTH_LIMITS.max})</span
+          >
         </div>
       {/snippet}
     </RangeStepper>

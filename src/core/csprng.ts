@@ -1,3 +1,4 @@
+import { COUNT_PER_ROLL_LIMITS, SERIES_LENGTH_LIMITS, isIntWithinLimits } from './limits';
 import { ALLOWED_FACES, type DieFaces, type RollConfig } from './types';
 
 export type RandomSource = (buf: Uint32Array) => Uint32Array;
@@ -28,25 +29,15 @@ export function validateRollConfig(config: unknown): asserts config is RollConfi
     );
   }
 
-  if (
-    typeof config.countPerRoll !== 'number' ||
-    !Number.isInteger(config.countPerRoll) ||
-    config.countPerRoll < 1 ||
-    config.countPerRoll > 10
-  ) {
+  if (!isIntWithinLimits(config.countPerRoll, COUNT_PER_ROLL_LIMITS)) {
     throw new Error(
-      `Invalid countPerRoll: ${String(config.countPerRoll)}. Must be an integer between 1 and 10`,
+      `Invalid countPerRoll: ${String(config.countPerRoll)}. Must be an integer between ${COUNT_PER_ROLL_LIMITS.min} and ${COUNT_PER_ROLL_LIMITS.max}`,
     );
   }
 
-  if (
-    typeof config.seriesLength !== 'number' ||
-    !Number.isInteger(config.seriesLength) ||
-    config.seriesLength < 1 ||
-    config.seriesLength > 21
-  ) {
+  if (!isIntWithinLimits(config.seriesLength, SERIES_LENGTH_LIMITS)) {
     throw new Error(
-      `Invalid seriesLength: ${String(config.seriesLength)}. Must be an integer between 1 and 21`,
+      `Invalid seriesLength: ${String(config.seriesLength)}. Must be an integer between ${SERIES_LENGTH_LIMITS.min} and ${SERIES_LENGTH_LIMITS.max}`,
     );
   }
 
