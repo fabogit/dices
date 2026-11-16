@@ -19,7 +19,7 @@ export const DEFAULT_PLAYER: Player = {
 };
 
 const MAX_HISTORY_ENTRIES = 50;
-const MAX_PLAYER_NAME_LENGTH = 24;
+export const MAX_PLAYER_NAME_LENGTH = 24;
 
 export interface RollStorage {
   load(): unknown;
