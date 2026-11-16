@@ -13,39 +13,54 @@ const defaultRandomSource: RandomSource = (buf: Uint32Array): Uint32Array => {
   return buf;
 };
 
-export function validateRollConfig(config: RollConfig): void {
-  if (!config || typeof config !== 'object') {
+function isObjectRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
+
+export function validateRollConfig(config: unknown): asserts config is RollConfig {
+  if (!isObjectRecord(config)) {
     throw new Error('Roll configuration must be a valid object');
   }
 
-  if (!ALLOWED_FACES.includes(config.faces)) {
+  if (!(ALLOWED_FACES as readonly unknown[]).includes(config.faces)) {
     throw new Error(
-      `Invalid faces count: ${config.faces}. Allowed values are: ${ALLOWED_FACES.join(', ')}`,
+      `Invalid faces count: ${String(config.faces)}. Allowed values are: ${ALLOWED_FACES.join(', ')}`,
     );
   }
 
   if (
+    typeof config.countPerRoll !== 'number' ||
     !Number.isInteger(config.countPerRoll) ||
     config.countPerRoll < 1 ||
     config.countPerRoll > 10
   ) {
     throw new Error(
-      `Invalid countPerRoll: ${config.countPerRoll}. Must be an integer between 1 and 10`,
+      `Invalid countPerRoll: ${String(config.countPerRoll)}. Must be an integer between 1 and 10`,
     );
   }
 
   if (
+    typeof config.seriesLength !== 'number' ||
     !Number.isInteger(config.seriesLength) ||
     config.seriesLength < 1 ||
     config.seriesLength > 21
   ) {
     throw new Error(
-      `Invalid seriesLength: ${config.seriesLength}. Must be an integer between 1 and 21`,
+      `Invalid seriesLength: ${String(config.seriesLength)}. Must be an integer between 1 and 21`,
     );
   }
 
   if (typeof config.playerId !== 'string' || config.playerId.trim().length === 0) {
     throw new Error('playerId must be a non-empty string');
+  }
+}
+
+export function isValidRollConfig(value: unknown): value is RollConfig {
+  try {
+    validateRollConfig(value);
+    return true;
+  } catch {
+    return false;
   }
 }
 

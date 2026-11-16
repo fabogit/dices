@@ -13,7 +13,14 @@ import {
   computeSeriesSummary,
   createSeriesId,
 } from '../core/engine';
-import { defaultStorage, sanitizePersistedHistory, type RollStorage } from '../core/persistence';
+import {
+  DEFAULT_PLAYER,
+  defaultStorage,
+  hydratePersistedState,
+  PLAYER_PALETTE,
+  serializePersistedState,
+  type RollStorage,
+} from '../core/persistence';
 import { LocalCryptoRollProvider, type IRollProvider } from '../core/provider';
 import type { DiceArena3D } from '../three/DiceArena3D';
 
@@ -30,8 +37,6 @@ export interface RollStateOptions {
   provider?: IRollProvider;
   storage?: RollStorage;
 }
-
-const PLAYER_PALETTE = ['#38bdf8', '#34d399', '#f472b6', '#fbbf24', '#a78bfa', '#fb923c'];
 
 function getInitialMotionPreference(): boolean {
   if (typeof window !== 'undefined' && typeof window.matchMedia === 'function') {
@@ -50,8 +55,8 @@ export class RollState {
   seriesLength: number = $state(3);
 
   // Players
-  players: Player[] = $state([{ id: 'player-1', name: 'Player 1', color: '#38bdf8' }]);
-  activePlayerId: string = $state('player-1');
+  players: Player[] = $state([{ ...DEFAULT_PLAYER }]);
+  activePlayerId: string = $state(DEFAULT_PLAYER.id);
 
   // Animation & Execution States
   isRolling: boolean = $state(false);
@@ -84,8 +89,22 @@ export class RollState {
   }: RollStateOptions = {}) {
     this.provider = provider;
     this.storage = storage;
-    this.history = sanitizePersistedHistory(this.storage.load());
+    const hydrated = hydratePersistedState(this.storage.load());
+    this.players = hydrated.players;
+    this.activePlayerId = hydrated.activePlayerId;
+    this.history = hydrated.history;
+    this.series = this.createSeriesState();
     this.setupMotionMediaListener();
+  }
+
+  private saveState(): void {
+    this.storage.save(
+      serializePersistedState({
+        players: this.players,
+        activePlayerId: this.activePlayerId,
+        history: this.history,
+      }),
+    );
   }
 
   private createSeriesState(): SeriesState {
@@ -255,7 +274,7 @@ export class RollState {
   // Player Management
   addPlayer(name: string): void {
     if (this.isRolling) return;
-    const trimmed = name.trim();
+    const trimmed = name.trim().slice(0, 24);
     if (!trimmed) return;
     if (this.rejectWhileSeriesRuns(this.isSeriesInProgress)) return;
     const nextIndex = this.players.length;
@@ -268,6 +287,7 @@ export class RollState {
     this.players = [...this.players, newPlayer];
     this.activePlayerId = newPlayer.id;
     this.resetCurrentSeries({ announce: this.mode === 'series' });
+    this.saveState();
   }
 
   setActivePlayer(id: string): void {
@@ -278,6 +298,7 @@ export class RollState {
     if (this.rejectWhileSeriesRuns(this.isSeriesInProgress)) return;
     this.activePlayerId = id;
     this.resetCurrentSeries({ announce: this.mode === 'series' });
+    this.saveState();
   }
 
   // Quick Roll action
@@ -359,7 +380,7 @@ export class RollState {
           Date.now(),
         );
         this.history = [completedSummary, ...this.history.slice(0, 49)];
-        this.storage.save(this.history);
+        this.saveState();
       }
 
       if (this.mode === 'series') {
@@ -464,7 +485,7 @@ export class RollState {
 
   clearHistory(): void {
     this.history = [];
-    this.storage.save([]);
+    this.saveState();
     this.announcerMessage = 'Roll history cleared.';
   }
 }

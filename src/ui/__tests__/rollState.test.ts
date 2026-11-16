@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { computeRoundResult, computeSeriesSummary } from '../../core/engine';
-import type { RollStorage } from '../../core/persistence';
+import type { PersistedStateV2, RollStorage } from '../../core/persistence';
 import type { IRollProvider } from '../../core/provider';
 import type { DieFaces } from '../../core/types';
 import { RollState } from '../rollState.svelte';
@@ -342,7 +342,7 @@ describe('RollState Controller', () => {
     expect(state.rounds.length).toBeLessThan(10);
   });
 
-  it('handles corrupt localStorage or non-array payloads safely', () => {
+  it('handles corrupt localStorage, v1 migration, and invalid v2 payloads safely', () => {
     const store = new Map<string, string>();
     // Storage is only read in a browser-like environment, so `window` must exist too.
     vi.stubGlobal('window', {});
@@ -364,27 +364,33 @@ describe('RollState Controller', () => {
     });
 
     try {
-      localStorage.setItem('dices_history_v1', 'invalid-json{{');
+      localStorage.setItem('dices_state_v2', 'invalid-json{{');
       const stateFromCorrupt = new RollState();
       expect(stateFromCorrupt.history).toEqual([]);
+      expect(stateFromCorrupt.players).toHaveLength(1);
+      expect(stateFromCorrupt.activePlayer.name).toBe('Player 1');
 
-      localStorage.setItem('dices_history_v1', '{"not":"an array"}');
+      localStorage.setItem('dices_state_v2', '{"not":"v2"}');
       const stateFromObject = new RollState();
       expect(stateFromObject.history).toEqual([]);
 
+      localStorage.removeItem('dices_state_v2');
       const validSummary = computeSeriesSummary(
         'series-persisted',
-        { faces: 6, countPerRoll: 1, seriesLength: 1, playerId: 'player-1' },
-        'Player 1',
+        { faces: 6, countPerRoll: 1, seriesLength: 1, playerId: 'p-alice' },
+        'Alice',
         [computeRoundResult(0, [4], 6, 1_000, 'round-persisted')],
         2_000,
       );
       localStorage.setItem('dices_history_v1', JSON.stringify([{}, validSummary, 42]));
-      const stateFromMixed = new RollState();
-      expect(stateFromMixed.history.map((entry) => entry.id)).toEqual(['series-persisted']);
-      expect(stateFromMixed.leaderboard[0]?.seriesPlayed).toBe(1);
+      const stateFromMigrated = new RollState();
+      expect(stateFromMigrated.history.map((entry) => entry.id)).toEqual(['series-persisted']);
+      expect(stateFromMigrated.players.map((p) => p.name)).toEqual(['Player 1', 'Alice']);
+      expect(stateFromMigrated.activePlayer.name).toBe('Alice');
+      expect(localStorage.getItem('dices_history_v1')).toBeNull();
+      expect(localStorage.getItem('dices_state_v2')).not.toBeNull();
 
-      localStorage.removeItem('dices_history_v1');
+      localStorage.clear();
     } finally {
       vi.unstubAllGlobals();
     }
@@ -790,7 +796,7 @@ describe('RollState Controller', () => {
     expect(state.leaderboard).toBe(updatedLeaderboard);
   });
 
-  it('uses injected IRollProvider and RollStorage ports for rolling and persistence', async () => {
+  it('uses injected IRollProvider and RollStorage ports for rolling and v2 persistence', async () => {
     const initialSummary = computeSeriesSummary(
       'initial-series',
       { faces: 6, countPerRoll: 1, seriesLength: 1, playerId: 'player-1' },
@@ -798,11 +804,13 @@ describe('RollState Controller', () => {
       [computeRoundResult(0, [3], 6, 1_000, 'initial-round')],
       2_000,
     );
-    const savedSnapshots: unknown[] = [];
+    let persistedPayload: unknown = [initialSummary, { invalid: true }];
+    const savedSnapshots: PersistedStateV2[] = [];
     const customStorage: RollStorage = {
-      load: () => [initialSummary, { invalid: true }],
+      load: () => persistedPayload,
       save: (payload) => {
-        savedSnapshots.push(payload);
+        persistedPayload = payload;
+        savedSnapshots.push(payload as PersistedStateV2);
       },
     };
     const queue = [
@@ -826,12 +834,23 @@ describe('RollState Controller', () => {
 
     expect(injected.history.map((s) => s.id)).toEqual(['initial-series']);
 
+    injected.addPlayer('Alice');
+    expect(savedSnapshots).toHaveLength(1);
+    expect(savedSnapshots[0].players.map((p) => p.name)).toEqual(['Player 1', 'Alice']);
+    expect(savedSnapshots[0].activePlayerId).toBe(injected.activePlayerId);
+
+    injected.setActivePlayer('player-1');
+    expect(savedSnapshots).toHaveLength(2);
+    expect(savedSnapshots[1].activePlayerId).toBe('player-1');
+
     const seriesRound = await injected.rollNextRound();
     expect(seriesRound?.values).toEqual([2, 5]);
     expect(seriesRound?.faces).toBe(6);
     expect(rollCalls).toEqual([{ faces: 6, count: 2 }]);
     expect(injected.history).toHaveLength(2);
-    expect(savedSnapshots).toHaveLength(1);
+    expect(savedSnapshots).toHaveLength(3);
+    expect(savedSnapshots[2].version).toBe(2);
+    expect(savedSnapshots[2].history[0].id).toBe(injected.history[0].id);
 
     injected.setMode('quick');
     injected.setFaces(2);
@@ -845,7 +864,15 @@ describe('RollState Controller', () => {
 
     injected.clearHistory();
     expect(injected.history).toEqual([]);
-    expect(savedSnapshots.at(-1)).toEqual([]);
+    const afterClear = savedSnapshots.at(-1);
+    expect(afterClear?.history).toEqual([]);
+    expect(afterClear?.players.map((p) => p.name)).toEqual(['Player 1', 'Alice']);
+
+    // Rehydrating from the saved v2 snapshot retains players cleanly without history
+    const reloaded = new RollState({ provider: customProvider, storage: customStorage });
+    expect(reloaded.history).toEqual([]);
+    expect(reloaded.players.map((p) => p.name)).toEqual(['Player 1', 'Alice']);
+    expect(reloaded.activePlayerId).toBe('player-1');
   });
 
   it('exposes seriesFaces independently and silently resets a completed series on player change in Quick Roll', async () => {

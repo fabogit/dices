@@ -47,7 +47,7 @@ The architecture cleanly decouples mathematical random generation, domain statis
 │  - Svelte 5 Reactive Store ($state, $derived) & Lifecycle State Machine / Series Bounds             │
 │  - Mode, Faces, Dice Count (M), Series Rounds (K), Active Player, and Visual Preferences           │
 │  - Reduced Motion Detection via window.matchMedia('(prefers-reduced-motion: reduce)')               │
-│  - Browser LocalStorage Synchronization ('dices_history_v1')                                        │
+│  - Browser LocalStorage Synchronization ('dices_state_v2')                                          │
 └──────────────────────────────────────┬──────────────────────────────────────────────────────────────┘
                                        │
                     ┌──────────────────┴──────────────────┐
@@ -164,7 +164,7 @@ For every completed series, `computeSeriesSummary` in `src/core/engine.ts` compu
 - **Face Frequency Distribution Table:** Real-time frequency count, empirical percentage, expected percentage ($100/N$), and delta percentage for each face.
 - **Normalized Luck Index & Player Leaderboard:**
   $$\text{Luck Score} = \frac{\text{Observed Series Average}}{\text{Expected Round Average}} \times 100$$
-  Normalized across different dice types ($d2$ to $d20$), tracking total rolls, critical hits, coin series won, and leaderboard rankings persisted in browser `localStorage`.
+  Normalized across different dice types ($d2$ to $d20$), tracking total rolls, critical hits, coin series won, and leaderboard rankings persisted in browser `localStorage` (`dices_state_v2` stores raw completed series records and player rosters with automatic migration from `dices_history_v1`; concurrent tabs follow last-write-wins semantics).
 
 ### 5. Accessibility & Edge Security Hardening
 
@@ -300,7 +300,7 @@ pnpm run preview
 # Run the full static gate: tsc --noEmit, svelte-check, oxlint (type-aware), and oxfmt --check
 pnpm run check
 
-# Execute comprehensive Vitest unit/state test suite (145 tests across core, formatters, 3D, state, and UI primitives)
+# Execute comprehensive Vitest unit/state test suite (146 tests across core, formatters, 3D, state, and UI primitives)
 pnpm test
 
 # Run Vitest test suite with V8 code coverage and threshold enforcement
