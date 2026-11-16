@@ -2,6 +2,10 @@ export const ALLOWED_FACES = [2, 4, 6, 8, 10, 12, 20] as const;
 
 export type DieFaces = (typeof ALLOWED_FACES)[number];
 
+export type PolyhedralFaces = Exclude<DieFaces, 2>;
+
+export type ResultKind = 'coin' | 'dice';
+
 export type CoinSide = 'HEADS' | 'TAILS';
 
 export type AppMode = 'quick' | 'series';
@@ -23,19 +27,33 @@ export interface RollConfig {
   playerId: string;
 }
 
-export interface RoundResult {
+export type CoinRollConfig = RollConfig & { faces: 2 };
+export type DiceRollConfig = RollConfig & { faces: PolyhedralFaces };
+
+export interface BaseRoundResult {
   id: string;
   roundIndex: number;
   values: number[];
   sum: number;
   max: number;
   min: number;
-  headsCount?: number;
-  tailsCount?: number;
-  roundWinnerSide?: CoinSide | 'TIE';
   timestamp: number;
-  faces: DieFaces;
 }
+
+export interface CoinRoundResult extends BaseRoundResult {
+  kind: 'coin';
+  faces: 2;
+  headsCount: number;
+  tailsCount: number;
+  roundWinnerSide: CoinSide | 'TIE';
+}
+
+export interface DiceRoundResult extends BaseRoundResult {
+  kind: 'dice';
+  faces: PolyhedralFaces;
+}
+
+export type RoundResult = CoinRoundResult | DiceRoundResult;
 
 export interface ModeStat {
   values: number[];
@@ -69,7 +87,7 @@ export interface CoinSeriesStats {
   zQualitative: string;
 }
 
-export interface SeriesAnalytics {
+export interface BaseSeriesAnalytics {
   totalDiceRolled: number;
   expectedRoundAverage: number;
   averageDelta: number;
@@ -88,11 +106,21 @@ export interface SeriesAnalytics {
   criticalMinCount: number;
   criticalMinRate: number; // percentage (0..100) of rolls equal to `1`
   distribution: FaceDistributionEntry[];
-  coinStats?: CoinSeriesStats;
   insightSummary: string;
 }
 
-export interface SeriesSummary {
+export interface CoinSeriesAnalytics extends BaseSeriesAnalytics {
+  kind: 'coin';
+  coinStats: CoinSeriesStats;
+}
+
+export interface DiceSeriesAnalytics extends BaseSeriesAnalytics {
+  kind: 'dice';
+}
+
+export type SeriesAnalytics = CoinSeriesAnalytics | DiceSeriesAnalytics;
+
+export interface BaseSeriesSummary {
   id: string;
   config: RollConfig;
   playerId: string;
@@ -105,14 +133,25 @@ export interface SeriesSummary {
   bestRoundIndex: number;
   worstRoundIndex: number;
   mode: ModeStat;
-  analytics: SeriesAnalytics;
-  coinSeriesWinner?: CoinSide | 'TIE';
-  totalHeads?: number;
-  totalTails?: number;
-  headsRoundsWon?: number;
-  tailsRoundsWon?: number;
   completedAt: number;
 }
+
+export interface CoinSeriesSummary extends BaseSeriesSummary {
+  kind: 'coin';
+  analytics: CoinSeriesAnalytics;
+  coinSeriesWinner: CoinSide | 'TIE';
+  totalHeads: number;
+  totalTails: number;
+  headsRoundsWon: number;
+  tailsRoundsWon: number;
+}
+
+export interface DiceSeriesSummary extends BaseSeriesSummary {
+  kind: 'dice';
+  analytics: DiceSeriesAnalytics;
+}
+
+export type SeriesSummary = CoinSeriesSummary | DiceSeriesSummary;
 
 export interface PlayerLeaderboardEntry {
   playerId: string;
@@ -127,36 +166,71 @@ export interface PlayerLeaderboardEntry {
   coinTosses?: number;
 }
 
-export interface QuickRollStats {
-  faces: DieFaces;
+export interface BaseQuickRollStats {
   values: number[];
   timestamp: number;
-  headsCount?: number;
-  tailsCount?: number;
-  headsPercentage?: number;
-  tailsPercentage?: number;
-  sum?: number;
-  expectedSum?: number;
-  sumDelta?: number;
-  zScore?: number;
-  criticalMaxCount?: number;
-  criticalMinCount?: number;
   insight: string;
 }
 
-export interface QuickRollSessionStats {
+export interface CoinQuickRollStats extends BaseQuickRollStats {
+  kind: 'coin';
+  faces: 2;
+  roundWinnerSide: CoinSide | 'TIE';
+  headsCount: number;
+  tailsCount: number;
+  headsPercentage: number;
+  tailsPercentage: number;
+}
+
+export interface DiceQuickRollStats extends BaseQuickRollStats {
+  kind: 'dice';
+  faces: PolyhedralFaces;
+  sum: number;
+  max: number;
+  min: number;
+  expectedSum: number;
+  sumDelta: number;
+  zScore: number;
+  criticalMaxCount: number;
+  criticalMinCount: number;
+}
+
+export type QuickRollStats = CoinQuickRollStats | DiceQuickRollStats;
+
+export interface EmptyQuickRollSessionStats {
+  kind: 'empty';
   faces: DieFaces;
-  matchingThrows: number;
-  totalDiceCount: number;
-  totalHeads?: number;
-  totalTails?: number;
-  headsPercentage?: number;
-  tailsPercentage?: number;
-  balanceVerdict?: string;
-  actualAverage?: number;
-  expectedAverage?: number;
-  averageDelta?: number;
-  criticalMaxCount?: number;
-  criticalMinCount?: number;
+  matchingThrows: 0;
+  totalDiceCount: 0;
   insight: string;
 }
+
+export interface CoinQuickRollSessionStats {
+  kind: 'coin';
+  faces: 2;
+  matchingThrows: number;
+  totalDiceCount: number;
+  totalHeads: number;
+  totalTails: number;
+  headsPercentage: number;
+  tailsPercentage: number;
+  balanceVerdict: string;
+  insight: string;
+}
+
+export interface DiceQuickRollSessionStats {
+  kind: 'dice';
+  faces: PolyhedralFaces;
+  matchingThrows: number;
+  totalDiceCount: number;
+  actualAverage: number;
+  expectedAverage: number;
+  averageDelta: number;
+  criticalMaxCount: number;
+  criticalMinCount: number;
+  insight: string;
+}
+
+export type PopulatedQuickRollSessionStats = CoinQuickRollSessionStats | DiceQuickRollSessionStats;
+
+export type QuickRollSessionStats = EmptyQuickRollSessionStats | PopulatedQuickRollSessionStats;

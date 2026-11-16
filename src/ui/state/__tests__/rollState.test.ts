@@ -150,7 +150,10 @@ describe('RollState Controller', () => {
     tieState.setSeriesLength(1);
 
     const tiedRound = await tieState.rollNextRound();
-    expect(tiedRound?.roundWinnerSide).toBe('TIE');
+    if (tiedRound?.kind !== 'coin' || tieState.summary.kind !== 'coin') {
+      throw new Error('Expected coin round and series summary');
+    }
+    expect(tiedRound.roundWinnerSide).toBe('TIE');
     expect(tieState.isComplete).toBe(true);
     expect(tieState.summary.coinSeriesWinner).toBe('TIE');
     expect(tieState.announcerMessage).toBe(
@@ -169,12 +172,16 @@ describe('RollState Controller', () => {
     splitState.setSeriesLength(2);
 
     const round1 = await splitState.rollNextRound();
-    expect(round1?.roundWinnerSide).toBe('HEADS');
+    if (round1?.kind !== 'coin') throw new Error('Expected coin round');
+    expect(round1.roundWinnerSide).toBe('HEADS');
     expect(splitState.isComplete).toBe(false);
     expect(splitState.announcerMessage).toBe('Round 1 of 2: Heads. HEADS wins round.');
 
     const round2 = await splitState.rollNextRound();
-    expect(round2?.roundWinnerSide).toBe('TAILS');
+    if (round2?.kind !== 'coin' || splitState.summary.kind !== 'coin') {
+      throw new Error('Expected coin round and series summary');
+    }
+    expect(round2.roundWinnerSide).toBe('TAILS');
     expect(splitState.isComplete).toBe(true);
     expect(splitState.summary.coinSeriesWinner).toBe('TIE');
     expect(splitState.announcerMessage).toBe(
@@ -191,6 +198,7 @@ describe('RollState Controller', () => {
     headsState.setSeriesLength(1);
 
     await headsState.rollNextRound();
+    if (headsState.summary.kind !== 'coin') throw new Error('Expected coin series summary');
     expect(headsState.summary.coinSeriesWinner).toBe('HEADS');
     expect(headsState.announcerMessage).toBe(
       'Round 1 of 1: Heads. HEADS wins round. Series complete! HEADS wins series with 1 Heads rounds to 0 Tails rounds.',
@@ -204,6 +212,7 @@ describe('RollState Controller', () => {
     tailsState.setSeriesLength(1);
 
     await tailsState.rollNextRound();
+    if (tailsState.summary.kind !== 'coin') throw new Error('Expected coin series summary');
     expect(tailsState.summary.coinSeriesWinner).toBe('TAILS');
     expect(tailsState.announcerMessage).toBe(
       'Round 1 of 1: Tails. TAILS wins round. Series complete! TAILS wins series with 0 Heads rounds to 1 Tails rounds.',
@@ -223,16 +232,19 @@ describe('RollState Controller', () => {
     quickState.setCountPerRoll(1);
 
     const headsRoll = await quickState.executeQuickRoll();
-    expect(headsRoll?.roundWinnerSide).toBe('HEADS');
+    if (headsRoll?.kind !== 'coin') throw new Error('Expected coin round');
+    expect(headsRoll.roundWinnerSide).toBe('HEADS');
     expect(quickState.announcerMessage).toBe('Quick roll: Heads. HEADS wins.');
 
     const tailsRoll = await quickState.executeQuickRoll();
-    expect(tailsRoll?.roundWinnerSide).toBe('TAILS');
+    if (tailsRoll?.kind !== 'coin') throw new Error('Expected coin round');
+    expect(tailsRoll.roundWinnerSide).toBe('TAILS');
     expect(quickState.announcerMessage).toBe('Quick roll: Tails. TAILS wins.');
 
     quickState.setCountPerRoll(2);
     const tieRoll = await quickState.executeQuickRoll();
-    expect(tieRoll?.roundWinnerSide).toBe('TIE');
+    if (tieRoll?.kind !== 'coin') throw new Error('Expected coin round');
+    expect(tieRoll.roundWinnerSide).toBe('TIE');
     expect(quickState.announcerMessage).toBe('Quick roll: Heads, Tails. Tied.');
     expect(quickSeq.remaining()).toBe(0);
   });

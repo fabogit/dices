@@ -142,6 +142,9 @@ describe('persistence v2 validators and serialization', () => {
     expect(hydrated.activePlayerId).toBe(alice.id);
     expect(hydrated.history).toHaveLength(1);
     expect(hydrated.history[0]).toEqual(hydrateSeriesRecord(serialized.history[0]));
+    if (hydrated.history[0].kind !== 'coin') {
+      throw new Error('Expected coin series summary after hydration');
+    }
     expect(hydrated.history[0].coinSeriesWinner).toBe('TIE');
     expect(hydrated.history[0].rounds[0].faces).toBe(2);
   });
