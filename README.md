@@ -328,6 +328,12 @@ Build command in Cloudflare Pages dashboard:
 - **Build output directory:** `dist`
 - **Node.js Version:** `26.13.1` (picked up automatically from `.node-version`)
 
+### Releases & Versioning
+
+Versions are automated with [release-please](https://github.com/googleapis/release-please). Merge PRs with Conventional Commit titles (`feat:`, `fix:`, `refactor:`, ...) and release-please opens or updates a "release" PR. Merging it bumps `package.json`, writes `CHANGELOG.md`, tags `vX.Y.Z` and creates the GitHub Release. Never bump the version by hand.
+
+Note: PRs opened with the default `GITHUB_TOKEN` do not trigger the CI workflow (a GitHub limitation), so close and reopen the release PR to run CI on it.
+
 ---
 
 ## 📄 License & Author
