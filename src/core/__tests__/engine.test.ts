@@ -155,9 +155,7 @@ describe('validateRollConfig', () => {
   });
 
   it('rejects non-object configurations', () => {
-    expect(() => validateRollConfig(null as unknown as RollConfig)).toThrow(
-      /Roll configuration must be a valid object/i,
-    );
+    expect(() => validateRollConfig(null)).toThrow(/Roll configuration must be a valid object/i);
   });
 });
 

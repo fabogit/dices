@@ -149,8 +149,10 @@ test.describe('Player Management, Leaderboard, & History Persistence (Issue #13)
     await expect(historyItems.nth(2)).toContainText('Alice');
     await expect(historyItems.nth(2)).toContainText('d6');
 
-    // Step 7: Reload the page and verify localStorage persistence
+    // Step 7: Reload the page and verify localStorage persistence (both players & history)
     await page.reload();
+    await expect(playerSelect.getByRole('option')).toHaveCount(2);
+    expect(await getSelectedPlayerName()).toBe('Alice');
     await page.getByRole('tab', { name: /History/i }).click();
 
     const reloadedPlayerCards = page
@@ -172,7 +174,7 @@ test.describe('Player Management, Leaderboard, & History Persistence (Issue #13)
       .getByRole('listitem');
     await expect(reloadedHistoryItems).toHaveCount(3);
 
-    // Step 8: Clear history and verify empty state across reload
+    // Step 8: Clear history and verify empty history + preserved players across reload
     const clearBtn = page.getByRole('button', { name: 'Clear all completed series history' });
     await expect(clearBtn).toBeVisible();
     await clearBtn.click();
@@ -181,8 +183,10 @@ test.describe('Player Management, Leaderboard, & History Persistence (Issue #13)
     await expect(clearBtn).not.toBeVisible();
     await expect(historyItems).toHaveCount(0);
 
-    // Persist empty history across reload
+    // Persist empty history while keeping registered players across reload
     await page.reload();
+    await expect(playerSelect.getByRole('option')).toHaveCount(2);
+    expect(await getSelectedPlayerName()).toBe('Alice');
     await page.getByRole('tab', { name: /History/i }).click();
     await expect(page.getByText(/No completed series/i)).toBeVisible();
     await expect(clearBtn).not.toBeVisible();
