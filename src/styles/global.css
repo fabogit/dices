@@ -55,6 +55,7 @@ body {
   padding: 0.6rem 1.2rem !important;
   border-radius: 0.375rem !important;
   outline: 3px solid var(--accent-blue) !important;
+  outline-offset: 2px !important;
   clip-path: none !important;
   width: auto !important;
   height: auto !important;
