@@ -1,6 +1,8 @@
 <script lang="ts">
+  import type { AppMode } from '../../core/types';
+
   interface Props {
-    mode: 'quick' | 'series';
+    mode: AppMode;
     faces: number;
     countPerRoll: number;
     isRolling: boolean;
