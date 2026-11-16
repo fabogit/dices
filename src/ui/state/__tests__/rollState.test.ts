@@ -24,6 +24,56 @@ function createDeferredArena() {
   return { arena, land, isAnimating: () => resolveLanding !== undefined };
 }
 
+interface PlannedRoll {
+  faces: DieFaces;
+  values: readonly number[];
+}
+
+/**
+ * Strict deterministic IRollProvider double that validates expected `faces`,
+ * `countPerRoll`, and full consumption of planned sequences.
+ */
+function createSequenceProvider(
+  plannedRolls: readonly PlannedRoll[],
+  kind: IRollProvider['kind'] = 'local-csprng',
+) {
+  const queue = plannedRolls.map((step) => ({
+    faces: step.faces,
+    values: [...step.values],
+  }));
+  const calls: Array<{ faces: DieFaces; countPerRoll: number }> = [];
+
+  const provider: IRollProvider = {
+    kind,
+    rollRound: async (faces, countPerRoll) => {
+      calls.push({ faces, countPerRoll });
+      const next = queue.shift();
+      if (!next) {
+        throw new Error(
+          `Sequence provider exhausted on rollRound(${faces}, ${countPerRoll}) after ${calls.length - 1} roll(s).`,
+        );
+      }
+      if (faces !== next.faces) {
+        throw new Error(
+          `Expected rollRound faces ${next.faces}, got ${faces} at call ${calls.length}.`,
+        );
+      }
+      if (countPerRoll !== next.values.length) {
+        throw new Error(
+          `Expected rollRound countPerRoll ${next.values.length}, got ${countPerRoll} at call ${calls.length}.`,
+        );
+      }
+      return [...next.values];
+    },
+  };
+
+  return {
+    provider,
+    calls,
+    remaining: () => queue.length,
+  };
+}
+
 describe('RollState Controller', () => {
   let state: RollState;
 
@@ -92,16 +142,99 @@ describe('RollState Controller', () => {
     expect(state.announcerMessage).toContain('Series complete');
   });
 
-  it('handles coin d2 series outcome and tie detection', async () => {
-    state.setFaces(2);
-    state.setCountPerRoll(1);
-    state.setSeriesLength(1);
+  it('detects coin d2 round and series ties deterministically via injected IRollProvider', async () => {
+    const tieSeq = createSequenceProvider([{ faces: 2, values: [1, 2] }]);
+    const tieState = new RollState({ provider: tieSeq.provider });
+    tieState.setFaces(2);
+    tieState.setCountPerRoll(2);
+    tieState.setSeriesLength(1);
 
-    const round = await state.rollNextRound();
-    expect(round).not.toBeNull();
-    expect(state.isComplete).toBe(true);
-    expect(state.summary.coinSeriesWinner).toBeDefined();
-    expect(['HEADS', 'TAILS', 'TIE']).toContain(state.summary.coinSeriesWinner);
+    const tiedRound = await tieState.rollNextRound();
+    expect(tiedRound?.roundWinnerSide).toBe('TIE');
+    expect(tieState.isComplete).toBe(true);
+    expect(tieState.summary.coinSeriesWinner).toBe('TIE');
+    expect(tieState.announcerMessage).toBe(
+      'Round 1 of 1: Heads, Tails. Round tied. Series complete! Series ended in a tie with 0 Heads rounds to 0 Tails rounds.',
+    );
+    expect(tieSeq.remaining()).toBe(0);
+
+    // Split decisive rounds (1 Heads round + 1 Tails round) tie the series without any tied round
+    const splitSeq = createSequenceProvider([
+      { faces: 2, values: [1] },
+      { faces: 2, values: [2] },
+    ]);
+    const splitState = new RollState({ provider: splitSeq.provider });
+    splitState.setFaces(2);
+    splitState.setCountPerRoll(1);
+    splitState.setSeriesLength(2);
+
+    const round1 = await splitState.rollNextRound();
+    expect(round1?.roundWinnerSide).toBe('HEADS');
+    expect(splitState.isComplete).toBe(false);
+    expect(splitState.announcerMessage).toBe('Round 1 of 2: Heads. HEADS wins round.');
+
+    const round2 = await splitState.rollNextRound();
+    expect(round2?.roundWinnerSide).toBe('TAILS');
+    expect(splitState.isComplete).toBe(true);
+    expect(splitState.summary.coinSeriesWinner).toBe('TIE');
+    expect(splitState.announcerMessage).toBe(
+      'Round 2 of 2: Tails. TAILS wins round. Series complete! Series ended in a tie with 1 Heads rounds to 1 Tails rounds.',
+    );
+    expect(splitSeq.remaining()).toBe(0);
+  });
+
+  it('announces decisive coin d2 series winners (HEADS and TAILS) deterministically', async () => {
+    const headsSeq = createSequenceProvider([{ faces: 2, values: [1] }]);
+    const headsState = new RollState({ provider: headsSeq.provider });
+    headsState.setFaces(2);
+    headsState.setCountPerRoll(1);
+    headsState.setSeriesLength(1);
+
+    await headsState.rollNextRound();
+    expect(headsState.summary.coinSeriesWinner).toBe('HEADS');
+    expect(headsState.announcerMessage).toBe(
+      'Round 1 of 1: Heads. HEADS wins round. Series complete! HEADS wins series with 1 Heads rounds to 0 Tails rounds.',
+    );
+    expect(headsSeq.remaining()).toBe(0);
+
+    const tailsSeq = createSequenceProvider([{ faces: 2, values: [2] }]);
+    const tailsState = new RollState({ provider: tailsSeq.provider });
+    tailsState.setFaces(2);
+    tailsState.setCountPerRoll(1);
+    tailsState.setSeriesLength(1);
+
+    await tailsState.rollNextRound();
+    expect(tailsState.summary.coinSeriesWinner).toBe('TAILS');
+    expect(tailsState.announcerMessage).toBe(
+      'Round 1 of 1: Tails. TAILS wins round. Series complete! TAILS wins series with 0 Heads rounds to 1 Tails rounds.',
+    );
+    expect(tailsSeq.remaining()).toBe(0);
+  });
+
+  it('announces coin d2 quick roll outcomes (Heads, Tails, and tie) deterministically', async () => {
+    const quickSeq = createSequenceProvider([
+      { faces: 2, values: [1] },
+      { faces: 2, values: [2] },
+      { faces: 2, values: [1, 2] },
+    ]);
+    const quickState = new RollState({ provider: quickSeq.provider });
+    quickState.setMode('quick');
+    quickState.setFaces(2);
+    quickState.setCountPerRoll(1);
+
+    const headsRoll = await quickState.executeQuickRoll();
+    expect(headsRoll?.roundWinnerSide).toBe('HEADS');
+    expect(quickState.announcerMessage).toBe('Quick roll: Heads. HEADS wins.');
+
+    const tailsRoll = await quickState.executeQuickRoll();
+    expect(tailsRoll?.roundWinnerSide).toBe('TAILS');
+    expect(quickState.announcerMessage).toBe('Quick roll: Tails. TAILS wins.');
+
+    quickState.setCountPerRoll(2);
+    const tieRoll = await quickState.executeQuickRoll();
+    expect(tieRoll?.roundWinnerSide).toBe('TIE');
+    expect(quickState.announcerMessage).toBe('Quick roll: Heads, Tails. Tied.');
+    expect(quickSeq.remaining()).toBe(0);
   });
 
   it('executes autoRollSeries to completion in instant mode', async () => {
@@ -813,18 +946,17 @@ describe('RollState Controller', () => {
         savedSnapshots.push(payload as PersistedStateV2);
       },
     };
-    const queue = [
-      [2, 5],
-      [1, 1],
-    ];
-    const rollCalls: Array<{ faces: DieFaces; count: number }> = [];
-    const customProvider: IRollProvider = {
-      kind: 'remote-multiplayer',
-      rollRound: async (faces, count) => {
-        rollCalls.push({ faces, count });
-        return queue.shift() ?? [1];
-      },
-    };
+    const {
+      provider: customProvider,
+      calls: rollCalls,
+      remaining,
+    } = createSequenceProvider(
+      [
+        { faces: 6, values: [2, 5] },
+        { faces: 2, values: [1, 1] },
+      ],
+      'remote-multiplayer',
+    );
 
     const injected = new RollState({ provider: customProvider, storage: customStorage });
     injected.instantMode = true;
@@ -846,7 +978,7 @@ describe('RollState Controller', () => {
     const seriesRound = await injected.rollNextRound();
     expect(seriesRound?.values).toEqual([2, 5]);
     expect(seriesRound?.faces).toBe(6);
-    expect(rollCalls).toEqual([{ faces: 6, count: 2 }]);
+    expect(rollCalls).toEqual([{ faces: 6, countPerRoll: 2 }]);
     expect(injected.history).toHaveLength(2);
     expect(savedSnapshots).toHaveLength(3);
     expect(savedSnapshots[2].version).toBe(2);
@@ -858,9 +990,10 @@ describe('RollState Controller', () => {
     expect(quickRound?.values).toEqual([1, 1]);
     expect(quickRound?.faces).toBe(2);
     expect(rollCalls).toEqual([
-      { faces: 6, count: 2 },
-      { faces: 2, count: 2 },
+      { faces: 6, countPerRoll: 2 },
+      { faces: 2, countPerRoll: 2 },
     ]);
+    expect(remaining()).toBe(0);
 
     injected.clearHistory();
     expect(injected.history).toEqual([]);
@@ -873,6 +1006,7 @@ describe('RollState Controller', () => {
     expect(reloaded.history).toEqual([]);
     expect(reloaded.players.map((p) => p.name)).toEqual(['Player 1', 'Alice']);
     expect(reloaded.activePlayerId).toBe('player-1');
+    expect(remaining()).toBe(0);
   });
 
   it('exposes seriesFaces independently and silently resets a completed series on player change in Quick Roll', async () => {
