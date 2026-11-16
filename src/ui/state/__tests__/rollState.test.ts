@@ -74,6 +74,16 @@ function createSequenceProvider(
   };
 }
 
+function createMemoryStorage(initialPayload: unknown = null): RollStorage {
+  let stored = initialPayload;
+  return {
+    load: () => stored,
+    save: (payload) => {
+      stored = payload;
+    },
+  };
+}
+
 describe('RollState Controller', () => {
   let state: RollState;
 
@@ -144,7 +154,10 @@ describe('RollState Controller', () => {
 
   it('detects coin d2 round and series ties deterministically via injected IRollProvider', async () => {
     const tieSeq = createSequenceProvider([{ faces: 2, values: [1, 2] }]);
-    const tieState = new RollState({ provider: tieSeq.provider });
+    const tieState = new RollState({
+      provider: tieSeq.provider,
+      storage: createMemoryStorage(),
+    });
     tieState.setFaces(2);
     tieState.setCountPerRoll(2);
     tieState.setSeriesLength(1);
@@ -166,7 +179,10 @@ describe('RollState Controller', () => {
       { faces: 2, values: [1] },
       { faces: 2, values: [2] },
     ]);
-    const splitState = new RollState({ provider: splitSeq.provider });
+    const splitState = new RollState({
+      provider: splitSeq.provider,
+      storage: createMemoryStorage(),
+    });
     splitState.setFaces(2);
     splitState.setCountPerRoll(1);
     splitState.setSeriesLength(2);
@@ -192,7 +208,10 @@ describe('RollState Controller', () => {
 
   it('announces decisive coin d2 series winners (HEADS and TAILS) deterministically', async () => {
     const headsSeq = createSequenceProvider([{ faces: 2, values: [1] }]);
-    const headsState = new RollState({ provider: headsSeq.provider });
+    const headsState = new RollState({
+      provider: headsSeq.provider,
+      storage: createMemoryStorage(),
+    });
     headsState.setFaces(2);
     headsState.setCountPerRoll(1);
     headsState.setSeriesLength(1);
@@ -206,7 +225,10 @@ describe('RollState Controller', () => {
     expect(headsSeq.remaining()).toBe(0);
 
     const tailsSeq = createSequenceProvider([{ faces: 2, values: [2] }]);
-    const tailsState = new RollState({ provider: tailsSeq.provider });
+    const tailsState = new RollState({
+      provider: tailsSeq.provider,
+      storage: createMemoryStorage(),
+    });
     tailsState.setFaces(2);
     tailsState.setCountPerRoll(1);
     tailsState.setSeriesLength(1);
@@ -226,7 +248,10 @@ describe('RollState Controller', () => {
       { faces: 2, values: [2] },
       { faces: 2, values: [1, 2] },
     ]);
-    const quickState = new RollState({ provider: quickSeq.provider });
+    const quickState = new RollState({
+      provider: quickSeq.provider,
+      storage: createMemoryStorage(),
+    });
     quickState.setMode('quick');
     quickState.setFaces(2);
     quickState.setCountPerRoll(1);
