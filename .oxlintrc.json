@@ -69,6 +69,28 @@
       "rules": {
         "no-restricted-imports": "off"
       }
+    },
+    {
+      "files": ["src/ui/quick/**"],
+      "rules": {
+        "no-restricted-imports": [
+          "error",
+          {
+            "patterns": [
+              {
+                "group": ["*rollState*"],
+                "message": "Presentational subcomponents must not import rollState; pass typed props and callbacks from a panel container."
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "files": ["src/ui/quick/QuickResultPanel.svelte"],
+      "rules": {
+        "no-restricted-imports": "off"
+      }
     }
   ]
 }

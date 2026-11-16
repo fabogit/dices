@@ -4,7 +4,7 @@
   import SeriesScoreboard from './ui/series/SeriesScoreboard.svelte';
   import StatisticalBreakdown from './ui/series/StatisticalBreakdown.svelte';
   import HistoryPanel from './ui/HistoryPanel.svelte';
-  import QuickResultPanel from './ui/QuickResultPanel.svelte';
+  import QuickResultPanel from './ui/quick/QuickResultPanel.svelte';
   import Dialog from './ui/primitives/Dialog.svelte';
   import Tabs from './ui/primitives/Tabs.svelte';
   import { rollState } from './ui/state/rollState.svelte';
