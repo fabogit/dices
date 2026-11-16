@@ -15,18 +15,14 @@ updates:
           - '@playwright/test'
           - 'playwright'
     ignore:
-      # Deferred to Phase 6 (#34): @sveltejs/vite-plugin-svelte >= 6 requires Vite >= 6.3,
-      # which breaks vitest@2.1.x (bundled with vite@5.4.x).
+      # Deferred to Phase 6 (#34): Vite 8 (Rolldown) and @sveltejs/vite-plugin-svelte 7.x
+      # (which requires Vite 8). While @sveltejs/vite-plugin-svelte 6.x is compatible with
+      # Vite >= 6.3, deferring it is a deliberate choice to avoid an intermediate upgrade
+      # before jumping directly to 7.x in #34.
       - dependency-name: '@sveltejs/vite-plugin-svelte'
         update-types:
           - 'version-update:semver-major'
       - dependency-name: 'vite'
-        update-types:
-          - 'version-update:semver-major'
-      - dependency-name: 'vitest'
-        update-types:
-          - 'version-update:semver-major'
-      - dependency-name: '@vitest/coverage-v8'
         update-types:
           - 'version-update:semver-major'
       # Deferred until svelte-check natively supports TypeScript >= 7 without dual-TS aliases (#22).
