@@ -13,6 +13,7 @@
     "test:coverage": "vp test --coverage",
     "test:e2e": "playwright test",
     "test:e2e:guard": "node scripts/check-e2e-selectors.mjs",
+    "check:playwright-version": "node scripts/check-playwright-version.mjs",
     "lint": "vp lint",
     "format": "vp fmt --write",
     "format:check": "vp fmt --check",
@@ -24,7 +25,7 @@
     "three": "^0.187.0"
   },
   "devDependencies": {
-    "@playwright/test": "^1.65.0",
+    "@playwright/test": "1.65.0",
     "@sveltejs/vite-plugin-svelte": "^7.3.1",
     "@testing-library/svelte": "^5.4.2",
     "@types/node": "^26.6.6",

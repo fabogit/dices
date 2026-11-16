@@ -34,6 +34,9 @@ export default defineConfig(({ mode }) => ({
     strictPort: true,
   },
   build: {
+    // The lazily loaded WebGL `three` chunk is ~534 kB minified (loaded only when the arena
+    // opens); raise the warning threshold just above it so new oversized chunks still warn.
+    chunkSizeWarningLimit: 550,
     rolldownOptions: {
       output: {
         codeSplitting: {

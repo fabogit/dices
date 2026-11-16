@@ -6,6 +6,15 @@ on:
   pull_request:
     branches: [main]
 
+# Least privilege: no job writes to the repo, PRs or checks; artifacts use the runtime token.
+permissions:
+  contents: read
+
+# Cancel superseded PR runs; never cancel runs on main.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
 jobs:
   build-and-test:
     name: Guard, Check, Unit Tests & Build
@@ -29,30 +38,8 @@ jobs:
       - name: Check E2E selector guard
         run: pnpm run test:e2e:guard
 
-      - name: Verify Playwright container tag matches package.json
-        run: |
-          node --input-type=module - <<'EOF'
-          import { readFileSync } from 'node:fs';
-
-          const pkg = JSON.parse(readFileSync('package.json', 'utf8'));
-          const ci = readFileSync('.github/workflows/ci.yml', 'utf8');
-          const pkgSpec = pkg.devDependencies?.['@playwright/test'];
-          if (!pkgSpec) {
-            throw new Error('Missing @playwright/test in package.json devDependencies');
-          }
-          const pkgVer = pkgSpec.replace(/^[\^~]/, '');
-          const match = ci.match(/mcr\.microsoft\.com\/playwright:v(\d+\.\d+\.\d+)/);
-          if (!match) {
-            throw new Error('Missing Playwright container image tag in .github/workflows/ci.yml');
-          }
-          const imgVer = match[1];
-          if (pkgVer !== imgVer) {
-            throw new Error(
-              `Playwright version mismatch: package.json has ${pkgSpec} (${pkgVer}) but ci.yml uses v${imgVer}`,
-            );
-          }
-          console.log(`Playwright version verified: v${imgVer}`);
-          EOF
+      - name: Verify Playwright container tag matches installed version
+        run: pnpm run check:playwright-version
 
       - name: Lint, format & type check
         run: pnpm run check
