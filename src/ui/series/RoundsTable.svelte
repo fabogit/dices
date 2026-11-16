@@ -40,7 +40,7 @@
               #{r.roundIndex + 1}
             </th>
             <td class="values-cell">
-              {#if faces === 2}
+              {#if r.kind === 'coin'}
                 <span class="coin-pills">
                   <CoinPills values={r.values} />
                 </span>
@@ -49,7 +49,7 @@
               {/if}
             </td>
             <td class="result-cell">
-              {#if faces === 2}
+              {#if r.kind === 'coin'}
                 <span class="outcome-pill" class:tie={r.roundWinnerSide === 'TIE'}>
                   {r.roundWinnerSide}
                 </span>
@@ -58,9 +58,9 @@
               {/if}
             </td>
             <td class="stat-cell">
-              {#if faces === 2}
+              {#if r.kind === 'coin'}
                 <span class="coin-split">
-                  {r.headsCount ?? 0}H / {r.tailsCount ?? 0}T
+                  {r.headsCount}H / {r.tailsCount}T
                 </span>
               {:else}
                 <span class="minmax-text">

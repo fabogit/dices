@@ -9,7 +9,7 @@ describe('LatestRollHero', () => {
     const tieStats = computeQuickRollStats(tieRoll);
 
     const { getByRole, getByText, rerender } = render(LatestRollHero, {
-      props: { roll: tieRoll, stats: tieStats },
+      props: { stats: tieStats },
     });
 
     const region = getByRole('region', { name: 'Latest Quick Roll Result' });
@@ -23,7 +23,7 @@ describe('LatestRollHero', () => {
 
     const headsWinRoll = computeRoundResult(1, [1, 1], 2, 1_700_000_005_000, 'q-win');
     const headsWinStats = computeQuickRollStats(headsWinRoll);
-    await rerender({ roll: headsWinRoll, stats: headsWinStats });
+    await rerender({ stats: headsWinStats });
 
     expect(getByText(/HEADS Wins/)).toBeTruthy();
     expect(getByRole('img', { name: 'Split: 100% Heads, 0% Tails' })).toBeTruthy();
@@ -34,7 +34,7 @@ describe('LatestRollHero', () => {
     const multiStats = computeQuickRollStats(multiRoll);
 
     const { getByRole, getByText, queryByText, rerender } = render(LatestRollHero, {
-      props: { roll: multiRoll, stats: multiStats },
+      props: { stats: multiStats },
     });
 
     const region = within(getByRole('region', { name: 'Latest Quick Roll Result' }));
@@ -51,7 +51,7 @@ describe('LatestRollHero', () => {
     // Single roll omits High/Low and shows negative delta when below expected (3.5)
     const singleLowRoll = computeRoundResult(1, [2], 6, 1_700_000_005_000, 'q-single');
     const singleLowStats = computeQuickRollStats(singleLowRoll);
-    await rerender({ roll: singleLowRoll, stats: singleLowStats });
+    await rerender({ stats: singleLowStats });
 
     expect(queryByText(/High:/)).toBeNull();
     expect(queryByText(/Low:/)).toBeNull();

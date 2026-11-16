@@ -46,7 +46,7 @@
           </div>
 
           <div class="history-outcome">
-            {#if item.config.faces === 2}
+            {#if item.kind === 'coin'}
               {@const coinSplit = getCoinSplitPercentages(item)}
               <div class="coin-outcome-block">
                 <span class="coin-outcome">

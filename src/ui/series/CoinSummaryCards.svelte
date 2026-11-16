@@ -1,9 +1,9 @@
 <script lang="ts">
   import { getCoinSplitPercentages } from '../../core/engine';
-  import type { SeriesSummary } from '../../core/types';
+  import type { CoinSeriesSummary } from '../../core/types';
 
   interface Props {
-    summary: SeriesSummary;
+    summary: CoinSeriesSummary;
     isComplete: boolean;
   }
 
@@ -18,13 +18,13 @@
     <div class="card-content">
       <span class="card-label">HEADS</span>
       <span class="card-metric">
-        {summary.headsRoundsWon ?? 0}
+        {summary.headsRoundsWon}
         <small>rounds won</small>
       </span>
       <div class="card-sub-row">
         <span class="sub-stat-pct" data-testid="heads-pct">{headsPct.toFixed(1)}%</span>
         <span class="sub-stat-sep">•</span>
-        <span class="sub-stat">{summary.totalHeads ?? 0} coins</span>
+        <span class="sub-stat">{summary.totalHeads} coins</span>
       </div>
     </div>
   </div>
@@ -34,13 +34,13 @@
     <div class="card-content">
       <span class="card-label">TAILS</span>
       <span class="card-metric">
-        {summary.tailsRoundsWon ?? 0}
+        {summary.tailsRoundsWon}
         <small>rounds won</small>
       </span>
       <div class="card-sub-row">
         <span class="sub-stat-pct" data-testid="tails-pct">{tailsPct.toFixed(1)}%</span>
         <span class="sub-stat-sep">•</span>
-        <span class="sub-stat">{summary.totalTails ?? 0} coins</span>
+        <span class="sub-stat">{summary.totalTails} coins</span>
       </div>
     </div>
   </div>

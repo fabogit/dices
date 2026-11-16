@@ -47,13 +47,8 @@
     </div>
 
     <!-- Analytics Key Metrics Grid -->
-    {#if rollState.seriesFaces === 2}
+    {#if analytics.kind === 'coin'}
       {@const coinStats = analytics.coinStats}
-      {@const headsPct = coinStats?.headsPercentage ?? 0}
-      {@const tailsPct = coinStats?.tailsPercentage ?? 0}
-      {@const headsDelta = coinStats?.headsDeltaPercentage ?? 0}
-      {@const tailsDelta = coinStats?.tailsDeltaPercentage ?? 0}
-      {@const zQualitative = coinStats?.zQualitative ?? 'No data'}
 
       <div
         class="analytics-metrics-grid coin-analytics-grid"
@@ -61,21 +56,29 @@
         data-variant="coin"
       >
         <!-- Heads Share -->
-        <StatBox label="Heads Share" value="{headsPct.toFixed(1)}%" valueTone="heads">
+        <StatBox
+          label="Heads Share"
+          value="{coinStats.headsPercentage.toFixed(1)}%"
+          valueTone="heads"
+        >
           {#if analytics.totalDiceRolled > 0}
             <DeltaBadge
-              tone={headsDelta >= 0 ? 'positive' : 'negative'}
-              text="{formatSigned(headsDelta, 1)}% vs 50%"
+              tone={coinStats.headsDeltaPercentage >= 0 ? 'positive' : 'negative'}
+              text="{formatSigned(coinStats.headsDeltaPercentage, 1)}% vs 50%"
             />
           {/if}
         </StatBox>
 
         <!-- Tails Share -->
-        <StatBox label="Tails Share" value="{tailsPct.toFixed(1)}%" valueTone="tails">
+        <StatBox
+          label="Tails Share"
+          value="{coinStats.tailsPercentage.toFixed(1)}%"
+          valueTone="tails"
+        >
           {#if analytics.totalDiceRolled > 0}
             <DeltaBadge
-              tone={tailsDelta >= 0 ? 'positive' : 'negative'}
-              text="{formatSigned(tailsDelta, 1)}% vs 50%"
+              tone={coinStats.tailsDeltaPercentage >= 0 ? 'positive' : 'negative'}
+              text="{formatSigned(coinStats.tailsDeltaPercentage, 1)}% vs 50%"
             />
           {/if}
         </StatBox>
@@ -84,14 +87,15 @@
         <StatBox
           label="Balance Deviation (z)"
           value={analytics.totalDiceRolled > 0 ? formatSigned(analytics.zScore, 2) : '0.00'}
-          subtext={zQualitative}
+          subtext={coinStats.zQualitative}
         />
 
         <!-- Round Split -->
         <StatBox
           label="Round Split"
-          value="{coinStats?.headsRoundsWon ?? 0}H / {coinStats?.tailsRoundsWon ??
-            0}T{(coinStats?.tieRounds ?? 0) > 0 ? ` / ${coinStats?.tieRounds} Tie` : ''}"
+          value="{coinStats.headsRoundsWon}H / {coinStats.tailsRoundsWon}T{coinStats.tieRounds > 0
+            ? ` / ${coinStats.tieRounds} Tie`
+            : ''}"
           subtext="across {rollState.rounds.length} rounds"
         />
       </div>

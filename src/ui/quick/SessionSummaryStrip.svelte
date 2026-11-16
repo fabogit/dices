@@ -1,54 +1,53 @@
 <script lang="ts">
-  import type { DieFaces, QuickRollSessionStats } from '../../core/types';
+  import type { PopulatedQuickRollSessionStats } from '../../core/types';
   import { dieLabel, formatSigned } from '../../lib/format';
   import DeltaBadge from '../primitives/DeltaBadge.svelte';
 
   interface Props {
-    sessionStats: QuickRollSessionStats;
-    faces: DieFaces;
+    sessionStats: PopulatedQuickRollSessionStats;
   }
 
-  let { sessionStats, faces }: Props = $props();
+  let { sessionStats }: Props = $props();
 </script>
 
 <!-- Active Die Session Summary Strip (Issue #12) -->
 <div class="session-summary-strip" role="group" aria-label="Session summary for active die">
   <div class="session-strip-header">
     <span class="session-strip-title">
-      Session Summary ({dieLabel(faces)})
+      Session Summary ({dieLabel(sessionStats.faces)})
     </span>
     <span class="session-strip-count">
       {sessionStats.matchingThrows} throws • {sessionStats.totalDiceCount}
-      {faces === 2 ? 'coins' : 'dice'}
+      {sessionStats.kind === 'coin' ? 'coins' : 'dice'}
     </span>
   </div>
 
   <div class="session-strip-metrics">
-    {#if faces === 2}
+    {#if sessionStats.kind === 'coin'}
       <span class="session-pill pill-heads">
-        {sessionStats.headsPercentage?.toFixed(1)}% Heads ({sessionStats.totalHeads})
+        {sessionStats.headsPercentage.toFixed(1)}% Heads ({sessionStats.totalHeads})
       </span>
       <span class="session-pill pill-tails">
-        {sessionStats.tailsPercentage?.toFixed(1)}% Tails ({sessionStats.totalTails})
+        {sessionStats.tailsPercentage.toFixed(1)}% Tails ({sessionStats.totalTails})
       </span>
       <span class="session-pill pill-verdict">
         {sessionStats.balanceVerdict}
       </span>
     {:else}
       <span class="session-pill pill-avg">
-        Die Avg: {sessionStats.actualAverage?.toFixed(2)}
+        Die Avg: {sessionStats.actualAverage.toFixed(2)}
       </span>
       <DeltaBadge
-        tone={(sessionStats.averageDelta ?? 0) >= 0 ? 'positive' : 'negative'}
-        text="{formatSigned(sessionStats.averageDelta ?? 0, 2)} Δ"
+        tone={sessionStats.averageDelta >= 0 ? 'positive' : 'negative'}
+        text="{formatSigned(sessionStats.averageDelta, 2)} Δ"
         variant="pill"
       />
-      {#if (sessionStats.criticalMaxCount ?? 0) > 0}
+      {#if sessionStats.criticalMaxCount > 0}
         <span class="session-pill pill-crit">
-          {sessionStats.criticalMaxCount}x crit ({faces})
+          {sessionStats.criticalMaxCount}x crit ({sessionStats.faces})
         </span>
       {/if}
-      {#if (sessionStats.criticalMinCount ?? 0) > 0}
+      {#if sessionStats.criticalMinCount > 0}
         <span class="session-pill pill-min">
           {sessionStats.criticalMinCount}x nat 1
         </span>

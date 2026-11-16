@@ -1,10 +1,10 @@
 import { describe, it, expect } from 'vite-plus/test';
 import { render } from '@testing-library/svelte';
 import { computeRoundResult, computeSeriesSummary } from '../../../core/engine';
-import type { RollConfig } from '../../../core/types';
+import type { DiceRollConfig } from '../../../core/types';
 import DiceSummaryGrid from '../DiceSummaryGrid.svelte';
 
-const diceConfig: RollConfig = {
+const diceConfig: DiceRollConfig = {
   faces: 6,
   countPerRoll: 2,
   seriesLength: 3,

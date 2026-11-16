@@ -1,32 +1,10 @@
 import { describe, it, expect } from 'vite-plus/test';
 import { render } from '@testing-library/svelte';
-import type { RoundResult } from '../../../core/types';
+import { computeRoundResult } from '../../../core/engine';
 import ArenaHud from '../ArenaHud.svelte';
 
-const diceRoll: RoundResult = {
-  id: 'round-1',
-  roundIndex: 1,
-  values: [2, 5],
-  sum: 7,
-  max: 5,
-  min: 2,
-  timestamp: 1_700_000_000_000,
-  faces: 6,
-};
-
-const coinRoll: RoundResult = {
-  id: 'coin-1',
-  roundIndex: 0,
-  values: [1, 2],
-  sum: 3,
-  max: 2,
-  min: 1,
-  headsCount: 1,
-  tailsCount: 1,
-  roundWinnerSide: 'TIE',
-  timestamp: 1_700_000_000_000,
-  faces: 2,
-};
+const diceRoll = computeRoundResult(1, [2, 5], 6, 1_700_000_000_000, 'round-1');
+const coinRoll = computeRoundResult(0, [1, 2], 2, 1_700_000_000_000, 'coin-1');
 
 describe('ArenaHud', () => {
   it('renders accessible WebGL context-loss alert outside aria-hidden overlay when contextLost is true', async () => {

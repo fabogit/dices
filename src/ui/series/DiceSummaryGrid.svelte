@@ -1,8 +1,8 @@
 <script lang="ts">
-  import type { RoundResult, SeriesSummary } from '../../core/types';
+  import type { DiceSeriesSummary, RoundResult } from '../../core/types';
 
   interface Props {
-    summary: SeriesSummary;
+    summary: DiceSeriesSummary;
     rounds: ReadonlyArray<RoundResult>;
   }
 
