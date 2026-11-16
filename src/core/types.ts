@@ -4,8 +4,6 @@ export type DieFaces = (typeof ALLOWED_FACES)[number];
 
 export type PolyhedralFaces = Exclude<DieFaces, 2>;
 
-export type ResultKind = 'coin' | 'dice';
-
 export type CoinSide = 'HEADS' | 'TAILS';
 
 export type AppMode = 'quick' | 'series';

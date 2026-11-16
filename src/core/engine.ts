@@ -465,18 +465,17 @@ export function computeSeriesAnalytics(config: RollConfig, rounds: RoundResult[]
     const headsDeltaPercentage = headsPercentage - 50;
     const tailsDeltaPercentage = tailsPercentage - 50;
 
+    const coinRounds = rounds.filter((r): r is CoinRoundResult => r.kind === 'coin');
     let headsRoundsWon = 0;
     let tailsRoundsWon = 0;
     let tieRounds = 0;
-    for (const r of rounds) {
-      if (r.kind === 'coin') {
-        if (r.roundWinnerSide === 'HEADS') {
-          headsRoundsWon++;
-        } else if (r.roundWinnerSide === 'TAILS') {
-          tailsRoundsWon++;
-        } else {
-          tieRounds++;
-        }
+    for (const r of coinRounds) {
+      if (r.roundWinnerSide === 'HEADS') {
+        headsRoundsWon++;
+      } else if (r.roundWinnerSide === 'TAILS') {
+        tailsRoundsWon++;
+      } else {
+        tieRounds++;
       }
     }
 
