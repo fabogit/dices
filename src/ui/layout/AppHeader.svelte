@@ -1,10 +1,18 @@
 <script lang="ts">
   import { MAX_PLAYER_NAME_LENGTH } from '../../core/persistence';
   import Dialog from '../primitives/Dialog.svelte';
+  import type { AddPlayerResult } from '../state/rollState.svelte';
   import { rollState } from '../state/rollState.svelte';
 
   let showAddPlayerModal = $state(false);
   let newPlayerName = $state('');
+  let addPlayerError = $state('');
+
+  const ADD_PLAYER_ERRORS: Record<Extract<AddPlayerResult, { ok: false }>['reason'], string> = {
+    empty: 'Enter a name.',
+    duplicate: 'A player with this name already exists.',
+    locked: "Players can't be added while a roll or series is in progress.",
+  };
 
   // A series belongs to one player: switching mid-series would discard its rounds
   const playerControlsDisabled = $derived(rollState.isRolling || rollState.isSeriesInProgress);
@@ -12,13 +20,21 @@
   function closeAddPlayerModal() {
     showAddPlayerModal = false;
     newPlayerName = '';
+    addPlayerError = '';
+  }
+
+  function openAddPlayerModal() {
+    addPlayerError = '';
+    showAddPlayerModal = true;
   }
 
   function handleAddPlayerSubmit(e: Event) {
     e.preventDefault();
-    if (newPlayerName.trim()) {
-      rollState.addPlayer(newPlayerName.trim());
+    const result = rollState.addPlayer(newPlayerName);
+    if (result.ok) {
       closeAddPlayerModal();
+    } else {
+      addPlayerError = ADD_PLAYER_ERRORS[result.reason];
     }
   }
 </script>
@@ -78,7 +94,7 @@
           type="button"
           class="btn-add-player"
           disabled={playerControlsDisabled}
-          onclick={() => (showAddPlayerModal = true)}
+          onclick={openAddPlayerModal}
           aria-label="Add new local player"
         >
           + Player
@@ -111,11 +127,16 @@
       type="text"
       maxlength={MAX_PLAYER_NAME_LENGTH}
       bind:value={newPlayerName}
+      oninput={() => (addPlayerError = '')}
       placeholder="e.g. Robin"
-      required
+      aria-invalid={addPlayerError ? 'true' : undefined}
+      aria-describedby={addPlayerError ? 'new-player-error' : undefined}
       autofocus
       class="modal-input"
     />
+    {#if addPlayerError}
+      <p id="new-player-error" class="modal-error" role="alert">{addPlayerError}</p>
+    {/if}
     <div class="modal-actions">
       <button type="button" class="modal-btn cancel" onclick={closeAddPlayerModal}> Cancel </button>
       <button type="submit" class="modal-btn confirm"> Add Player </button>
@@ -311,6 +332,16 @@
     border-radius: 0.375rem;
     color: var(--text-primary);
     font-size: 0.95rem;
+  }
+
+  .modal-input[aria-invalid='true'] {
+    border-color: var(--color-danger);
+  }
+
+  .modal-error {
+    margin: 0;
+    font-size: 0.8rem;
+    color: var(--color-danger-light);
   }
 
   .modal-actions {
