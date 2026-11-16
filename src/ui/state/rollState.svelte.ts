@@ -34,6 +34,10 @@ export interface SeriesState {
   rounds: RoundResult[];
 }
 
+export type AddPlayerResult =
+  | { ok: true; player: Player }
+  | { ok: false; reason: 'empty' | 'duplicate' | 'locked' };
+
 export interface RollStateOptions {
   provider?: IRollProvider;
   storage?: RollStorage;
@@ -273,11 +277,18 @@ export class RollState {
   }
 
   // Player Management
-  addPlayer(name: string): void {
-    if (this.isRolling) return;
+  addPlayer(name: string): AddPlayerResult {
+    if (this.isRolling) return { ok: false, reason: 'locked' };
     const trimmed = name.trim().slice(0, MAX_PLAYER_NAME_LENGTH);
-    if (!trimmed) return;
-    if (this.rejectWhileSeriesRuns(this.isSeriesInProgress)) return;
+    if (!trimmed) return { ok: false, reason: 'empty' };
+    if (this.rejectWhileSeriesRuns(this.isSeriesInProgress)) {
+      return { ok: false, reason: 'locked' };
+    }
+    // Names are compared trimmed and case-folded; persisted duplicates are tolerated, not migrated
+    const folded = trimmed.toLocaleLowerCase();
+    if (this.players.some((p) => p.name.trim().toLocaleLowerCase() === folded)) {
+      return { ok: false, reason: 'duplicate' };
+    }
     const nextIndex = this.players.length;
     const color = PLAYER_PALETTE[nextIndex % PLAYER_PALETTE.length];
     const newPlayer: Player = {
@@ -289,6 +300,7 @@ export class RollState {
     this.activePlayerId = newPlayer.id;
     this.resetCurrentSeries({ announce: this.mode === 'series' });
     this.saveState();
+    return { ok: true, player: newPlayer };
   }
 
   setActivePlayer(id: string): void {
