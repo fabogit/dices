@@ -1,5 +1,8 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { computeRoundResult, computeSeriesSummary } from '../../core/engine';
+import type { RollStorage } from '../../core/persistence';
+import type { IRollProvider } from '../../core/provider';
+import type { DieFaces } from '../../core/types';
 import { RollState } from '../rollState.svelte';
 
 /**
@@ -25,6 +28,7 @@ describe('RollState Controller', () => {
   let state: RollState;
 
   beforeEach(() => {
+    window.localStorage?.clear();
     state = new RollState();
     state.clearHistory();
     state.resetCurrentSeries();
@@ -784,5 +788,115 @@ describe('RollState Controller', () => {
     const updatedLeaderboard = state.leaderboard;
     expect(updatedLeaderboard).not.toBe(firstLeaderboard);
     expect(state.leaderboard).toBe(updatedLeaderboard);
+  });
+
+  it('uses injected IRollProvider and RollStorage ports for rolling and persistence', async () => {
+    const initialSummary = computeSeriesSummary(
+      'initial-series',
+      { faces: 6, countPerRoll: 1, seriesLength: 1, playerId: 'player-1' },
+      'Player 1',
+      [computeRoundResult(0, [3], 6, 1_000, 'initial-round')],
+      2_000,
+    );
+    const savedSnapshots: unknown[] = [];
+    const customStorage: RollStorage = {
+      load: () => [initialSummary, { invalid: true }],
+      save: (payload) => {
+        savedSnapshots.push(payload);
+      },
+    };
+    const queue = [
+      [2, 5],
+      [1, 1],
+    ];
+    const rollCalls: Array<{ faces: DieFaces; count: number }> = [];
+    const customProvider: IRollProvider = {
+      kind: 'remote-multiplayer',
+      rollRound: async (faces, count) => {
+        rollCalls.push({ faces, count });
+        return queue.shift() ?? [1];
+      },
+    };
+
+    const injected = new RollState({ provider: customProvider, storage: customStorage });
+    injected.instantMode = true;
+    injected.setFaces(6);
+    injected.setCountPerRoll(2);
+    injected.setSeriesLength(1);
+
+    expect(injected.history.map((s) => s.id)).toEqual(['initial-series']);
+
+    const seriesRound = await injected.rollNextRound();
+    expect(seriesRound?.values).toEqual([2, 5]);
+    expect(seriesRound?.faces).toBe(6);
+    expect(rollCalls).toEqual([{ faces: 6, count: 2 }]);
+    expect(injected.history).toHaveLength(2);
+    expect(savedSnapshots).toHaveLength(1);
+
+    injected.setMode('quick');
+    injected.setFaces(2);
+    const quickRound = await injected.executeQuickRoll();
+    expect(quickRound?.values).toEqual([1, 1]);
+    expect(quickRound?.faces).toBe(2);
+    expect(rollCalls).toEqual([
+      { faces: 6, count: 2 },
+      { faces: 2, count: 2 },
+    ]);
+
+    injected.clearHistory();
+    expect(injected.history).toEqual([]);
+    expect(savedSnapshots.at(-1)).toEqual([]);
+  });
+
+  it('exposes seriesFaces independently and silently resets a completed series on player change in Quick Roll', async () => {
+    state.instantMode = true;
+    state.setFaces(2);
+    state.setSeriesLength(1);
+    await state.rollNextRound();
+    expect(state.isComplete).toBe(true);
+    expect(state.seriesFaces).toBe(2);
+
+    state.setMode('quick');
+    state.setFaces(20);
+    expect(state.faces).toBe(20);
+    expect(state.seriesFaces).toBe(2);
+
+    state.addPlayer('Alice');
+    expect(state.activePlayer.name).toBe('Alice');
+    expect(state.rounds).toHaveLength(0);
+    expect(state.seriesFaces).toBe(20);
+    expect(state.announcerMessage).toBe('Switched to Quick Roll mode.');
+
+    state.setActivePlayer('player-1');
+    expect(state.activePlayer.id).toBe('player-1');
+    expect(state.rounds).toHaveLength(0);
+    expect(state.announcerMessage).toBe('Switched to Quick Roll mode.');
+  });
+
+  it('ignores clearQuickRolls while a quick roll is in flight', async () => {
+    const { arena, land, isAnimating } = createDeferredArena();
+    state.instantMode = true;
+    state.setMode('quick');
+
+    const initialRoll = await state.executeQuickRoll();
+    expect(initialRoll?.roundIndex).toBe(0);
+    expect(state.quickRollCount).toBe(1);
+
+    state.setArena(arena);
+    state.instantMode = false;
+    const inFlight = state.executeQuickRoll();
+    await vi.waitFor(() => expect(isAnimating()).toBe(true));
+    expect(state.isRolling).toBe(true);
+
+    state.clearQuickRolls();
+    expect(state.quickRolls).toHaveLength(1);
+    expect(state.quickRollCount).toBe(1);
+
+    land();
+    const landedRoll = await inFlight;
+    expect(landedRoll?.roundIndex).toBe(1);
+    expect(state.quickRollCount).toBe(2);
+    expect(state.quickRolls).toHaveLength(2);
+    state.setArena(null);
   });
 });

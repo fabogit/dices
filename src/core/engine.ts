@@ -1,5 +1,3 @@
-import { validateRollConfig } from './csprng';
-import { LocalCryptoRollProvider, type IRollProvider } from './provider';
 import type {
   CoinSeriesStats,
   CoinSide,
@@ -19,11 +17,21 @@ import type {
 } from './types';
 
 let roundIdSequence = 0;
+let seriesIdSequence = 0;
 
 function generateRoundId(timestamp: number): string {
   roundIdSequence += 1;
   const uuid = typeof crypto !== 'undefined' ? crypto.randomUUID?.() : undefined;
   return uuid ?? `round-${timestamp}-${roundIdSequence}`;
+}
+
+/**
+ * Generates a unique identifier for a series, falling back cleanly when crypto.randomUUID is unavailable.
+ */
+export function createSeriesId(timestamp: number = Date.now()): string {
+  seriesIdSequence += 1;
+  const uuid = typeof crypto !== 'undefined' ? crypto.randomUUID?.() : undefined;
+  return uuid ?? `series-${timestamp}-${seriesIdSequence}`;
 }
 
 const SAMPLE_RELIABILITY_LABELS: Record<SampleReliability, string> = {
@@ -109,6 +117,7 @@ export function computeRoundResult(
       tailsCount,
       roundWinnerSide,
       timestamp,
+      faces,
     };
   }
 
@@ -120,6 +129,7 @@ export function computeRoundResult(
     max,
     min,
     timestamp,
+    faces,
   };
 }
 
@@ -619,11 +629,8 @@ export function computePlayerLeaderboard(
   return entries;
 }
 
-export function computeQuickRollStats(
-  round: RoundResult,
-  faces: DieFaces = round.faces ?? 6,
-): QuickRollStats {
-  const actualFaces = round.faces ?? faces;
+export function computeQuickRollStats(round: RoundResult): QuickRollStats {
+  const actualFaces = round.faces;
   const count = round.values.length;
   const timestamp = round.timestamp;
 
@@ -720,7 +727,7 @@ export function computeQuickRollSessionStats(
   quickRolls: RoundResult[],
   currentFaces: DieFaces,
 ): QuickRollSessionStats {
-  const matchingRolls = quickRolls.filter((r) => (r.faces ?? currentFaces) === currentFaces);
+  const matchingRolls = quickRolls.filter((r) => r.faces === currentFaces);
   const matchingThrows = matchingRolls.length;
   const allValues = matchingRolls.flatMap((r) => r.values);
   const totalDiceCount = allValues.length;
@@ -791,70 +798,4 @@ export function computeQuickRollSessionStats(
     criticalMinCount,
     insight,
   };
-}
-
-export class RollSeriesEngine {
-  readonly id: string;
-  readonly config: RollConfig;
-  readonly playerName: string;
-  private readonly provider: IRollProvider;
-  private _rounds: RoundResult[] = [];
-
-  constructor(
-    config: RollConfig,
-    playerName: string,
-    provider: IRollProvider = new LocalCryptoRollProvider(),
-    id?: string,
-  ) {
-    validateRollConfig(config);
-    this.config = { ...config };
-    this.playerName = playerName;
-    this.provider = provider;
-    this.id =
-      id ??
-      (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function'
-        ? crypto.randomUUID()
-        : `series-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`);
-  }
-
-  get rounds(): ReadonlyArray<RoundResult> {
-    return this._rounds;
-  }
-
-  get isComplete(): boolean {
-    return this._rounds.length >= this.config.seriesLength;
-  }
-
-  get currentRoundIndex(): number {
-    return this._rounds.length;
-  }
-
-  async rollNextRound(): Promise<RoundResult> {
-    if (this.isComplete) {
-      throw new Error(
-        `Series is already complete (${this._rounds.length}/${this.config.seriesLength} rounds played)`,
-      );
-    }
-
-    const values = await this.provider.rollRound(this.config.faces, this.config.countPerRoll);
-    const round = computeRoundResult(this._rounds.length, values, this.config.faces);
-    round.faces = this.config.faces;
-    this._rounds.push(round);
-    return round;
-  }
-
-  async rollAllRemainingRounds(): Promise<RoundResult[]> {
-    while (!this.isComplete) {
-      await this.rollNextRound();
-    }
-    return [...this._rounds];
-  }
-
-  getSummary(completedAt?: number): SeriesSummary {
-    return computeSeriesSummary(this.id, this.config, this.playerName, this._rounds, completedAt);
-  }
-
-  reset(): void {
-    this._rounds = [];
-  }
 }

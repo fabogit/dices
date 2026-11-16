@@ -13,7 +13,7 @@
   );
   // The HUD must label values with the die that produced them: the selected instrument
   // can change while the previous quick roll is still on display.
-  const currentRollFaces = $derived(currentRoll?.faces ?? rollState.faces);
+  const currentRollFaces = $derived(currentRoll ? currentRoll.faces : rollState.faces);
 
   onMount(() => {
     let destroyed = false;

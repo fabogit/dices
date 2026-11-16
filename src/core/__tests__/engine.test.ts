@@ -9,13 +9,13 @@ import {
   computeRoundResult,
   computeSeriesAnalytics,
   computeSeriesSummary,
+  createSeriesId,
   getCoinSplitPercentages,
   getCoinZQualitative,
   getSampleReliabilityLabel,
   LocalCryptoRollProvider,
   rollBatchCryptoFair,
   rollCryptoFair,
-  RollSeriesEngine,
   validateRollConfig,
   type DieFaces,
   type IRollProvider,
@@ -232,6 +232,7 @@ describe('computeRoundResult', () => {
       max: 6,
       min: 1,
       timestamp: fixedTimestamp,
+      faces: 6,
     });
     expect(round.id.length).toBeGreaterThan(0);
     expect(round.headsCount).toBeUndefined();
@@ -415,107 +416,39 @@ describe('computeSeriesSummary', () => {
   });
 });
 
-describe('RollSeriesEngine and IRollProvider', () => {
-  class MockDeterministicProvider implements IRollProvider {
-    readonly kind = 'local-csprng' as const;
-    private call = 0;
+describe('createSeriesId and LocalCryptoRollProvider', () => {
+  it('generates distinct series ids and falls back cleanly when randomUUID is absent', () => {
+    const id1 = createSeriesId(1700000000100);
+    const id2 = createSeriesId(1700000000100);
+    expect(id1.length).toBeGreaterThan(0);
+    expect(id1).not.toBe(id2);
 
-    constructor(private readonly sequence: number[][]) {}
-
-    async rollRound(_faces: DieFaces, _count: number): Promise<number[]> {
-      const next = this.sequence[this.call++];
-      return next ?? [1];
+    vi.stubGlobal('crypto', {});
+    try {
+      const fallback = createSeriesId(1700000000200);
+      expect(fallback).toMatch(/^series-1700000000200-\d+$/);
+    } finally {
+      vi.unstubAllGlobals();
     }
-  }
-
-  it('executes a series round-by-round and tracks completion state', async () => {
-    const config: RollConfig = {
-      faces: 20,
-      countPerRoll: 1,
-      seriesLength: 2,
-      playerId: 'hero',
-    };
-
-    const mockProvider = new MockDeterministicProvider([[15], [20]]);
-    const engine = new RollSeriesEngine(config, 'Paladin', mockProvider, 'test-engine-id');
-
-    expect(engine.id).toBe('test-engine-id');
-    expect(engine.isComplete).toBe(false);
-    expect(engine.currentRoundIndex).toBe(0);
-
-    const round0 = await engine.rollNextRound();
-    expect(round0.roundIndex).toBe(0);
-    expect(round0.values).toEqual([15]);
-    expect(engine.isComplete).toBe(false);
-    expect(engine.currentRoundIndex).toBe(1);
-
-    const round1 = await engine.rollNextRound();
-    expect(round1.roundIndex).toBe(1);
-    expect(round1.values).toEqual([20]);
-    expect(engine.isComplete).toBe(true);
-
-    // Further rolls should throw error
-    await expect(engine.rollNextRound()).rejects.toThrow(/Series is already complete/i);
-
-    const summary = engine.getSummary();
-    expect(summary.overallMax).toBe(20);
-    expect(summary.overallMin).toBe(15);
-    expect(summary.totalSum).toBe(35);
-    expect(summary.bestRoundIndex).toBe(1);
-    expect(summary.worstRoundIndex).toBe(0);
-
-    // Reset allows re-running
-    engine.reset();
-    expect(engine.rounds).toHaveLength(0);
-    expect(engine.isComplete).toBe(false);
   });
 
-  it('executes all remaining rounds at once with rollAllRemainingRounds', async () => {
-    const config: RollConfig = {
-      faces: 6,
-      countPerRoll: 2,
-      seriesLength: 3,
-      playerId: 'wizard',
-    };
+  it('rolls deterministically with a custom RandomSource and uniformly with Web Crypto', async () => {
+    const sequence = [5, 0];
+    let idx = 0;
+    const deterministicProvider: IRollProvider = new LocalCryptoRollProvider((buf) => {
+      buf[0] = sequence[idx++];
+      return buf;
+    });
+    expect(deterministicProvider.kind).toBe('local-csprng');
+    expect(await deterministicProvider.rollRound(6, 2)).toEqual([6, 1]);
 
-    const mockProvider = new MockDeterministicProvider([
-      [3, 4],
-      [1, 6],
-      [5, 5],
-    ]);
-    const engine = new RollSeriesEngine(config, 'Gandalf', mockProvider);
-
-    const rounds = await engine.rollAllRemainingRounds();
-    expect(rounds).toHaveLength(3);
-    expect(engine.isComplete).toBe(true);
-    expect(rounds[0].values).toEqual([3, 4]);
-    expect(rounds[1].values).toEqual([1, 6]);
-    expect(rounds[2].values).toEqual([5, 5]);
-
-    const summary = engine.getSummary();
-    expect(summary.totalSum).toBe(24);
-    expect(summary.average).toBe(8);
-  });
-
-  it('works seamlessly with LocalCryptoRollProvider', async () => {
-    const config: RollConfig = {
-      faces: 6,
-      countPerRoll: 2,
-      seriesLength: 2,
-      playerId: 'local-player',
-    };
-
-    const provider = new LocalCryptoRollProvider();
-    const engine = new RollSeriesEngine(config, 'DefaultUser', provider);
-
-    const rounds = await engine.rollAllRemainingRounds();
-    expect(rounds).toHaveLength(2);
-    for (const r of rounds) {
-      expect(r.values).toHaveLength(2);
-      for (const val of r.values) {
-        expect(val).toBeGreaterThanOrEqual(1);
-        expect(val).toBeLessThanOrEqual(6);
-      }
+    const liveProvider: IRollProvider = new LocalCryptoRollProvider();
+    const liveValues = await liveProvider.rollRound(20, 4);
+    expect(liveValues).toHaveLength(4);
+    for (const val of liveValues) {
+      expect(Number.isInteger(val)).toBe(true);
+      expect(val).toBeGreaterThanOrEqual(1);
+      expect(val).toBeLessThanOrEqual(20);
     }
   });
 });
@@ -838,7 +771,7 @@ describe('computePlayerLeaderboard', () => {
 describe('computeQuickRollStats', () => {
   it('computes single coin toss and multi-coin statistics', () => {
     const singleCoin = computeRoundResult(0, [1], 2);
-    const stats1 = computeQuickRollStats(singleCoin, 2);
+    const stats1 = computeQuickRollStats(singleCoin);
     expect(stats1.faces).toBe(2);
     expect(stats1.headsCount).toBe(1);
     expect(stats1.tailsCount).toBe(0);
@@ -846,44 +779,44 @@ describe('computeQuickRollStats', () => {
     expect(stats1.insight).toContain('Landed Heads');
 
     const singleTails = computeRoundResult(0, [2], 2);
-    const statsTails = computeQuickRollStats(singleTails, 2);
+    const statsTails = computeQuickRollStats(singleTails);
     expect(statsTails.insight).toBe('Landed Tails.');
 
     const multiCoin = computeRoundResult(0, [1, 1, 2], 2);
-    const stats2 = computeQuickRollStats(multiCoin, 2);
+    const stats2 = computeQuickRollStats(multiCoin);
     expect(stats2.headsCount).toBe(2);
     expect(stats2.tailsCount).toBe(1);
     expect(stats2.headsPercentage).toBeCloseTo(66.67, 1);
     expect(stats2.insight).toContain('Heads majority');
 
     const multiTails = computeRoundResult(0, [1, 2, 2], 2);
-    const stats3 = computeQuickRollStats(multiTails, 2);
+    const stats3 = computeQuickRollStats(multiTails);
     expect(stats3.insight).toContain('Tails majority');
 
     const evenSplit = computeRoundResult(0, [1, 2], 2);
-    const statsEven = computeQuickRollStats(evenSplit, 2);
+    const statsEven = computeQuickRollStats(evenSplit);
     expect(statsEven.insight).toBe('Even split (1H / 1T).');
   });
 
   it('computes polyhedral dice single roll insights (nat 20, nat 1, delta)', () => {
     const nat20 = computeRoundResult(0, [20], 20);
-    const stats20 = computeQuickRollStats(nat20, 20);
+    const stats20 = computeQuickRollStats(nat20);
     expect(stats20.expectedSum).toBe(10.5);
     expect(stats20.sumDelta).toBe(9.5);
     expect(stats20.criticalMaxCount).toBe(1);
     expect(stats20.insight).toContain('Natural 20! Maximum possible roll');
 
     const nat1 = computeRoundResult(0, [1], 20);
-    const stats1 = computeQuickRollStats(nat1, 20);
+    const stats1 = computeQuickRollStats(nat1);
     expect(stats1.criticalMinCount).toBe(1);
     expect(stats1.insight).toContain('Natural 1. Minimum possible roll');
 
     const aboveAvg = computeRoundResult(0, [5], 6);
-    const statsAbove = computeQuickRollStats(aboveAvg, 6);
+    const statsAbove = computeQuickRollStats(aboveAvg);
     expect(statsAbove.insight).toContain('Above average');
 
     const belowAvg = computeRoundResult(0, [2], 6);
-    const statsBelow = computeQuickRollStats(belowAvg, 6);
+    const statsBelow = computeQuickRollStats(belowAvg);
     expect(statsBelow.insight).toContain('Below average');
   });
 
@@ -891,7 +824,7 @@ describe('computeQuickRollStats', () => {
     // 3d6 roll: [6, 6, 5] -> sum 17
     // Expected sum: 3 * 3.5 = 10.5. sumDelta = 6.5
     const roll3d6 = computeRoundResult(0, [6, 6, 5], 6);
-    const stats = computeQuickRollStats(roll3d6, 6);
+    const stats = computeQuickRollStats(roll3d6);
     expect(stats.sum).toBe(17);
     expect(stats.expectedSum).toBe(10.5);
     expect(stats.sumDelta).toBe(6.5);
@@ -902,14 +835,14 @@ describe('computeQuickRollStats', () => {
 
     // 3d6 low roll: [1, 1, 1] -> sum 3
     const low3d6 = computeRoundResult(0, [1, 1, 1], 6);
-    const statsLow = computeQuickRollStats(low3d6, 6);
+    const statsLow = computeQuickRollStats(low3d6);
     expect(statsLow.zScore).toBeLessThan(-1.5);
     expect(statsLow.insight).toContain('Low roll: sum 3');
     expect(statsLow.insight).toContain('3x nat 1');
 
     // 3d6 typical roll: [3, 4, 4] -> sum 11 (near 10.5)
     const typical3d6 = computeRoundResult(0, [3, 4, 4], 6);
-    const statsTypical = computeQuickRollStats(typical3d6, 6);
+    const statsTypical = computeQuickRollStats(typical3d6);
     expect(statsTypical.zScore).toBeDefined();
     expect(Math.abs(statsTypical.zScore!)).toBeLessThan(1.0);
     expect(statsTypical.insight).toContain('Typical roll: sum 11');
@@ -919,12 +852,8 @@ describe('computeQuickRollStats', () => {
 describe('computeQuickRollSessionStats', () => {
   it('filters rolls matching active die face so d6 and d20 are not mixed', () => {
     const rD6_1 = computeRoundResult(0, [4], 6);
-    rD6_1.faces = 6;
     const rD6_2 = computeRoundResult(1, [6], 6);
-    rD6_2.faces = 6;
-
     const rD20 = computeRoundResult(2, [20], 20);
-    rD20.faces = 20;
 
     const quickRolls = [rD20, rD6_2, rD6_1];
 
@@ -944,9 +873,7 @@ describe('computeQuickRollSessionStats', () => {
 
   it('computes coin balance verdict and session split', () => {
     const r1 = computeRoundResult(0, [1, 1], 2);
-    r1.faces = 2;
     const r2 = computeRoundResult(1, [1, 2], 2);
-    r2.faces = 2;
 
     const coinSession = computeQuickRollSessionStats([r2, r1], 2);
     expect(coinSession.matchingThrows).toBe(2);
@@ -960,9 +887,7 @@ describe('computeQuickRollSessionStats', () => {
 
     // Tails-leaning session
     const rTails1 = computeRoundResult(2, [2, 2], 2);
-    rTails1.faces = 2;
     const rTails2 = computeRoundResult(3, [2, 2], 2);
-    rTails2.faces = 2;
     const tailsSession = computeQuickRollSessionStats([rTails2, rTails1], 2);
     expect(tailsSession.balanceVerdict).toBe('Tails-leaning');
     expect(tailsSession.headsPercentage).toBe(0);
@@ -970,9 +895,7 @@ describe('computeQuickRollSessionStats', () => {
 
     // Evenly balanced session
     const rEven1 = computeRoundResult(4, [1, 2], 2);
-    rEven1.faces = 2;
     const rEven2 = computeRoundResult(5, [1, 2], 2);
-    rEven2.faces = 2;
     const evenSession = computeQuickRollSessionStats([rEven2, rEven1], 2);
     expect(evenSession.balanceVerdict).toBe('Evenly balanced');
     expect(evenSession.headsPercentage).toBe(50);

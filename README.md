@@ -44,7 +44,7 @@ The architecture cleanly decouples mathematical random generation, domain statis
             ▼                                     ▼                                  │                │
 ┌────────────────────────────────────────────────────────────────────────────────────┴────────────────┘
 │                                       RollState (rollState.svelte.ts)                               │
-│  - Svelte 5 Reactive Store ($state, $derived)                                                       │
+│  - Svelte 5 Reactive Store ($state, $derived) & Lifecycle State Machine / Series Bounds             │
 │  - Mode, Faces, Dice Count (M), Series Rounds (K), Active Player, and Visual Preferences           │
 │  - Reduced Motion Detection via window.matchMedia('(prefers-reduced-motion: reduce)')               │
 │  - Browser LocalStorage Synchronization ('dices_history_v1')                                        │
@@ -53,9 +53,9 @@ The architecture cleanly decouples mathematical random generation, domain statis
                     ┌──────────────────┴──────────────────┐
                     ▼                                     ▼
 ┌───────────────────────────────────────┐  ┌──────────────────────────────────────────────────────────┐
-│      RollSeriesEngine (engine.ts)     │  │                DiceArena3D (DiceArena3D.ts)              │
-│ - Lifecycle State Machine & Bounds    │  │ - Three.js PerspectiveCamera, Scene, & WebGLRenderer     │
-│ - Round Evaluation & Mode Calculation │  │ - Procedural Mesh Factory (geometries.ts)                │
+│    Pure Domain Analytics (engine.ts)  │  │                DiceArena3D (DiceArena3D.ts)              │
+│ - Round Evaluation & Mode Calculation │  │ - Three.js PerspectiveCamera, Scene, & WebGLRenderer     │
+│ - Quick Roll & Session Statistics     │  │ - Procedural Mesh Factory (geometries.ts)                │
 │ - Series Analytics (Δ, σ, Criticals)  │  │ - Face Normal Alignment to Quaternion Math               │
 │ - Player Leaderboard & Luck Score     │  │ - Kinematic Ballistic Tumble & Settlement Easing         │
 └───────────────────┬───────────────────┘  └──────────────────────────────────────────────────────────┘
@@ -151,7 +151,7 @@ The rejection probability is mathematically negligible while ensuring 100% unifo
 
 ### 4. Statistical Breakdown & Player Leaderboard
 
-For every completed series, `RollSeriesEngine` computes an exhaustive analytical breakdown:
+For every completed series, `computeSeriesSummary` in `src/core/engine.ts` computes an exhaustive analytical breakdown:
 
 - **Theoretical Expectation:** $E[\text{Round Sum}] = M \times \frac{N + 1}{2}$.
 - **Average Delta ($\Delta$):** Observed mean round sum minus theoretical expectation ($\bar{s} - E$).
@@ -201,6 +201,7 @@ export interface RollConfig {
 }
 
 export interface RoundResult {
+  id: string;
   roundIndex: number;
   values: number[];
   sum: number;
@@ -210,6 +211,7 @@ export interface RoundResult {
   tailsCount?: number;
   roundWinnerSide?: CoinSide | 'TIE';
   timestamp: number;
+  faces: DieFaces;
 }
 
 export interface SeriesAnalytics {
@@ -298,7 +300,7 @@ pnpm run preview
 # Run the full static gate: tsc --noEmit, svelte-check, oxlint (type-aware), and oxfmt --check
 pnpm run check
 
-# Execute comprehensive Vitest unit/state test suite (139 tests across core, formatters, 3D, state, and UI primitives)
+# Execute comprehensive Vitest unit/state test suite (145 tests across core, formatters, 3D, state, and UI primitives)
 pnpm test
 
 # Run Vitest test suite with V8 code coverage and threshold enforcement

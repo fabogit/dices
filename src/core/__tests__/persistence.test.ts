@@ -1,6 +1,11 @@
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { computeRoundResult, computeSeriesSummary } from '../engine';
-import { isPersistedSeriesSummary, sanitizePersistedHistory } from '../persistence';
+import {
+  defaultStorage,
+  HISTORY_STORAGE_KEY,
+  isPersistedSeriesSummary,
+  sanitizePersistedHistory,
+} from '../persistence';
 import type { RollConfig } from '../types';
 
 const config: RollConfig = { faces: 6, countPerRoll: 2, seriesLength: 1, playerId: 'player-1' };
@@ -47,6 +52,7 @@ describe('persisted history sanitization', () => {
       { ...valid, config: { ...valid.config, faces: 7 } },
       { ...valid, rounds: 'none' },
       { ...valid, rounds: [{ values: ['x'] }] },
+      { ...valid, rounds: [{ ...valid.rounds[0], faces: 7 }] },
       { ...valid, completedAt: Number.NaN },
       { ...validCoin, analytics: { ...validCoin.analytics, coinStats: {} } },
       { ...validCoin, totalHeads: 'many' },
@@ -62,5 +68,94 @@ describe('persisted history sanitization', () => {
     expect(sanitizePersistedHistory([valid, {}, 42, null])).toEqual([valid]);
     expect(sanitizePersistedHistory({ not: 'an array' })).toEqual([]);
     expect(sanitizePersistedHistory(undefined)).toEqual([]);
+  });
+
+  it('accepts legacy rounds without faces and backfills them from config.faces', () => {
+    const modern = makeSummary('series-legacy');
+    const legacyRound = { ...modern.rounds[0] } as Record<string, unknown>;
+    delete legacyRound.faces;
+    const legacyEntry: unknown = { ...modern, rounds: [legacyRound] };
+
+    expect(isPersistedSeriesSummary(legacyEntry)).toBe(true);
+    const sanitized = sanitizePersistedHistory([legacyEntry]);
+    expect(sanitized).toHaveLength(1);
+    expect(sanitized[0].rounds[0].faces).toBe(modern.config.faces);
+  });
+
+  it('rejects rounds whose faces differ from config.faces', () => {
+    const base = makeSummary('series-mismatch');
+    const mismatched: unknown = {
+      ...base,
+      rounds: [{ ...base.rounds[0], faces: 20 }],
+    };
+
+    expect(isPersistedSeriesSummary(mismatched)).toBe(false);
+    expect(sanitizePersistedHistory([mismatched])).toEqual([]);
+  });
+});
+
+function createMemoryStorage(options: { throwOnSet?: boolean } = {}): Storage {
+  const store = new Map<string, string>();
+  return {
+    get length() {
+      return store.size;
+    },
+    clear: () => store.clear(),
+    getItem: (key: string) => store.get(key) ?? null,
+    key: (index: number) => Array.from(store.keys())[index] ?? null,
+    removeItem: (key: string) => {
+      store.delete(key);
+    },
+    setItem: (key: string, value: string) => {
+      if (options.throwOnSet) {
+        throw new Error('QuotaExceededError');
+      }
+      store.set(key, value);
+    },
+  };
+}
+
+describe('defaultStorage', () => {
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  it('loads and saves JSON payloads via window.localStorage and tolerates corrupt JSON or write errors', () => {
+    const memoryStorage = createMemoryStorage();
+    vi.stubGlobal('window', { localStorage: memoryStorage });
+
+    const storage = defaultStorage();
+    expect(storage.load()).toBeNull();
+
+    const sample = [makeSummary('series-storage')];
+    storage.save(sample);
+    expect(memoryStorage.getItem(HISTORY_STORAGE_KEY)).toBe(JSON.stringify(sample));
+    expect(storage.load()).toEqual(sample);
+
+    memoryStorage.setItem(HISTORY_STORAGE_KEY, '{broken-json');
+    expect(storage.load()).toBeNull();
+
+    vi.stubGlobal('window', { localStorage: createMemoryStorage({ throwOnSet: true }) });
+    expect(() => storage.save(sample)).not.toThrow();
+  });
+
+  it('returns null and no-ops safely when window or localStorage is unavailable or throws', () => {
+    const storage = defaultStorage('custom-key');
+
+    vi.stubGlobal('window', undefined);
+    expect(storage.load()).toBeNull();
+    expect(() => storage.save([{ test: true }])).not.toThrow();
+
+    vi.stubGlobal('window', {});
+    expect(storage.load()).toBeNull();
+    expect(() => storage.save([{ test: true }])).not.toThrow();
+
+    vi.stubGlobal('window', {
+      get localStorage(): Storage {
+        throw new Error('SecurityError');
+      },
+    });
+    expect(storage.load()).toBeNull();
+    expect(() => storage.save([{ test: true }])).not.toThrow();
   });
 });

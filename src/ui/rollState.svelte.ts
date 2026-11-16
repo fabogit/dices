@@ -11,15 +11,26 @@ import {
   computePlayerLeaderboard,
   computeRoundResult,
   computeSeriesSummary,
-  RollSeriesEngine,
+  createSeriesId,
 } from '../core/engine';
-import { sanitizePersistedHistory } from '../core/persistence';
-import { LocalCryptoRollProvider } from '../core/provider';
+import { defaultStorage, sanitizePersistedHistory, type RollStorage } from '../core/persistence';
+import { LocalCryptoRollProvider, type IRollProvider } from '../core/provider';
 import type { DiceArena3D } from '../three/DiceArena3D';
 
 export type AppMode = 'quick' | 'series';
 
-const STORAGE_KEY = 'dices_history_v1';
+export interface SeriesState {
+  id: string;
+  config: RollConfig;
+  playerName: string;
+  rounds: RoundResult[];
+}
+
+export interface RollStateOptions {
+  provider?: IRollProvider;
+  storage?: RollStorage;
+}
+
 const PLAYER_PALETTE = ['#38bdf8', '#34d399', '#f472b6', '#fbbf24', '#a78bfa', '#fb923c'];
 
 function getInitialMotionPreference(): boolean {
@@ -27,30 +38,6 @@ function getInitialMotionPreference(): boolean {
     return window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   }
   return false;
-}
-
-function loadHistoryFromStorage(): SeriesSummary[] {
-  if (typeof window === 'undefined' || typeof localStorage === 'undefined') {
-    return [];
-  }
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) return [];
-    return sanitizePersistedHistory(JSON.parse(raw));
-  } catch {
-    return [];
-  }
-}
-
-function saveHistoryToStorage(history: SeriesSummary[]): void {
-  if (typeof window === 'undefined' || typeof localStorage === 'undefined') {
-    return;
-  }
-  try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(history));
-  } catch {
-    // Ignore storage quota or access errors in sandbox / restricted browsers
-  }
 }
 
 export class RollState {
@@ -75,36 +62,44 @@ export class RollState {
   // Announcer text for assistive technologies (aria-live="polite")
   announcerMessage: string = $state('');
 
-  // History & Reactive Rounds (Series mode)
-  history: SeriesSummary[] = $state(loadHistoryFromStorage());
-  rounds: RoundResult[] = $state([]);
+  // History & Single Source of Truth for the Active/Current Series
+  history: SeriesSummary[] = $state([]);
+  private series: SeriesState = $state.raw(this.createSeriesState());
 
   // Session-only Quick Rolls (Quick mode, feed capped at 25)
   quickRolls: RoundResult[] = $state([]);
   // Total quick rolls thrown this session; keeps counting past the feed cap
   quickRollCount: number = $state(0);
 
-  // Internal Engine
-  private engine: RollSeriesEngine;
-  private summaryRevision: number = $state(0);
+  // Injected Ports & Arena Reference
+  private readonly provider: IRollProvider;
+  private readonly storage: RollStorage;
   private arena: DiceArena3D | null = null;
   // Identifies the active auto-roll loop; bumping it retires any loop still awaiting
   private autoRollRun: number = 0;
-  private cryptoProvider: LocalCryptoRollProvider = new LocalCryptoRollProvider();
 
-  constructor() {
-    this.engine = this.createEngine();
+  constructor({
+    provider = new LocalCryptoRollProvider(),
+    storage = defaultStorage(),
+  }: RollStateOptions = {}) {
+    this.provider = provider;
+    this.storage = storage;
+    this.history = sanitizePersistedHistory(this.storage.load());
     this.setupMotionMediaListener();
   }
 
-  private createEngine(): RollSeriesEngine {
-    const config: RollConfig = {
-      faces: this.faces,
-      countPerRoll: this.countPerRoll,
-      seriesLength: this.seriesLength,
-      playerId: this.activePlayerId,
+  private createSeriesState(): SeriesState {
+    return {
+      id: createSeriesId(),
+      config: {
+        faces: this.faces,
+        countPerRoll: this.countPerRoll,
+        seriesLength: this.seriesLength,
+        playerId: this.activePlayerId,
+      },
+      playerName: this.activePlayer.name,
+      rounds: [],
     };
-    return new RollSeriesEngine(config, this.activePlayer.name);
   }
 
   private setupMotionMediaListener(): void {
@@ -124,17 +119,25 @@ export class RollState {
     return this.players.find((p) => p.id === this.activePlayerId) ?? this.players[0];
   }
 
+  get rounds(): RoundResult[] {
+    return this.series.rounds;
+  }
+
+  get seriesFaces(): DieFaces {
+    return this.series.config.faces;
+  }
+
   get currentRoundIndex(): number {
-    return this.rounds.length;
+    return this.series.rounds.length;
   }
 
   get isComplete(): boolean {
-    return this.rounds.length >= this.seriesLength;
+    return this.series.rounds.length >= this.series.config.seriesLength;
   }
 
   // A series with at least one round and rounds still to play
   get isSeriesInProgress(): boolean {
-    return this.rounds.length > 0 && !this.isComplete;
+    return this.series.rounds.length > 0 && !this.isComplete;
   }
 
   // Dice setup is frozen in Series mode until the running series completes or is reset
@@ -143,24 +146,25 @@ export class RollState {
   }
 
   get latestRound(): RoundResult | null {
-    return this.rounds.length > 0 ? this.rounds[this.rounds.length - 1] : null;
+    return this.series.rounds.length > 0 ? this.series.rounds[this.series.rounds.length - 1] : null;
   }
 
   get latestQuickRoll(): RoundResult | null {
     return this.quickRolls.length > 0 ? this.quickRolls[0] : null;
   }
 
-  // Built from the published rounds, never from the engine's own list: a round still in
-  // flight stays out of the summary until its dice have landed. The engine itself is not
-  // reactive, so summaryRevision signals when it is replaced (new setup or player).
+  // Built directly from the single reactive series state; in-flight rounds only join `series.rounds`
+  // once their dice have landed.
   readonly summary: SeriesSummary = $derived.by(() => {
-    void this.summaryRevision;
-    const { id, config, playerName } = this.engine;
-    return computeSeriesSummary(id, config, playerName, this.rounds);
+    const { id, config, playerName, rounds } = this.series;
+    return computeSeriesSummary(id, config, playerName, rounds);
   });
 
   get progressPercent(): number {
-    return Math.min(100, Math.round((this.rounds.length / this.seriesLength) * 100));
+    return Math.min(
+      100,
+      Math.round((this.series.rounds.length / this.series.config.seriesLength) * 100),
+    );
   }
 
   readonly leaderboard: PlayerLeaderboardEntry[] = $derived(
@@ -171,10 +175,10 @@ export class RollState {
   setMode(mode: AppMode): void {
     if (this.isRolling || this.isAutoRolling || this.mode === mode) return;
     if (mode === 'series') {
-      if (this.rounds.length > 0) {
+      if (this.series.rounds.length > 0) {
         // Series has at least one round (in progress or completed): resume with its own setup
-        this.faces = this.engine.config.faces;
-        this.countPerRoll = this.engine.config.countPerRoll;
+        this.faces = this.series.config.faces;
+        this.countPerRoll = this.series.config.countPerRoll;
       } else {
         // Series is empty: recreate it silently with the current setup
         this.resetCurrentSeries({ announce: false });
@@ -206,7 +210,7 @@ export class RollState {
   // (in progress or completed) is never touched; an empty series is kept silently aligned.
   private applyDiceSetupChange(): void {
     if (this.mode === 'quick') {
-      if (this.rounds.length === 0) {
+      if (this.series.rounds.length === 0) {
         this.resetCurrentSeries({ announce: false });
       }
       return;
@@ -263,7 +267,7 @@ export class RollState {
     };
     this.players = [...this.players, newPlayer];
     this.activePlayerId = newPlayer.id;
-    this.resetCurrentSeries();
+    this.resetCurrentSeries({ announce: this.mode === 'series' });
   }
 
   setActivePlayer(id: string): void {
@@ -273,7 +277,7 @@ export class RollState {
     if (!exists) return;
     if (this.rejectWhileSeriesRuns(this.isSeriesInProgress)) return;
     this.activePlayerId = id;
-    this.resetCurrentSeries();
+    this.resetCurrentSeries({ announce: this.mode === 'series' });
   }
 
   // Quick Roll action
@@ -285,13 +289,14 @@ export class RollState {
     this.isRolling = true;
     try {
       const faces = this.faces;
-      const values = await this.cryptoProvider.rollRound(faces, this.countPerRoll);
+      const index = this.quickRollCount;
+      const values = await this.provider.rollRound(faces, this.countPerRoll);
+      const ts = Date.now();
 
       // The result stays hidden until the dice have landed
       await this.playVisual(faces, values);
 
-      const round = computeRoundResult(this.quickRollCount, values, faces);
-      round.faces = faces;
+      const round = computeRoundResult(index, values, faces, ts);
       this.quickRollCount += 1;
       this.quickRolls = [round, ...this.quickRolls.slice(0, 24)];
 
@@ -313,6 +318,7 @@ export class RollState {
   }
 
   clearQuickRolls(): void {
+    if (this.isRolling) return;
     this.quickRolls = [];
     this.quickRollCount = 0;
     this.announcerMessage = 'Quick roll feed cleared.';
@@ -326,25 +332,34 @@ export class RollState {
 
     this.isRolling = true;
     try {
-      const engine = this.engine;
-      const faces = engine.config.faces;
-      const round = await engine.rollNextRound();
+      const series = this.series;
+      const { faces, countPerRoll, seriesLength } = series.config;
+      const index = series.rounds.length;
+      const values = await this.provider.rollRound(faces, countPerRoll);
+      const ts = Date.now();
 
       // The result stays hidden until the dice have landed
-      await this.playVisual(faces, round.values);
+      await this.playVisual(faces, values);
 
-      if (engine !== this.engine) {
+      if (series !== this.series) {
         // The series was reset while this round was in flight: the round is discarded
         return null;
       }
-      this.rounds = [...engine.rounds];
-      this.summaryRevision++;
+      const round = computeRoundResult(index, values, faces, ts);
+      const rounds = [...series.rounds, round];
+      this.series = { ...series, rounds };
 
       let completedSummary: SeriesSummary | null = null;
       if (this.isComplete) {
-        completedSummary = engine.getSummary();
+        completedSummary = computeSeriesSummary(
+          series.id,
+          series.config,
+          series.playerName,
+          rounds,
+          Date.now(),
+        );
         this.history = [completedSummary, ...this.history.slice(0, 49)];
-        saveHistoryToStorage(this.history);
+        this.storage.save(this.history);
       }
 
       if (this.mode === 'series') {
@@ -357,9 +372,9 @@ export class RollState {
             round.roundWinnerSide === 'TIE'
               ? 'Round tied.'
               : `${round.roundWinnerSide} wins round.`;
-          roundAnnounce = `Round ${roundNum} of ${this.seriesLength}: ${sideNames}. ${outcome}`;
+          roundAnnounce = `Round ${roundNum} of ${seriesLength}: ${sideNames}. ${outcome}`;
         } else {
-          roundAnnounce = `Round ${roundNum} of ${this.seriesLength}: Rolled ${round.values.join(', ')}. Sum: ${round.sum}.`;
+          roundAnnounce = `Round ${roundNum} of ${seriesLength}: Rolled ${round.values.join(', ')}. Sum: ${round.sum}.`;
         }
 
         if (completedSummary) {
@@ -371,7 +386,7 @@ export class RollState {
                 : completedSummary.coinSeriesWinner + ' wins series'
             } with ${completedSummary.headsRoundsWon} Heads rounds to ${completedSummary.tailsRoundsWon} Tails rounds.`;
           } else {
-            seriesAnnounce = ` Series complete for ${this.activePlayer.name}! Total sum: ${completedSummary.totalSum}, Average: ${completedSummary.average.toFixed(1)}, Best round: ${completedSummary.bestRoundIndex + 1}.`;
+            seriesAnnounce = ` Series complete for ${series.playerName}! Total sum: ${completedSummary.totalSum}, Average: ${completedSummary.average.toFixed(1)}, Best round: ${completedSummary.bestRoundIndex + 1}.`;
           }
           this.announcerMessage = roundAnnounce + seriesAnnounce;
         } else {
@@ -441,9 +456,7 @@ export class RollState {
   resetCurrentSeries(options: { announce?: boolean } = {}): void {
     this.stopAutoRoll();
     this.skipAnimation();
-    this.engine = this.createEngine();
-    this.rounds = [];
-    this.summaryRevision++;
+    this.series = this.createSeriesState();
     if (options.announce !== false) {
       this.announcerMessage = `Series reset for ${this.activePlayer.name}. Ready to roll.`;
     }
@@ -451,7 +464,7 @@ export class RollState {
 
   clearHistory(): void {
     this.history = [];
-    saveHistoryToStorage([]);
+    this.storage.save([]);
     this.announcerMessage = 'Roll history cleared.';
   }
 }

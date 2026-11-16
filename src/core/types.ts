@@ -32,7 +32,7 @@ export interface RoundResult {
   tailsCount?: number;
   roundWinnerSide?: CoinSide | 'TIE';
   timestamp: number;
-  faces?: DieFaces;
+  faces: DieFaces;
 }
 
 export interface ModeStat {
