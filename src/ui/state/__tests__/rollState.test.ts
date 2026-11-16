@@ -74,6 +74,16 @@ function createSequenceProvider(
   };
 }
 
+function createMemoryStorage(initialPayload: unknown = null): RollStorage {
+  let stored = initialPayload;
+  return {
+    load: () => stored,
+    save: (payload) => {
+      stored = payload;
+    },
+  };
+}
+
 describe('RollState Controller', () => {
   let state: RollState;
 
@@ -144,13 +154,19 @@ describe('RollState Controller', () => {
 
   it('detects coin d2 round and series ties deterministically via injected IRollProvider', async () => {
     const tieSeq = createSequenceProvider([{ faces: 2, values: [1, 2] }]);
-    const tieState = new RollState({ provider: tieSeq.provider });
+    const tieState = new RollState({
+      provider: tieSeq.provider,
+      storage: createMemoryStorage(),
+    });
     tieState.setFaces(2);
     tieState.setCountPerRoll(2);
     tieState.setSeriesLength(1);
 
     const tiedRound = await tieState.rollNextRound();
-    expect(tiedRound?.roundWinnerSide).toBe('TIE');
+    if (tiedRound?.kind !== 'coin' || tieState.summary.kind !== 'coin') {
+      throw new Error('Expected coin round and series summary');
+    }
+    expect(tiedRound.roundWinnerSide).toBe('TIE');
     expect(tieState.isComplete).toBe(true);
     expect(tieState.summary.coinSeriesWinner).toBe('TIE');
     expect(tieState.announcerMessage).toBe(
@@ -163,18 +179,25 @@ describe('RollState Controller', () => {
       { faces: 2, values: [1] },
       { faces: 2, values: [2] },
     ]);
-    const splitState = new RollState({ provider: splitSeq.provider });
+    const splitState = new RollState({
+      provider: splitSeq.provider,
+      storage: createMemoryStorage(),
+    });
     splitState.setFaces(2);
     splitState.setCountPerRoll(1);
     splitState.setSeriesLength(2);
 
     const round1 = await splitState.rollNextRound();
-    expect(round1?.roundWinnerSide).toBe('HEADS');
+    if (round1?.kind !== 'coin') throw new Error('Expected coin round');
+    expect(round1.roundWinnerSide).toBe('HEADS');
     expect(splitState.isComplete).toBe(false);
     expect(splitState.announcerMessage).toBe('Round 1 of 2: Heads. HEADS wins round.');
 
     const round2 = await splitState.rollNextRound();
-    expect(round2?.roundWinnerSide).toBe('TAILS');
+    if (round2?.kind !== 'coin' || splitState.summary.kind !== 'coin') {
+      throw new Error('Expected coin round and series summary');
+    }
+    expect(round2.roundWinnerSide).toBe('TAILS');
     expect(splitState.isComplete).toBe(true);
     expect(splitState.summary.coinSeriesWinner).toBe('TIE');
     expect(splitState.announcerMessage).toBe(
@@ -185,12 +208,16 @@ describe('RollState Controller', () => {
 
   it('announces decisive coin d2 series winners (HEADS and TAILS) deterministically', async () => {
     const headsSeq = createSequenceProvider([{ faces: 2, values: [1] }]);
-    const headsState = new RollState({ provider: headsSeq.provider });
+    const headsState = new RollState({
+      provider: headsSeq.provider,
+      storage: createMemoryStorage(),
+    });
     headsState.setFaces(2);
     headsState.setCountPerRoll(1);
     headsState.setSeriesLength(1);
 
     await headsState.rollNextRound();
+    if (headsState.summary.kind !== 'coin') throw new Error('Expected coin series summary');
     expect(headsState.summary.coinSeriesWinner).toBe('HEADS');
     expect(headsState.announcerMessage).toBe(
       'Round 1 of 1: Heads. HEADS wins round. Series complete! HEADS wins series with 1 Heads rounds to 0 Tails rounds.',
@@ -198,12 +225,16 @@ describe('RollState Controller', () => {
     expect(headsSeq.remaining()).toBe(0);
 
     const tailsSeq = createSequenceProvider([{ faces: 2, values: [2] }]);
-    const tailsState = new RollState({ provider: tailsSeq.provider });
+    const tailsState = new RollState({
+      provider: tailsSeq.provider,
+      storage: createMemoryStorage(),
+    });
     tailsState.setFaces(2);
     tailsState.setCountPerRoll(1);
     tailsState.setSeriesLength(1);
 
     await tailsState.rollNextRound();
+    if (tailsState.summary.kind !== 'coin') throw new Error('Expected coin series summary');
     expect(tailsState.summary.coinSeriesWinner).toBe('TAILS');
     expect(tailsState.announcerMessage).toBe(
       'Round 1 of 1: Tails. TAILS wins round. Series complete! TAILS wins series with 0 Heads rounds to 1 Tails rounds.',
@@ -217,22 +248,28 @@ describe('RollState Controller', () => {
       { faces: 2, values: [2] },
       { faces: 2, values: [1, 2] },
     ]);
-    const quickState = new RollState({ provider: quickSeq.provider });
+    const quickState = new RollState({
+      provider: quickSeq.provider,
+      storage: createMemoryStorage(),
+    });
     quickState.setMode('quick');
     quickState.setFaces(2);
     quickState.setCountPerRoll(1);
 
     const headsRoll = await quickState.executeQuickRoll();
-    expect(headsRoll?.roundWinnerSide).toBe('HEADS');
+    if (headsRoll?.kind !== 'coin') throw new Error('Expected coin round');
+    expect(headsRoll.roundWinnerSide).toBe('HEADS');
     expect(quickState.announcerMessage).toBe('Quick roll: Heads. HEADS wins.');
 
     const tailsRoll = await quickState.executeQuickRoll();
-    expect(tailsRoll?.roundWinnerSide).toBe('TAILS');
+    if (tailsRoll?.kind !== 'coin') throw new Error('Expected coin round');
+    expect(tailsRoll.roundWinnerSide).toBe('TAILS');
     expect(quickState.announcerMessage).toBe('Quick roll: Tails. TAILS wins.');
 
     quickState.setCountPerRoll(2);
     const tieRoll = await quickState.executeQuickRoll();
-    expect(tieRoll?.roundWinnerSide).toBe('TIE');
+    if (tieRoll?.kind !== 'coin') throw new Error('Expected coin round');
+    expect(tieRoll.roundWinnerSide).toBe('TIE');
     expect(quickState.announcerMessage).toBe('Quick roll: Heads, Tails. Tied.');
     expect(quickSeq.remaining()).toBe(0);
   });

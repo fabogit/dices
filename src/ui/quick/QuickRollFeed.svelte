@@ -31,19 +31,18 @@
   <div class="feed-scroll-wrapper" tabindex="0" role="region" aria-label="Recent quick rolls feed">
     <ul class="feed-list" role="list">
       {#each items as item (item.id)}
-        {@const itemFaces = item.faces}
         <li class="feed-item">
           <div class="feed-item-left">
             <span class="feed-index">#{item.roundIndex + 1}</span>
             <span
               class="feed-die-badge"
               data-testid="feed-die-badge"
-              class:coin-die={itemFaces === 2}
+              class:coin-die={item.kind === 'coin'}
             >
-              {dieLabel(itemFaces, 'short')}
+              {dieLabel(item.faces, 'short')}
             </span>
             <div class="feed-values">
-              {#if itemFaces === 2}
+              {#if item.kind === 'coin'}
                 <CoinPills values={item.values} itemTestId="mini-coin" />
               {:else}
                 <span class="dice-values-string" data-testid="dice-values"
@@ -54,7 +53,7 @@
           </div>
 
           <div class="feed-item-right">
-            {#if itemFaces === 2}
+            {#if item.kind === 'coin'}
               <span
                 class="feed-outcome"
                 data-testid="feed-outcome"

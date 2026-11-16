@@ -1,12 +1,26 @@
 import type {
+  CoinQuickRollSessionStats,
+  CoinQuickRollStats,
+  CoinRollConfig,
+  CoinRoundResult,
+  CoinSeriesAnalytics,
   CoinSeriesStats,
+  CoinSeriesSummary,
   CoinSide,
   DeltaDirection,
+  DiceQuickRollSessionStats,
+  DiceQuickRollStats,
+  DiceRollConfig,
+  DiceRoundResult,
+  DiceSeriesAnalytics,
+  DiceSeriesSummary,
   DieFaces,
+  EmptyQuickRollSessionStats,
   FaceDistributionEntry,
   ModeStat,
   Player,
   PlayerLeaderboardEntry,
+  PolyhedralFaces,
   QuickRollSessionStats,
   QuickRollStats,
   RollConfig,
@@ -75,20 +89,44 @@ export function classifyDelta(delta: number, threshold: number = 0.05): DeltaDir
 }
 
 /**
- * Resolves coin Heads/Tails counts and percentages with safe fallbacks for persisted summaries.
+ * Extracts coin Heads/Tails counts and percentages directly from coin series analytics.
  */
-export function getCoinSplitPercentages(
-  summary: Pick<SeriesSummary, 'analytics' | 'totalHeads' | 'totalTails'>,
-): { headsPct: number; tailsPct: number; headsCount: number; tailsCount: number } {
-  const coinStats = summary.analytics.coinStats;
-  const totalCoins = summary.analytics.totalDiceRolled || 1;
-  const headsCount = coinStats?.headsCount ?? summary.totalHeads ?? 0;
-  const tailsCount = coinStats?.tailsCount ?? summary.totalTails ?? 0;
-  const headsPct = coinStats ? coinStats.headsPercentage : (headsCount / totalCoins) * 100;
-  const tailsPct = coinStats ? coinStats.tailsPercentage : (tailsCount / totalCoins) * 100;
-  return { headsPct, tailsPct, headsCount, tailsCount };
+export function getCoinSplitPercentages(summary: Pick<CoinSeriesSummary, 'analytics'>): {
+  headsPct: number;
+  tailsPct: number;
+  headsCount: number;
+  tailsCount: number;
+} {
+  const { headsPercentage, tailsPercentage, headsCount, tailsCount } = summary.analytics.coinStats;
+  return {
+    headsPct: headsPercentage,
+    tailsPct: tailsPercentage,
+    headsCount,
+    tailsCount,
+  };
 }
 
+export function computeRoundResult(
+  roundIndex: number,
+  values: number[],
+  faces: 2,
+  timestamp?: number,
+  id?: string,
+): CoinRoundResult;
+export function computeRoundResult(
+  roundIndex: number,
+  values: number[],
+  faces: PolyhedralFaces,
+  timestamp?: number,
+  id?: string,
+): DiceRoundResult;
+export function computeRoundResult(
+  roundIndex: number,
+  values: number[],
+  faces: DieFaces,
+  timestamp?: number,
+  id?: string,
+): RoundResult;
 export function computeRoundResult(
   roundIndex: number,
   values: number[],
@@ -107,6 +145,7 @@ export function computeRoundResult(
       headsCount > tailsCount ? 'HEADS' : tailsCount > headsCount ? 'TAILS' : 'TIE';
 
     return {
+      kind: 'coin',
       id,
       roundIndex,
       values: [...values],
@@ -117,11 +156,12 @@ export function computeRoundResult(
       tailsCount,
       roundWinnerSide,
       timestamp,
-      faces,
+      faces: 2,
     };
   }
 
   return {
+    kind: 'dice',
     id,
     roundIndex,
     values: [...values],
@@ -240,6 +280,15 @@ function generateSeriesInsightSummary(
   return `${samplePrefix}${performanceVerdict}${highlightStr}${caution}`;
 }
 
+export function computeSeriesAnalytics(
+  config: CoinRollConfig,
+  rounds: RoundResult[],
+): CoinSeriesAnalytics;
+export function computeSeriesAnalytics(
+  config: DiceRollConfig,
+  rounds: RoundResult[],
+): DiceSeriesAnalytics;
+export function computeSeriesAnalytics(config: RollConfig, rounds: RoundResult[]): SeriesAnalytics;
 export function computeSeriesAnalytics(config: RollConfig, rounds: RoundResult[]): SeriesAnalytics {
   const allValues = rounds.flatMap((r) => r.values);
   const totalDiceRolled = allValues.length;
@@ -387,50 +436,7 @@ export function computeSeriesAnalytics(config: RollConfig, rounds: RoundResult[]
     isHot: hottestFaces.includes(entry.face),
   }));
 
-  // Coin-specific statistics
-  let coinStats: CoinSeriesStats | undefined = undefined;
-  if (config.faces === 2) {
-    const headsCount = criticalMaxCount;
-    const tailsCount = criticalMinCount;
-    const headsPercentage = totalDiceRolled > 0 ? (headsCount / totalDiceRolled) * 100 : 0;
-    const tailsPercentage = totalDiceRolled > 0 ? (tailsCount / totalDiceRolled) * 100 : 0;
-    const headsDeltaPercentage = headsPercentage - 50;
-    const tailsDeltaPercentage = tailsPercentage - 50;
-    const headsRoundsWon = rounds.filter((r) => r.roundWinnerSide === 'HEADS').length;
-    const tailsRoundsWon = rounds.filter((r) => r.roundWinnerSide === 'TAILS').length;
-    const tieRounds = rounds.filter((r) => r.roundWinnerSide === 'TIE').length;
-
-    coinStats = {
-      headsCount,
-      tailsCount,
-      headsPercentage,
-      tailsPercentage,
-      headsDeltaPercentage,
-      tailsDeltaPercentage,
-      headsRoundsWon,
-      tailsRoundsWon,
-      tieRounds,
-      zQualitative: getCoinZQualitative(zScore, sampleReliability),
-    };
-  }
-
-  const insightSummary = generateSeriesInsightSummary(
-    config.faces,
-    totalDiceRolled,
-    rounds.length,
-    roundAverage,
-    expectedRoundAverage,
-    zScore,
-    sampleReliability,
-    criticalMaxCount,
-    criticalMaxRate,
-    criticalMinCount,
-    criticalMinRate,
-    hottestFaces,
-    coinStats,
-  );
-
-  return {
+  const baseAnalytics = {
     totalDiceRolled,
     expectedRoundAverage,
     averageDelta,
@@ -449,27 +455,100 @@ export function computeSeriesAnalytics(config: RollConfig, rounds: RoundResult[]
     criticalMinCount,
     criticalMinRate,
     distribution,
-    coinStats,
+  };
+
+  if (config.faces === 2) {
+    const headsCount = criticalMaxCount;
+    const tailsCount = criticalMinCount;
+    const headsPercentage = totalDiceRolled > 0 ? (headsCount / totalDiceRolled) * 100 : 0;
+    const tailsPercentage = totalDiceRolled > 0 ? (tailsCount / totalDiceRolled) * 100 : 0;
+    const headsDeltaPercentage = headsPercentage - 50;
+    const tailsDeltaPercentage = tailsPercentage - 50;
+
+    const coinRounds = rounds.filter((r): r is CoinRoundResult => r.kind === 'coin');
+    let headsRoundsWon = 0;
+    let tailsRoundsWon = 0;
+    let tieRounds = 0;
+    for (const r of coinRounds) {
+      if (r.roundWinnerSide === 'HEADS') {
+        headsRoundsWon++;
+      } else if (r.roundWinnerSide === 'TAILS') {
+        tailsRoundsWon++;
+      } else {
+        tieRounds++;
+      }
+    }
+
+    const coinStats: CoinSeriesStats = {
+      headsCount,
+      tailsCount,
+      headsPercentage,
+      tailsPercentage,
+      headsDeltaPercentage,
+      tailsDeltaPercentage,
+      headsRoundsWon,
+      tailsRoundsWon,
+      tieRounds,
+      zQualitative: getCoinZQualitative(zScore, sampleReliability),
+    };
+
+    const insightSummary = generateSeriesInsightSummary(
+      config.faces,
+      totalDiceRolled,
+      rounds.length,
+      roundAverage,
+      expectedRoundAverage,
+      zScore,
+      sampleReliability,
+      criticalMaxCount,
+      criticalMaxRate,
+      criticalMinCount,
+      criticalMinRate,
+      hottestFaces,
+      coinStats,
+    );
+
+    return {
+      ...baseAnalytics,
+      kind: 'coin',
+      coinStats,
+      insightSummary,
+    };
+  }
+
+  const insightSummary = generateSeriesInsightSummary(
+    config.faces,
+    totalDiceRolled,
+    rounds.length,
+    roundAverage,
+    expectedRoundAverage,
+    zScore,
+    sampleReliability,
+    criticalMaxCount,
+    criticalMaxRate,
+    criticalMinCount,
+    criticalMinRate,
+    hottestFaces,
+  );
+
+  return {
+    ...baseAnalytics,
+    kind: 'dice',
     insightSummary,
   };
 }
 
-export function computeSeriesSummary(
-  id: string,
-  config: RollConfig,
-  playerName: string,
-  rounds: RoundResult[],
-  completedAt: number = Date.now(),
-): SeriesSummary {
-  const analytics = computeSeriesAnalytics(config, rounds);
-
+function computeAggregateRollMetrics(rounds: RoundResult[]): {
+  totalSum: number;
+  overallMax: number;
+  overallMin: number;
+  average: number;
+  bestRoundIndex: number;
+  worstRoundIndex: number;
+  mode: ModeStat;
+} {
   if (rounds.length === 0) {
     return {
-      id,
-      config: { ...config },
-      playerId: config.playerId,
-      playerName,
-      rounds: [],
       totalSum: 0,
       overallMax: 0,
       overallMin: 0,
@@ -477,8 +556,6 @@ export function computeSeriesSummary(
       bestRoundIndex: -1,
       worstRoundIndex: -1,
       mode: { values: [], frequency: 0, isTie: false },
-      analytics,
-      completedAt,
     };
   }
 
@@ -504,15 +581,9 @@ export function computeSeriesSummary(
     }
   }
 
-  const allValues = rounds.flatMap((r) => r.values);
-  const mode = computeMode(allValues);
+  const mode = computeMode(rounds.flatMap((r) => r.values));
 
-  const summary: SeriesSummary = {
-    id,
-    config: { ...config },
-    playerId: config.playerId,
-    playerName,
-    rounds: [...rounds],
+  return {
     totalSum,
     overallMax,
     overallMin,
@@ -520,26 +591,83 @@ export function computeSeriesSummary(
     bestRoundIndex,
     worstRoundIndex,
     mode,
-    analytics,
+  };
+}
+
+function buildCoinSummaryFields(coinStats: CoinSeriesStats): {
+  coinSeriesWinner: CoinSide | 'TIE';
+  totalHeads: number;
+  totalTails: number;
+  headsRoundsWon: number;
+  tailsRoundsWon: number;
+} {
+  const { headsCount, tailsCount, headsRoundsWon, tailsRoundsWon } = coinStats;
+  const coinSeriesWinner: CoinSide | 'TIE' =
+    headsRoundsWon > tailsRoundsWon ? 'HEADS' : tailsRoundsWon > headsRoundsWon ? 'TAILS' : 'TIE';
+
+  return {
+    coinSeriesWinner,
+    totalHeads: headsCount,
+    totalTails: tailsCount,
+    headsRoundsWon,
+    tailsRoundsWon,
+  };
+}
+
+export function computeSeriesSummary(
+  id: string,
+  config: CoinRollConfig,
+  playerName: string,
+  rounds: RoundResult[],
+  completedAt?: number,
+): CoinSeriesSummary;
+export function computeSeriesSummary(
+  id: string,
+  config: DiceRollConfig,
+  playerName: string,
+  rounds: RoundResult[],
+  completedAt?: number,
+): DiceSeriesSummary;
+export function computeSeriesSummary(
+  id: string,
+  config: RollConfig,
+  playerName: string,
+  rounds: RoundResult[],
+  completedAt?: number,
+): SeriesSummary;
+export function computeSeriesSummary(
+  id: string,
+  config: RollConfig,
+  playerName: string,
+  rounds: RoundResult[],
+  completedAt: number = Date.now(),
+): SeriesSummary {
+  const analytics = computeSeriesAnalytics(config, rounds);
+  const metrics = computeAggregateRollMetrics(rounds);
+  const baseSummary = {
+    id,
+    config: { ...config },
+    playerId: config.playerId,
+    playerName,
+    rounds: [...rounds],
+    ...metrics,
     completedAt,
   };
 
-  if (config.faces === 2) {
-    const totalHeads = rounds.reduce((acc, r) => acc + (r.headsCount ?? 0), 0);
-    const totalTails = rounds.reduce((acc, r) => acc + (r.tailsCount ?? 0), 0);
-    const headsRoundsWon = rounds.filter((r) => r.roundWinnerSide === 'HEADS').length;
-    const tailsRoundsWon = rounds.filter((r) => r.roundWinnerSide === 'TAILS').length;
-    const coinSeriesWinner: CoinSide | 'TIE' =
-      headsRoundsWon > tailsRoundsWon ? 'HEADS' : tailsRoundsWon > headsRoundsWon ? 'TAILS' : 'TIE';
-
-    summary.totalHeads = totalHeads;
-    summary.totalTails = totalTails;
-    summary.headsRoundsWon = headsRoundsWon;
-    summary.tailsRoundsWon = tailsRoundsWon;
-    summary.coinSeriesWinner = coinSeriesWinner;
+  if (analytics.kind === 'coin') {
+    return {
+      ...baseSummary,
+      kind: 'coin',
+      analytics,
+      ...buildCoinSummaryFields(analytics.coinStats),
+    };
   }
 
-  return summary;
+  return {
+    ...baseSummary,
+    kind: 'dice',
+    analytics,
+  };
 }
 
 export function computePlayerLeaderboard(
@@ -575,9 +703,8 @@ export function computePlayerLeaderboard(
       criticalMaxCountTotal += s.analytics.criticalMaxCount;
 
       let seriesLuck = 100;
-      if (s.config.faces === 2) {
-        const headsInSeries =
-          s.totalHeads ?? s.rounds.reduce((acc, r) => acc + (r.headsCount ?? 0), 0);
+      if (s.kind === 'coin') {
+        const headsInSeries = s.totalHeads;
         coinTosses += rollsInSeries;
         totalCoinHeads += headsInSeries;
 
@@ -629,14 +756,15 @@ export function computePlayerLeaderboard(
   return entries;
 }
 
+export function computeQuickRollStats(round: CoinRoundResult): CoinQuickRollStats;
+export function computeQuickRollStats(round: DiceRoundResult): DiceQuickRollStats;
+export function computeQuickRollStats(round: RoundResult): QuickRollStats;
 export function computeQuickRollStats(round: RoundResult): QuickRollStats {
-  const actualFaces = round.faces;
   const count = round.values.length;
   const timestamp = round.timestamp;
 
-  if (actualFaces === 2) {
-    const headsCount = round.headsCount ?? round.values.filter((v) => v === 1).length;
-    const tailsCount = round.tailsCount ?? round.values.filter((v) => v === 2).length;
+  if (round.kind === 'coin') {
+    const { headsCount, tailsCount, roundWinnerSide } = round;
     const headsPercentage = count > 0 ? (headsCount / count) * 100 : 0;
     const tailsPercentage = count > 0 ? (tailsCount / count) * 100 : 0;
 
@@ -654,9 +782,11 @@ export function computeQuickRollStats(round: RoundResult): QuickRollStats {
     }
 
     return {
-      faces: actualFaces,
+      kind: 'coin',
+      faces: 2,
       values: [...round.values],
       timestamp,
+      roundWinnerSide,
       headsCount,
       tailsCount,
       headsPercentage,
@@ -666,7 +796,8 @@ export function computeQuickRollStats(round: RoundResult): QuickRollStats {
   }
 
   // Polyhedral dice d4..d20
-  const sum = round.sum;
+  const actualFaces = round.faces;
+  const { sum, max, min } = round;
   const expectedDieMean = (actualFaces + 1) / 2;
   const expectedSum = count * expectedDieMean;
   const sumDelta = sum - expectedSum;
@@ -710,10 +841,13 @@ export function computeQuickRollStats(round: RoundResult): QuickRollStats {
   }
 
   return {
+    kind: 'dice',
     faces: actualFaces,
     values: [...round.values],
     timestamp,
     sum,
+    max,
+    min,
     expectedSum,
     sumDelta,
     zScore,
@@ -725,6 +859,18 @@ export function computeQuickRollStats(round: RoundResult): QuickRollStats {
 
 export function computeQuickRollSessionStats(
   quickRolls: RoundResult[],
+  currentFaces: 2,
+): EmptyQuickRollSessionStats | CoinQuickRollSessionStats;
+export function computeQuickRollSessionStats(
+  quickRolls: RoundResult[],
+  currentFaces: PolyhedralFaces,
+): EmptyQuickRollSessionStats | DiceQuickRollSessionStats;
+export function computeQuickRollSessionStats(
+  quickRolls: RoundResult[],
+  currentFaces: DieFaces,
+): QuickRollSessionStats;
+export function computeQuickRollSessionStats(
+  quickRolls: RoundResult[],
   currentFaces: DieFaces,
 ): QuickRollSessionStats {
   const matchingRolls = quickRolls.filter((r) => r.faces === currentFaces);
@@ -734,6 +880,7 @@ export function computeQuickRollSessionStats(
 
   if (matchingThrows === 0) {
     return {
+      kind: 'empty',
       faces: currentFaces,
       matchingThrows: 0,
       totalDiceCount: 0,
@@ -764,7 +911,8 @@ export function computeQuickRollSessionStats(
     const insight = `${matchingThrows} throws (${totalDiceCount} coins): ${headsPercentage.toFixed(1)}% Heads / ${tailsPercentage.toFixed(1)}% Tails (${balanceVerdict.toLowerCase()}).`;
 
     return {
-      faces: currentFaces,
+      kind: 'coin',
+      faces: 2,
       matchingThrows,
       totalDiceCount,
       totalHeads,
@@ -788,6 +936,7 @@ export function computeQuickRollSessionStats(
   const insight = `${matchingThrows} throws (${totalDiceCount} dice): avg die ${actualAverage.toFixed(2)} (${sign}${averageDelta.toFixed(2)} vs E[X] ${expectedAverage.toFixed(1)}). ${criticalMaxCount} max crits, ${criticalMinCount} nat 1s.`;
 
   return {
+    kind: 'dice',
     faces: currentFaces,
     matchingThrows,
     totalDiceCount,

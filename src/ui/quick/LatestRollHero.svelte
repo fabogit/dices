@@ -1,42 +1,37 @@
 <script lang="ts">
-  import type { QuickRollStats, RoundResult } from '../../core/types';
+  import type { QuickRollStats } from '../../core/types';
   import { dieLabel, formatSigned, formatTime } from '../../lib/format';
   import DeltaBadge from '../primitives/DeltaBadge.svelte';
 
   interface Props {
-    roll: RoundResult;
     stats: QuickRollStats;
   }
 
-  let { roll, stats }: Props = $props();
-
-  const heroFaces = $derived(roll.faces);
-  const headsPct = $derived(stats.headsPercentage ?? 0);
-  const tailsPct = $derived(stats.tailsPercentage ?? 0);
+  let { stats }: Props = $props();
 </script>
 
 <div class="latest-hero-card" role="region" aria-label="Latest Quick Roll Result">
   <div class="hero-top-row">
     <span class="hero-instrument">
-      {dieLabel(heroFaces)}
-      × {roll.values.length}
+      {dieLabel(stats.faces)}
+      × {stats.values.length}
     </span>
-    <span class="hero-time">{formatTime(roll.timestamp)}</span>
+    <span class="hero-time">{formatTime(stats.timestamp)}</span>
   </div>
 
-  {#if heroFaces === 2}
+  {#if stats.kind === 'coin'}
     <!-- Coin d2 Hero Display -->
     <div class="coin-hero-display">
       <div class="coin-winner-title">
-        {#if roll.roundWinnerSide === 'TIE'}
+        {#if stats.roundWinnerSide === 'TIE'}
           <span class="winner-tie">⚖️ Tied Result</span>
         {:else}
-          <span class="winner-side">🏆 {roll.roundWinnerSide} Wins</span>
+          <span class="winner-side">🏆 {stats.roundWinnerSide} Wins</span>
         {/if}
       </div>
 
       <div class="coin-chips-row">
-        {#each roll.values as v, idx (idx)}
+        {#each stats.values as v, idx (idx)}
           <span class="coin-chip" class:heads={v === 1} class:tails={v === 2}>
             {v === 1 ? 'HEADS' : 'TAILS'}
           </span>
@@ -47,19 +42,21 @@
       <div
         class="coin-bar-track"
         role="img"
-        aria-label="Split: {headsPct.toFixed(0)}% Heads, {tailsPct.toFixed(0)}% Tails"
+        aria-label="Split: {stats.headsPercentage.toFixed(
+          0,
+        )}% Heads, {stats.tailsPercentage.toFixed(0)}% Tails"
       >
-        <div class="coin-bar-heads" style:width="{headsPct}%"></div>
-        <div class="coin-bar-tails" style:width="{tailsPct}%"></div>
+        <div class="coin-bar-heads" style:width="{stats.headsPercentage}%"></div>
+        <div class="coin-bar-tails" style:width="{stats.tailsPercentage}%"></div>
       </div>
 
       <div class="coin-counts-row">
         <span class="coin-count-stat heads-color">
-          Heads: <strong>{stats.headsCount ?? 0}</strong> ({headsPct.toFixed(0)}%)
+          Heads: <strong>{stats.headsCount}</strong> ({stats.headsPercentage.toFixed(0)}%)
         </span>
         <span class="stat-bullet">•</span>
         <span class="coin-count-stat tails-color">
-          Tails: <strong>{stats.tailsCount ?? 0}</strong> ({tailsPct.toFixed(0)}%)
+          Tails: <strong>{stats.tailsCount}</strong> ({stats.tailsPercentage.toFixed(0)}%)
         </span>
       </div>
 
@@ -70,14 +67,14 @@
     <div class="dice-hero-display">
       <div class="sum-display-block">
         <span class="sum-label">TOTAL SUM</span>
-        <span class="sum-big-number" data-testid="hero-sum">{roll.sum}</span>
+        <span class="sum-big-number" data-testid="hero-sum">{stats.sum}</span>
       </div>
 
       <div class="dice-chips-row">
-        {#each roll.values as val, idx (idx)}
+        {#each stats.values as val, idx (idx)}
           <span
             class="die-value-chip"
-            class:crit-max={val === heroFaces}
+            class:crit-max={val === stats.faces}
             class:crit-min={val === 1}
           >
             {val}
@@ -87,25 +84,25 @@
 
       <!-- Descriptive Metric Strip -->
       <div class="dice-sub-stats">
-        <span>Expected: <strong>{stats.expectedSum?.toFixed(1)}</strong></span>
+        <span>Expected: <strong>{stats.expectedSum.toFixed(1)}</strong></span>
         <span class="stat-bullet">•</span>
         <DeltaBadge
-          tone={(stats.sumDelta ?? 0) >= 0 ? 'positive' : 'negative'}
+          tone={stats.sumDelta >= 0 ? 'positive' : 'negative'}
           prefix="Δ: "
-          text={formatSigned(stats.sumDelta ?? 0)}
+          text={formatSigned(stats.sumDelta)}
           variant="inline"
         />
-        {#if roll.values.length > 1}
+        {#if stats.values.length > 1}
           <span class="stat-bullet">•</span>
-          <span>High: <strong>{roll.max}</strong></span>
+          <span>High: <strong>{stats.max}</strong></span>
           <span class="stat-bullet">•</span>
-          <span>Low: <strong>{roll.min}</strong></span>
+          <span>Low: <strong>{stats.min}</strong></span>
         {/if}
-        {#if (stats.criticalMaxCount ?? 0) > 0}
+        {#if stats.criticalMaxCount > 0}
           <span class="stat-bullet">•</span>
-          <span class="crit-highlight">{stats.criticalMaxCount}x crit ({heroFaces})</span>
+          <span class="crit-highlight">{stats.criticalMaxCount}x crit ({stats.faces})</span>
         {/if}
-        {#if (stats.criticalMinCount ?? 0) > 0}
+        {#if stats.criticalMinCount > 0}
           <span class="stat-bullet">•</span>
           <span class="min-highlight">{stats.criticalMinCount}x nat 1</span>
         {/if}

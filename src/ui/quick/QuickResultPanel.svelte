@@ -27,16 +27,16 @@
     <span class="count-badge">{rollState.quickRollCount} in session</span>
   {/snippet}
 
-  {#if rollState.latestQuickRoll && latestStats}
-    <LatestRollHero roll={rollState.latestQuickRoll} stats={latestStats} />
+  {#if latestStats}
+    <LatestRollHero stats={latestStats} />
   {:else}
     <EmptyState variant="card" icon="🎲" title="Ready to Roll">
       Click <strong>Roll</strong> in the 3D Arena below the viewport for continuous instant rolls.
     </EmptyState>
   {/if}
 
-  {#if sessionStats.matchingThrows >= 2}
-    <SessionSummaryStrip {sessionStats} faces={rollState.faces} />
+  {#if sessionStats.kind !== 'empty' && sessionStats.matchingThrows >= 2}
+    <SessionSummaryStrip {sessionStats} />
   {/if}
 
   {#if rollState.quickRolls.length > 0}

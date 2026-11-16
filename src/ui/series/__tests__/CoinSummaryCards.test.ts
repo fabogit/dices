@@ -1,10 +1,10 @@
 import { describe, it, expect } from 'vite-plus/test';
 import { render } from '@testing-library/svelte';
 import { computeRoundResult, computeSeriesSummary } from '../../../core/engine';
-import type { RollConfig } from '../../../core/types';
+import type { CoinRollConfig } from '../../../core/types';
 import CoinSummaryCards from '../CoinSummaryCards.svelte';
 
-const coinConfig: RollConfig = {
+const coinConfig: CoinRollConfig = {
   faces: 2,
   countPerRoll: 1,
   seriesLength: 2,

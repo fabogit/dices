@@ -10,9 +10,10 @@ describe('SessionSummaryStrip', () => {
       computeRoundResult(1, [1, 2], 2, 1_700_000_001_000, 'c2'),
     ];
     const sessionStats = computeQuickRollSessionStats(rolls, 2);
+    if (sessionStats.kind !== 'coin') throw new Error('Expected coin quick roll session stats');
 
     const { getByRole, getByText } = render(SessionSummaryStrip, {
-      props: { sessionStats, faces: 2 },
+      props: { sessionStats },
     });
 
     expect(getByRole('group', { name: 'Session summary for active die' })).toBeTruthy();
@@ -21,7 +22,7 @@ describe('SessionSummaryStrip', () => {
     expect(getByText('75.0% Heads (3)')).toBeTruthy();
     expect(getByText('25.0% Tails (1)')).toBeTruthy();
     expect(sessionStats.balanceVerdict).toBeTruthy();
-    expect(getByText(sessionStats.balanceVerdict ?? '')).toBeTruthy();
+    expect(getByText(sessionStats.balanceVerdict)).toBeTruthy();
     expect(getByText(sessionStats.insight)).toBeTruthy();
   });
 
@@ -31,9 +32,10 @@ describe('SessionSummaryStrip', () => {
       computeRoundResult(1, [1], 6, 1_700_000_001_000, 'd2'),
     ];
     const statsWithCrits = computeQuickRollSessionStats(rollsWithCrits, 6);
+    if (statsWithCrits.kind !== 'dice') throw new Error('Expected dice quick roll session stats');
 
     const { getByText, queryByText, rerender } = render(SessionSummaryStrip, {
-      props: { sessionStats: statsWithCrits, faces: 6 },
+      props: { sessionStats: statsWithCrits },
     });
 
     expect(getByText('Session Summary (d6)')).toBeTruthy();
@@ -49,7 +51,8 @@ describe('SessionSummaryStrip', () => {
       computeRoundResult(1, [3], 6, 1_700_000_003_000, 'd4'),
     ];
     const midStats = computeQuickRollSessionStats(midRolls, 6);
-    await rerender({ sessionStats: midStats, faces: 6 });
+    if (midStats.kind !== 'dice') throw new Error('Expected dice quick roll session stats');
+    await rerender({ sessionStats: midStats });
 
     expect(getByText('Die Avg: 2.50')).toBeTruthy();
     expect(getByText('-1.00 Δ')).toBeTruthy();

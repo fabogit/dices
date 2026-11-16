@@ -223,6 +223,7 @@ describe('computeRoundResult', () => {
     const round = computeRoundResult(0, [4, 6, 1, 5], 6, fixedTimestamp);
 
     expect(round).toEqual({
+      kind: 'dice',
       id: expect.any(String),
       roundIndex: 0,
       values: [4, 6, 1, 5],
@@ -233,9 +234,9 @@ describe('computeRoundResult', () => {
       faces: 6,
     });
     expect(round.id.length).toBeGreaterThan(0);
-    expect(round.headsCount).toBeUndefined();
-    expect(round.tailsCount).toBeUndefined();
-    expect(round.roundWinnerSide).toBeUndefined();
+    expect('headsCount' in round).toBe(false);
+    expect('tailsCount' in round).toBe(false);
+    expect('roundWinnerSide' in round).toBe(false);
   });
 
   it('assigns distinct stable ids across sequential rounds and handles missing randomUUID', () => {
@@ -351,12 +352,13 @@ describe('computeSeriesSummary', () => {
       frequency: 2,
       isTie: true,
     });
-    expect(summary.coinSeriesWinner).toBeUndefined();
+    expect(summary.kind).toBe('dice');
+    expect('coinSeriesWinner' in summary).toBe(false);
   });
 
   it('summarizes coin Best-of-3 series with clear winner', () => {
-    const config: RollConfig = {
-      faces: 2,
+    const config = {
+      faces: 2 as const,
       countPerRoll: 1,
       seriesLength: 3,
       playerId: 'coin-player',
@@ -369,6 +371,7 @@ describe('computeSeriesSummary', () => {
 
     const summary = computeSeriesSummary('series-coin', config, 'Bob', [r0, r1, r2]);
 
+    expect(summary.kind).toBe('coin');
     expect(summary.totalHeads).toBe(2);
     expect(summary.totalTails).toBe(1);
     expect(summary.headsRoundsWon).toBe(2);
@@ -377,8 +380,8 @@ describe('computeSeriesSummary', () => {
   });
 
   it('summarizes coin series resulting in a TIE', () => {
-    const config: RollConfig = {
-      faces: 2,
+    const config = {
+      faces: 2 as const,
       countPerRoll: 1,
       seriesLength: 2,
       playerId: 'coin-player',
@@ -389,21 +392,23 @@ describe('computeSeriesSummary', () => {
 
     const summary = computeSeriesSummary('series-coin-tie', config, 'Bob', [r0, r1]);
 
+    expect(summary.kind).toBe('coin');
     expect(summary.headsRoundsWon).toBe(1);
     expect(summary.tailsRoundsWon).toBe(1);
     expect(summary.coinSeriesWinner).toBe('TIE');
   });
 
-  it('handles empty series safely', () => {
-    const config: RollConfig = {
-      faces: 20,
+  it('handles empty dice and empty coin series with coherent variant fields', () => {
+    const diceConfig = {
+      faces: 20 as const,
       countPerRoll: 1,
       seriesLength: 5,
       playerId: 'p1',
     };
 
-    const summary = computeSeriesSummary('empty-series', config, 'Solo', []);
+    const summary = computeSeriesSummary('empty-series', diceConfig, 'Solo', []);
 
+    expect(summary.kind).toBe('dice');
     expect(summary.totalSum).toBe(0);
     expect(summary.overallMax).toBe(0);
     expect(summary.overallMin).toBe(0);
@@ -411,6 +416,23 @@ describe('computeSeriesSummary', () => {
     expect(summary.bestRoundIndex).toBe(-1);
     expect(summary.worstRoundIndex).toBe(-1);
     expect(summary.rounds).toHaveLength(0);
+
+    const coinConfig = {
+      faces: 2 as const,
+      countPerRoll: 2,
+      seriesLength: 3,
+      playerId: 'p1',
+    };
+    const emptyCoinSummary = computeSeriesSummary('empty-coin', coinConfig, 'Solo', []);
+
+    expect(emptyCoinSummary.kind).toBe('coin');
+    expect(emptyCoinSummary.coinSeriesWinner).toBe('TIE');
+    expect(emptyCoinSummary.totalHeads).toBe(0);
+    expect(emptyCoinSummary.totalTails).toBe(0);
+    expect(emptyCoinSummary.headsRoundsWon).toBe(0);
+    expect(emptyCoinSummary.tailsRoundsWon).toBe(0);
+    expect(emptyCoinSummary.analytics.coinStats.headsPercentage).toBe(0);
+    expect(emptyCoinSummary.analytics.coinStats.tailsPercentage).toBe(0);
   });
 });
 
@@ -575,8 +597,8 @@ describe('computeSeriesAnalytics', () => {
   });
 
   it('computes coin d2 zScore, coinStats, and distribution scaling accurately', () => {
-    const configD2: RollConfig = {
-      faces: 2,
+    const configD2 = {
+      faces: 2 as const,
       countPerRoll: 2,
       seriesLength: 2,
       playerId: 'p1',
@@ -587,6 +609,7 @@ describe('computeSeriesAnalytics', () => {
     const r1 = computeRoundResult(1, [1, 2], 2); // 1 Heads, 1 Tails -> TIE
     const analytics = computeSeriesAnalytics(configD2, [r0, r1]);
 
+    expect(analytics.kind).toBe('coin');
     expect(analytics.totalDiceRolled).toBe(4);
     // theoreticalRoundStdDev for 2d2: sqrt(2 * (4 - 1) / 12) = sqrt(6 / 12) = sqrt(0.5) = ~0.7071
     expect(analytics.theoreticalRoundStdDev).toBeCloseTo(Math.SQRT1_2, 4);
@@ -594,16 +617,15 @@ describe('computeSeriesAnalytics', () => {
     // zScore for d2: (headsCount - 0.5 * n) / (0.5 * sqrt(n)) = (3 - 2) / (0.5 * 2) = 1.0
     expect(analytics.zScore).toBeCloseTo(1.0, 4);
 
-    expect(analytics.coinStats).toBeDefined();
-    expect(analytics.coinStats?.headsCount).toBe(3);
-    expect(analytics.coinStats?.tailsCount).toBe(1);
-    expect(analytics.coinStats?.headsPercentage).toBe(75);
-    expect(analytics.coinStats?.tailsPercentage).toBe(25);
-    expect(analytics.coinStats?.headsDeltaPercentage).toBe(25); // 75 - 50
-    expect(analytics.coinStats?.tailsDeltaPercentage).toBe(-25); // 25 - 50
-    expect(analytics.coinStats?.headsRoundsWon).toBe(1);
-    expect(analytics.coinStats?.tailsRoundsWon).toBe(0);
-    expect(analytics.coinStats?.tieRounds).toBe(1);
+    expect(analytics.coinStats.headsCount).toBe(3);
+    expect(analytics.coinStats.tailsCount).toBe(1);
+    expect(analytics.coinStats.headsPercentage).toBe(75);
+    expect(analytics.coinStats.tailsPercentage).toBe(25);
+    expect(analytics.coinStats.headsDeltaPercentage).toBe(25); // 75 - 50
+    expect(analytics.coinStats.tailsDeltaPercentage).toBe(-25); // 25 - 50
+    expect(analytics.coinStats.headsRoundsWon).toBe(1);
+    expect(analytics.coinStats.tailsRoundsWon).toBe(0);
+    expect(analytics.coinStats.tieRounds).toBe(1);
 
     // distributionPeakPercentage should scale relative to the highest empirical bar (75%)
     expect(analytics.distributionPeakPercentage).toBe(75);
@@ -841,8 +863,7 @@ describe('computeQuickRollStats', () => {
     // 3d6 typical roll: [3, 4, 4] -> sum 11 (near 10.5)
     const typical3d6 = computeRoundResult(0, [3, 4, 4], 6);
     const statsTypical = computeQuickRollStats(typical3d6);
-    expect(statsTypical.zScore).toBeDefined();
-    expect(Math.abs(statsTypical.zScore!)).toBeLessThan(1.0);
+    expect(Math.abs(statsTypical.zScore)).toBeLessThan(1.0);
     expect(statsTypical.insight).toContain('Typical roll: sum 11');
   });
 });
@@ -856,6 +877,7 @@ describe('computeQuickRollSessionStats', () => {
     const quickRolls = [rD20, rD6_2, rD6_1];
 
     const d6Session = computeQuickRollSessionStats(quickRolls, 6);
+    if (d6Session.kind !== 'dice') throw new Error('Expected dice quick roll session stats');
     expect(d6Session.matchingThrows).toBe(2);
     expect(d6Session.totalDiceCount).toBe(2);
     // Average of 4 and 6 is 5.0
@@ -865,6 +887,7 @@ describe('computeQuickRollSessionStats', () => {
     expect(d6Session.criticalMaxCount).toBe(1);
 
     const d20Session = computeQuickRollSessionStats(quickRolls, 20);
+    if (d20Session.kind !== 'dice') throw new Error('Expected d20 quick roll session stats');
     expect(d20Session.matchingThrows).toBe(1);
     expect(d20Session.actualAverage).toBe(20.0);
   });
@@ -874,6 +897,7 @@ describe('computeQuickRollSessionStats', () => {
     const r2 = computeRoundResult(1, [1, 2], 2);
 
     const coinSession = computeQuickRollSessionStats([r2, r1], 2);
+    if (coinSession.kind !== 'coin') throw new Error('Expected coin quick roll session stats');
     expect(coinSession.matchingThrows).toBe(2);
     expect(coinSession.totalDiceCount).toBe(4);
     expect(coinSession.totalHeads).toBe(3);
@@ -887,6 +911,7 @@ describe('computeQuickRollSessionStats', () => {
     const rTails1 = computeRoundResult(2, [2, 2], 2);
     const rTails2 = computeRoundResult(3, [2, 2], 2);
     const tailsSession = computeQuickRollSessionStats([rTails2, rTails1], 2);
+    if (tailsSession.kind !== 'coin') throw new Error('Expected coin quick roll session stats');
     expect(tailsSession.balanceVerdict).toBe('Tails-leaning');
     expect(tailsSession.headsPercentage).toBe(0);
     expect(tailsSession.tailsPercentage).toBe(100);
@@ -895,15 +920,21 @@ describe('computeQuickRollSessionStats', () => {
     const rEven1 = computeRoundResult(4, [1, 2], 2);
     const rEven2 = computeRoundResult(5, [1, 2], 2);
     const evenSession = computeQuickRollSessionStats([rEven2, rEven1], 2);
+    if (evenSession.kind !== 'coin') throw new Error('Expected coin quick roll session stats');
     expect(evenSession.balanceVerdict).toBe('Evenly balanced');
     expect(evenSession.headsPercentage).toBe(50);
   });
 
   it('handles empty quick roll sessions gracefully', () => {
     const emptySession = computeQuickRollSessionStats([], 12);
+    expect(emptySession.kind).toBe('empty');
     expect(emptySession.matchingThrows).toBe(0);
     expect(emptySession.totalDiceCount).toBe(0);
     expect(emptySession.insight).toContain('No d12 rolls');
+
+    const emptyCoinSession = computeQuickRollSessionStats([], 2);
+    expect(emptyCoinSession.kind).toBe('empty');
+    expect(emptyCoinSession.insight).toContain('No coin rolls');
   });
 });
 
@@ -932,13 +963,13 @@ describe('statistical template helpers', () => {
     expect(classifyDelta(-0.06)).toBe('negative');
   });
 
-  it('resolves coin split percentages from coinStats and legacy fallbacks', () => {
-    const coinConfig: RollConfig = { faces: 2, countPerRoll: 4, seriesLength: 1, playerId: 'p1' };
+  it('resolves coin split percentages from coinStats on populated and empty summaries', () => {
+    const coinConfig = { faces: 2 as const, countPerRoll: 4, seriesLength: 1, playerId: 'p1' };
     const r0 = computeRoundResult(0, [1, 1, 1, 2], 2);
     const modernSummary = computeSeriesSummary('s-coin', coinConfig, 'Alice', [r0]);
 
     expect(modernSummary.analytics.sampleReliabilityLabel).toBe('Small sample (<10)');
-    expect(modernSummary.analytics.coinStats?.zQualitative).toBe('Heads-leaning');
+    expect(modernSummary.analytics.coinStats.zQualitative).toBe('Heads-leaning');
     expect(getCoinSplitPercentages(modernSummary)).toEqual({
       headsPct: 75,
       tailsPct: 25,
@@ -946,22 +977,8 @@ describe('statistical template helpers', () => {
       tailsCount: 1,
     });
 
-    const legacySummary = {
-      analytics: { ...modernSummary.analytics, coinStats: undefined },
-      totalHeads: 3,
-      totalTails: 1,
-    };
-    expect(getCoinSplitPercentages(legacySummary)).toEqual({
-      headsPct: 75,
-      tailsPct: 25,
-      headsCount: 3,
-      tailsCount: 1,
-    });
-
-    const emptyLegacy = {
-      analytics: { ...modernSummary.analytics, totalDiceRolled: 0, coinStats: undefined },
-    };
-    expect(getCoinSplitPercentages(emptyLegacy)).toEqual({
+    const emptyCoinSummary = computeSeriesSummary('s-coin-empty', coinConfig, 'Alice', []);
+    expect(getCoinSplitPercentages(emptyCoinSummary)).toEqual({
       headsPct: 0,
       tailsPct: 0,
       headsCount: 0,

@@ -322,7 +322,7 @@ export class RollState {
       this.quickRolls = [round, ...this.quickRolls.slice(0, 24)];
 
       if (this.mode === 'quick') {
-        if (faces === 2) {
+        if (round.kind === 'coin') {
           const sideNames = round.values.map((v) => (v === 1 ? 'Heads' : 'Tails')).join(', ');
           const outcome =
             round.roundWinnerSide === 'TIE' ? 'Tied.' : `${round.roundWinnerSide} wins.`;
@@ -387,7 +387,7 @@ export class RollState {
         // Generate a11y announcement
         const roundNum = round.roundIndex + 1;
         let roundAnnounce = '';
-        if (faces === 2) {
+        if (round.kind === 'coin') {
           const sideNames = round.values.map((v) => (v === 1 ? 'Heads' : 'Tails')).join(', ');
           const outcome =
             round.roundWinnerSide === 'TIE'
@@ -400,7 +400,7 @@ export class RollState {
 
         if (completedSummary) {
           let seriesAnnounce = '';
-          if (faces === 2) {
+          if (completedSummary.kind === 'coin') {
             seriesAnnounce = ` Series complete! ${
               completedSummary.coinSeriesWinner === 'TIE'
                 ? 'Series ended in a tie'

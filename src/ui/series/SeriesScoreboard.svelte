@@ -6,6 +6,7 @@
   import { rollState } from '../state/rollState.svelte';
 
   let isCollapsed = $state(false);
+  const summary = $derived(rollState.summary);
 </script>
 
 <section class="series-scoreboard" aria-labelledby="scoreboard-heading">
@@ -36,10 +37,10 @@
       ></div>
     </div>
 
-    {#if rollState.seriesFaces === 2}
-      <CoinSummaryCards summary={rollState.summary} isComplete={rollState.isComplete} />
+    {#if summary.kind === 'coin'}
+      <CoinSummaryCards {summary} isComplete={rollState.isComplete} />
     {:else}
-      <DiceSummaryGrid summary={rollState.summary} rounds={rollState.rounds} />
+      <DiceSummaryGrid {summary} rounds={rollState.rounds} />
     {/if}
 
     <RoundsTable
