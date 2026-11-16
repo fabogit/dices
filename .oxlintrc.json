@@ -44,6 +44,31 @@
           }
         ]
       }
+    },
+    {
+      "files": ["src/ui/series/**"],
+      "rules": {
+        "no-restricted-imports": [
+          "error",
+          {
+            "patterns": [
+              {
+                "group": ["*rollState*"],
+                "message": "Presentational subcomponents must not import rollState; pass typed props and callbacks from a panel container."
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "files": [
+        "src/ui/series/SeriesScoreboard.svelte",
+        "src/ui/series/StatisticalBreakdown.svelte"
+      ],
+      "rules": {
+        "no-restricted-imports": "off"
+      }
     }
   ]
 }
