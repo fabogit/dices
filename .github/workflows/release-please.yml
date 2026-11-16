@@ -8,6 +8,11 @@ permissions:
   contents: write
   pull-requests: write
 
+# Queue runs (no cancel) so two release-please runs never race on the release PR.
+concurrency:
+  group: ${{ github.workflow }}
+  cancel-in-progress: false
+
 jobs:
   release-please:
     runs-on: ubuntu-latest
