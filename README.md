@@ -81,8 +81,8 @@ The architecture cleanly decouples mathematical random generation, domain statis
 - **Runtime & Framework:** [Svelte 5](https://svelte.dev/) (`^5.15.0`) utilizing Svelte 5 Runes (`$state`, `$derived`, `$effect`)
 - **3D Graphics & Rendering:** [Three.js](https://threejs.org/) (`^0.187.0`), `@types/three` (`^0.187.0`)
 - **Language & Typings:** [TypeScript](https://www.typescriptlang.org/) (`^6.0.3`), ECMAScript 2022 Target
-- **Build Tooling & Bundler:** [Vite 6](https://vite.dev/) (`^6.0.0`), `@sveltejs/vite-plugin-svelte` (`^5.0.0`), with manual chunk splitting for `three`
-- **Testing & Quality:** [Vitest](https://vitest.dev/) (`^2.1.0`) with `@vitest/coverage-v8`, [Playwright](https://playwright.dev/) (`^1.65.0`, Chromium E2E), GitHub Actions CI, and a `pnpm run check` gate combining `tsc --noEmit`, `svelte-check`, `oxlint` (type-aware), and `oxfmt --check`
+- **Build Tooling & Bundler:** [Vite 6](https://vite.dev/) (`^6.4.0`), `@sveltejs/vite-plugin-svelte` (`^5.0.0`), with manual chunk splitting for `three`
+- **Testing & Quality:** [Vitest](https://vitest.dev/) (`^5.1.0`) with `@vitest/coverage-v8`, [Playwright](https://playwright.dev/) (`^1.65.0`, Chromium E2E), GitHub Actions CI, and a `pnpm run check` gate combining `tsc --noEmit`, `svelte-check`, `oxlint` (type-aware), and `oxfmt --check`
 - **Package Management & Engine:** [pnpm](https://pnpm.io/) (`pnpm@11.21.0`), Node.js `>=26.13.1` (pinned via `.node-version`)
 - **Cloud Infrastructure & Security:** [Cloudflare Pages](https://pages.cloudflare.com/) (`wrangler.jsonc`, `compatibility_date: 2026-11-01`), strict security headers via `public/_headers`
 
