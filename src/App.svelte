@@ -1,12 +1,13 @@
 <script lang="ts">
   import ControlPanel from './ui/ControlPanel.svelte';
   import ArenaViewport from './ui/ArenaViewport.svelte';
-  import SeriesScoreboard from './ui/SeriesScoreboard.svelte';
+  import SeriesScoreboard from './ui/series/SeriesScoreboard.svelte';
+  import StatisticalBreakdown from './ui/series/StatisticalBreakdown.svelte';
   import HistoryPanel from './ui/HistoryPanel.svelte';
   import QuickResultPanel from './ui/QuickResultPanel.svelte';
   import Dialog from './ui/primitives/Dialog.svelte';
   import Tabs from './ui/primitives/Tabs.svelte';
-  import { rollState } from './ui/rollState.svelte';
+  import { rollState } from './ui/state/rollState.svelte';
 
   const appVersion = typeof __APP_VERSION__ !== 'undefined' ? __APP_VERSION__ : '1.0.2';
   const appAuthor = typeof __APP_AUTHOR__ !== 'undefined' ? __APP_AUTHOR__ : 'fabogit';
@@ -198,7 +199,7 @@
             aria-labelledby="tab-scoreboard"
             hidden={rightPanelTab !== 'scoreboard'}
           >
-            <SeriesScoreboard section="scoreboard" />
+            <SeriesScoreboard />
           </div>
           <div
             id="tabpanel-analytics"
@@ -206,7 +207,7 @@
             aria-labelledby="tab-analytics"
             hidden={rightPanelTab !== 'analytics'}
           >
-            <SeriesScoreboard section="analytics" />
+            <StatisticalBreakdown />
           </div>
           <div
             id="tabpanel-history"

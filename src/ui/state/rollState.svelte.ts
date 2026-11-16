@@ -6,13 +6,13 @@ import {
   type RollConfig,
   type RoundResult,
   type SeriesSummary,
-} from '../core/types';
+} from '../../core/types';
 import {
   computePlayerLeaderboard,
   computeRoundResult,
   computeSeriesSummary,
   createSeriesId,
-} from '../core/engine';
+} from '../../core/engine';
 import {
   DEFAULT_PLAYER,
   defaultStorage,
@@ -20,9 +20,9 @@ import {
   PLAYER_PALETTE,
   serializePersistedState,
   type RollStorage,
-} from '../core/persistence';
-import { LocalCryptoRollProvider, type IRollProvider } from '../core/provider';
-import type { DiceArena3D } from '../three/DiceArena3D';
+} from '../../core/persistence';
+import { LocalCryptoRollProvider, type IRollProvider } from '../../core/provider';
+import type { DiceArena3D } from '../../three/DiceArena3D';
 
 export type AppMode = 'quick' | 'series';
 

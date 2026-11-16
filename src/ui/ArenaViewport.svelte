@@ -2,7 +2,7 @@
   import CollapsiblePanel from './primitives/CollapsiblePanel.svelte';
   import { onMount } from 'svelte';
   import type { DiceArena3D } from '../three/DiceArena3D';
-  import { rollState } from './rollState.svelte';
+  import { rollState } from './state/rollState.svelte';
 
   let canvasElement: HTMLCanvasElement;
   let arena: DiceArena3D | null = null;

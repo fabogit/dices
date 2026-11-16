@@ -2,7 +2,7 @@
   import { ALLOWED_FACES } from '../core/types';
   import { DIE_THEMES } from '../lib/dieThemes';
   import { dieLabel } from '../lib/format';
-  import { rollState } from './rollState.svelte';
+  import { rollState } from './state/rollState.svelte';
   import CollapsiblePanel from './primitives/CollapsiblePanel.svelte';
   import RangeStepper from './primitives/RangeStepper.svelte';
 

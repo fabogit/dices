@@ -3,7 +3,7 @@
   import { dieLabel, formatTime } from '../lib/format';
   import CollapsiblePanel from './primitives/CollapsiblePanel.svelte';
   import EmptyState from './primitives/EmptyState.svelte';
-  import { rollState } from './rollState.svelte';
+  import { rollState } from './state/rollState.svelte';
 
   const leaderboard = $derived(rollState.leaderboard);
   let isCollapsed = $state(false);
