@@ -113,6 +113,32 @@
       "rules": {
         "no-restricted-imports": "off"
       }
+    },
+    {
+      "files": ["src/ui/arena/**"],
+      "rules": {
+        "no-restricted-imports": [
+          "error",
+          {
+            "patterns": [
+              {
+                "group": ["*rollState*"],
+                "message": "Presentational subcomponents must not import rollState; pass typed props and callbacks from a panel container."
+              },
+              {
+                "group": ["**/three/**"],
+                "message": "Arena HUD/toolbar must stay WebGL-free; only ArenaViewport may load DiceArena3D."
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "files": ["src/ui/arena/ArenaViewport.svelte"],
+      "rules": {
+        "no-restricted-imports": "off"
+      }
     }
   ]
 }
