@@ -1,4 +1,4 @@
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect, vi } from 'vite-plus/test';
 import { render, fireEvent } from '@testing-library/svelte';
 import { createRawSnippet } from 'svelte';
 import Tabs from '../Tabs.svelte';

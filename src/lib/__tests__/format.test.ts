@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it } from 'vite-plus/test';
 import { ALLOWED_FACES } from '../../core/types';
 import { dieLabel, formatSigned, formatTime } from '../format';
 

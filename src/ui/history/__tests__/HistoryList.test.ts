@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect } from 'vite-plus/test';
 import { render, within } from '@testing-library/svelte';
 import { computeRoundResult, computeSeriesSummary } from '../../../core/engine';
 import type { RollConfig, SeriesSummary } from '../../../core/types';

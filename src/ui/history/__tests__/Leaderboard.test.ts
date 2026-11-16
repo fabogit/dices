@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect } from 'vite-plus/test';
 import { render, within } from '@testing-library/svelte';
 import type { PlayerLeaderboardEntry } from '../../../core/types';
 import Leaderboard from '../Leaderboard.svelte';

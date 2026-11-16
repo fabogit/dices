@@ -1,4 +1,4 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vite-plus/test';
 import * as THREE from 'three';
 import { DiceArena3D } from '../DiceArena3D';
 import { computeTargetQuaternion } from '../geometries';
