@@ -26,7 +26,6 @@
   let tablistEl: HTMLDivElement | undefined = $state();
 
   function handleKeyDown(e: KeyboardEvent) {
-    if (tabs.length === 0) return;
     const currentIndex = tabs.findIndex((t) => t.id === activeTab);
     const startIndex = currentIndex >= 0 ? currentIndex : 0;
     let nextIndex = -1;

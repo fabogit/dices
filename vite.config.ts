@@ -18,6 +18,35 @@ const CONTAINER_TEST_FILES = CONTAINER_FILES.map((file) =>
   file.replace(/\/([^/]+)\.svelte$/, '/__tests__/$1.test.ts'),
 );
 
+// Svelte compiles every text or attribute interpolation `{x}` to `x ?? ''`, and v8 counts the
+// never-taken `''` side as an uncovered branch. In these interpolation-heavy components that
+// noise keeps branch coverage under the 80% default even though every real branch is covered,
+// so each gets its own floor at today's value (rounded down): it may go up, never silently down.
+// Lower a floor deliberately if a change really needs it.
+const SVELTE_BRANCH_FLOORS: Record<string, number> = {
+  'src/ui/series/CoinSummaryCards.svelte': 58,
+  'src/ui/history/HistoryList.svelte': 65,
+  'src/ui/quick/SessionSummaryStrip.svelte': 66,
+  'src/ui/quick/LatestRollHero.svelte': 73,
+  'src/ui/series/DistributionChart.svelte': 75,
+  'src/ui/history/Leaderboard.svelte': 80,
+  'src/ui/series/RoundsTable.svelte': 81,
+  'src/ui/primitives/Tabs.svelte': 84,
+};
+
+// Vitest checks every threshold glob independently and a file matching two globs must pass
+// both, so the default glob has to exclude the files above rather than be overridden by them.
+const SVELTE_FLOOR_NAMES = Object.keys(SVELTE_BRANCH_FLOORS).map((file) =>
+  file.replace(/^.*\/([^/]+)\.svelte$/, '$1'),
+);
+const SVELTE_DEFAULT_GLOB = `src/ui/**/!(${SVELTE_FLOOR_NAMES.join('|')}).svelte`;
+const SVELTE_FLOOR_THRESHOLDS = Object.fromEntries(
+  Object.entries(SVELTE_BRANCH_FLOORS).map(([file, branches]) => [
+    file,
+    { perFile: true, statements: 90, branches, functions: 90, lines: 90 },
+  ]),
+);
+
 const NO_ROLL_STATE_MESSAGE =
   'Presentational subcomponents must not import rollState; pass typed props and callbacks from a panel container.';
 
@@ -194,28 +223,51 @@ export default defineConfig(({ mode }) => ({
       ],
       exclude: [...coverageConfigDefaults.exclude, ...CONTAINER_FILES],
       thresholds: {
+        // `perFile` is set on each glob below (not at the top level): a top-level `perFile` would
+        // also hold glob-matched files to the global numbers. Every included file must match a
+        // glob so none falls back to the aggregate check (#74).
         statements: 90,
         branches: 80,
         functions: 90,
         lines: 90,
+        'src/lib/**/*.ts': {
+          perFile: true,
+          statements: 90,
+          branches: 80,
+          functions: 90,
+          lines: 90,
+        },
+        // WebGL code is only partly reachable in happy-dom; floors sit just under today's
+        // per-file numbers so they can ratchet up but not regress.
+        'src/three/**/*.ts': {
+          perFile: true,
+          statements: 87,
+          branches: 65,
+          functions: 87,
+          lines: 86,
+        },
         'src/core/**/*.ts': {
+          perFile: true,
           statements: 90,
           branches: 85,
           functions: 90,
           lines: 90,
         },
         'src/ui/state/**/*.ts': {
+          perFile: true,
           statements: 90,
           branches: 85,
           functions: 90,
           lines: 90,
         },
-        'src/ui/**/*.svelte': {
+        [SVELTE_DEFAULT_GLOB]: {
+          perFile: true,
           statements: 90,
           branches: 80,
           functions: 90,
           lines: 90,
         },
+        ...SVELTE_FLOOR_THRESHOLDS,
       },
     },
   },
