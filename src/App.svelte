@@ -1,5 +1,5 @@
 <script lang="ts">
-  import ArenaViewport from './ui/ArenaViewport.svelte';
+  import ArenaViewport from './ui/arena/ArenaViewport.svelte';
   import ControlPanel from './ui/ControlPanel.svelte';
   import AppFooter from './ui/layout/AppFooter.svelte';
   import AppHeader from './ui/layout/AppHeader.svelte';
