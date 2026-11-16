@@ -318,6 +318,7 @@ export class RollState {
   }
 
   clearQuickRolls(): void {
+    if (this.isRolling) return;
     this.quickRolls = [];
     this.quickRollCount = 0;
     this.announcerMessage = 'Quick roll feed cleared.';

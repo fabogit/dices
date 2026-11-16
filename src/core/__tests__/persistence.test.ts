@@ -69,6 +69,29 @@ describe('persisted history sanitization', () => {
     expect(sanitizePersistedHistory({ not: 'an array' })).toEqual([]);
     expect(sanitizePersistedHistory(undefined)).toEqual([]);
   });
+
+  it('accepts legacy rounds without faces and backfills them from config.faces', () => {
+    const modern = makeSummary('series-legacy');
+    const legacyRound = { ...modern.rounds[0] } as Record<string, unknown>;
+    delete legacyRound.faces;
+    const legacyEntry: unknown = { ...modern, rounds: [legacyRound] };
+
+    expect(isPersistedSeriesSummary(legacyEntry)).toBe(true);
+    const sanitized = sanitizePersistedHistory([legacyEntry]);
+    expect(sanitized).toHaveLength(1);
+    expect(sanitized[0].rounds[0].faces).toBe(modern.config.faces);
+  });
+
+  it('rejects rounds whose faces differ from config.faces', () => {
+    const base = makeSummary('series-mismatch');
+    const mismatched: unknown = {
+      ...base,
+      rounds: [{ ...base.rounds[0], faces: 20 }],
+    };
+
+    expect(isPersistedSeriesSummary(mismatched)).toBe(false);
+    expect(sanitizePersistedHistory([mismatched])).toEqual([]);
+  });
 });
 
 function createMemoryStorage(options: { throwOnSet?: boolean } = {}): Storage {

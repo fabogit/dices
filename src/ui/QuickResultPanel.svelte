@@ -195,6 +195,7 @@
         <button
           type="button"
           class="clear-feed-btn"
+          disabled={rollState.isRolling}
           onclick={() => rollState.clearQuickRolls()}
           aria-label="Clear quick roll feed"
         >
@@ -599,9 +600,14 @@
     cursor: pointer;
   }
 
-  .clear-feed-btn:hover {
+  .clear-feed-btn:hover:not(:disabled) {
     color: var(--color-danger);
     border-color: var(--color-danger-bold);
+  }
+
+  .clear-feed-btn:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
   }
 
   .feed-scroll-wrapper {
