@@ -15,16 +15,11 @@ updates:
           - '@playwright/test'
           - 'playwright'
     ignore:
-      # Deferred to Phase 6 (#34): Vite 8 (Rolldown) and @sveltejs/vite-plugin-svelte 7.x
-      # (which requires Vite 8). While @sveltejs/vite-plugin-svelte 6.x is compatible with
-      # Vite >= 6.3, deferring it is a deliberate choice to avoid an intermediate upgrade
-      # before jumping directly to 7.x in #34.
-      - dependency-name: '@sveltejs/vite-plugin-svelte'
-        update-types:
-          - 'version-update:semver-major'
+      # `vite` is aliased to `@voidzero-dev/vite-plus-core` and pinned alongside `vite-plus` (#34).
+      # Update `vite-plus` first, then sync the `vite` alias and `pnpm-workspace.yaml` overrides together.
       - dependency-name: 'vite'
-        update-types:
-          - 'version-update:semver-major'
+      # Must stay pinned to the exact Vitest version bundled by `vite-plus`.
+      - dependency-name: '@vitest/coverage-v8'
       # Deferred until svelte-check natively supports TypeScript >= 7 without dual-TS aliases (#22).
       - dependency-name: 'typescript'
         update-types:
