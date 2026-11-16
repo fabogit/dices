@@ -4,6 +4,8 @@ export type DieFaces = (typeof ALLOWED_FACES)[number];
 
 export type CoinSide = 'HEADS' | 'TAILS';
 
+export type AppMode = 'quick' | 'series';
+
 export type SampleReliability = 'empty' | 'small' | 'moderate' | 'solid';
 
 export type DeltaDirection = 'positive' | 'negative' | 'neutral';

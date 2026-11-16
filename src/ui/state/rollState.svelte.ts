@@ -1,5 +1,6 @@
 import {
   ALLOWED_FACES,
+  type AppMode,
   type DieFaces,
   type Player,
   type PlayerLeaderboardEntry,
@@ -24,8 +25,6 @@ import {
 } from '../../core/persistence';
 import { LocalCryptoRollProvider, type IRollProvider } from '../../core/provider';
 import type { DiceArena3D } from '../../three/DiceArena3D';
-
-export type AppMode = 'quick' | 'series';
 
 export interface SeriesState {
   id: string;

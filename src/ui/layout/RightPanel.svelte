@@ -1,5 +1,5 @@
 <script lang="ts">
-  import HistoryPanel from '../HistoryPanel.svelte';
+  import HistoryPanel from '../history/HistoryPanel.svelte';
   import Tabs from '../primitives/Tabs.svelte';
   import QuickResultPanel from '../quick/QuickResultPanel.svelte';
   import SeriesScoreboard from '../series/SeriesScoreboard.svelte';

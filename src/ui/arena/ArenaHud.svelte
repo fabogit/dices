@@ -1,8 +1,8 @@
 <script lang="ts">
-  import type { RoundResult } from '../../core/types';
+  import type { AppMode, RoundResult } from '../../core/types';
 
   interface Props {
-    mode: 'quick' | 'series';
+    mode: AppMode;
     contextLost: boolean;
     isRolling: boolean;
     isComplete: boolean;
