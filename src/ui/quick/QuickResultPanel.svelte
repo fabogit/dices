@@ -2,10 +2,12 @@
   import { computeQuickRollSessionStats, computeQuickRollStats } from '../../core/engine';
   import CollapsiblePanel from '../primitives/CollapsiblePanel.svelte';
   import EmptyState from '../primitives/EmptyState.svelte';
-  import { rollState } from '../state/rollState.svelte';
+  import { getRollState } from '../state/rollStateContext';
   import LatestRollHero from './LatestRollHero.svelte';
   import QuickRollFeed from './QuickRollFeed.svelte';
   import SessionSummaryStrip from './SessionSummaryStrip.svelte';
+
+  const rollState = getRollState();
 
   let isCollapsed = $state(false);
 

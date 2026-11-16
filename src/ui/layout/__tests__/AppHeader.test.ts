@@ -1,10 +1,13 @@
-import { describe, it, expect, beforeEach } from 'vite-plus/test';
-import { render, fireEvent } from '@testing-library/svelte';
-import { rollState } from '../../state/rollState.svelte';
+import { describe, it, expect, beforeEach, afterEach } from 'vite-plus/test';
+import { fireEvent } from '@testing-library/svelte';
+import type { RollState } from '../../state/rollState.svelte';
+import { createTestRollState, renderWithRollState } from '../../__tests__/renderWithRollState';
 import AppHeader from '../AppHeader.svelte';
 
+let rollState: RollState;
+
 async function openDialog() {
-  const view = render(AppHeader);
+  const view = renderWithRollState(AppHeader, rollState);
   await fireEvent.click(view.getByRole('button', { name: 'Add new local player' }));
   const input = view.getByLabelText('Player Name:') as HTMLInputElement;
   const dialog = view.container.ownerDocument.querySelector('dialog') as HTMLDialogElement;
@@ -13,9 +16,11 @@ async function openDialog() {
 
 describe('AppHeader add-player dialog', () => {
   beforeEach(() => {
-    rollState.mode = 'series';
-    rollState.isRolling = false;
-    rollState.resetCurrentSeries({ announce: false });
+    rollState = createTestRollState();
+  });
+
+  afterEach(() => {
+    rollState.dispose();
   });
 
   it('closes on success and adds the player', async () => {

@@ -1,10 +1,17 @@
 <script lang="ts">
+  import { untrack } from 'svelte';
   import ArenaViewport from './ui/arena/ArenaViewport.svelte';
   import ControlPanel from './ui/controls/ControlPanel.svelte';
   import AppFooter from './ui/layout/AppFooter.svelte';
   import AppHeader from './ui/layout/AppHeader.svelte';
   import RightPanel from './ui/layout/RightPanel.svelte';
-  import { rollState } from './ui/state/rollState.svelte';
+  import type { RollState } from './ui/state/rollState.svelte';
+  import { setRollState } from './ui/state/rollStateContext';
+
+  // The store is created once by the entry point (main.ts) and never replaced: provide that
+  // instance to every container below (untrack marks the one-time read as intentional)
+  const props: { rollState: RollState } = $props();
+  const rollState = setRollState(untrack(() => props.rollState));
 
   const appVersion = __APP_VERSION__;
   const appAuthor = __APP_AUTHOR__;

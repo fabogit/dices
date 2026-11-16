@@ -1,11 +1,14 @@
-import { describe, it, expect, beforeEach } from 'vite-plus/test';
-import { render, fireEvent } from '@testing-library/svelte';
+import { describe, it, expect, beforeEach, afterEach } from 'vite-plus/test';
+import { fireEvent } from '@testing-library/svelte';
 import { SERIES_LENGTH_LIMITS } from '../../../core/limits';
-import { rollState } from '../../state/rollState.svelte';
+import type { RollState } from '../../state/rollState.svelte';
+import { createTestRollState, renderWithRollState } from '../../__tests__/renderWithRollState';
 import ControlPanel from '../ControlPanel.svelte';
 
+let rollState: RollState;
+
 function renderInput(): HTMLInputElement {
-  const { getByLabelText } = render(ControlPanel);
+  const { getByLabelText } = renderWithRollState(ControlPanel, rollState);
   return getByLabelText(
     `Custom series length (${SERIES_LENGTH_LIMITS.min} to ${SERIES_LENGTH_LIMITS.max})`,
   ) as HTMLInputElement;
@@ -18,8 +21,12 @@ async function type(input: HTMLInputElement, value: string): Promise<void> {
 
 describe('ControlPanel custom series length input', () => {
   beforeEach(() => {
-    rollState.mode = 'series';
+    rollState = createTestRollState();
     rollState.setSeriesLength(5);
+  });
+
+  afterEach(() => {
+    rollState.dispose();
   });
 
   it('re-syncs to the clamped value when it equals the current state (99 at 21)', async () => {

@@ -1,9 +1,11 @@
 <script lang="ts">
   import CollapsiblePanel from '../primitives/CollapsiblePanel.svelte';
   import EmptyState from '../primitives/EmptyState.svelte';
-  import { rollState } from '../state/rollState.svelte';
+  import { getRollState } from '../state/rollStateContext';
   import HistoryList from './HistoryList.svelte';
   import Leaderboard from './Leaderboard.svelte';
+
+  const rollState = getRollState();
 
   let isCollapsed = $state(false);
 </script>
