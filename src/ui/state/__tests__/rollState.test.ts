@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, vi } from 'vite-plus/test';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vite-plus/test';
 import { computeRoundResult, computeSeriesSummary } from '../../../core/engine';
 import type { PersistedStateV2, RollStorage } from '../../../core/persistence';
 import type { IRollProvider } from '../../../core/provider';
@@ -92,6 +92,10 @@ describe('RollState Controller', () => {
     state = new RollState();
     state.clearHistory();
     state.resetCurrentSeries();
+  });
+
+  afterEach(() => {
+    state.dispose();
   });
 
   it('initializes with default settings', () => {

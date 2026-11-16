@@ -122,16 +122,39 @@ export class RollState {
     };
   }
 
+  // Tracks who last decided `instantMode`. OS reduced-motion changes only apply while 'system';
+  // instantMode is not persisted, so there is no stored preference to restore as 'user'.
+  private instantModeSource: 'system' | 'user' = 'system';
+  private motionListenerAbort: AbortController | undefined;
+  private motionListenerCleanup: (() => void) | undefined;
+
   private setupMotionMediaListener(): void {
-    if (typeof window !== 'undefined' && typeof window.matchMedia === 'function') {
-      const mediaQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
-      const listener = (event: MediaQueryListEvent) => {
-        this.instantMode = event.matches;
-      };
-      if (typeof mediaQuery.addEventListener === 'function') {
-        mediaQuery.addEventListener('change', listener);
+    if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') return;
+    const mediaQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
+    if (typeof mediaQuery.addEventListener !== 'function') return;
+    const listener = (event: MediaQueryListEvent) => {
+      if (this.instantModeSource === 'system') this.instantMode = event.matches;
+    };
+    const abort = new AbortController();
+    mediaQuery.addEventListener('change', listener, { signal: abort.signal });
+    this.motionListenerAbort = abort;
+    // Fallback for environments that ignore `signal`.
+    this.motionListenerCleanup = () => {
+      if (typeof mediaQuery.removeEventListener === 'function') {
+        mediaQuery.removeEventListener('change', listener);
       }
-    }
+    };
+  }
+
+  /**
+   * Releases the OS reduced-motion listener. Idempotent. The app singleton lives for the whole
+   * page lifetime and is never disposed; call this for short-lived instances (e.g. tests).
+   */
+  dispose(): void {
+    this.motionListenerAbort?.abort();
+    this.motionListenerCleanup?.();
+    this.motionListenerAbort = undefined;
+    this.motionListenerCleanup = undefined;
   }
 
   // Derived properties
@@ -270,6 +293,7 @@ export class RollState {
 
   toggleInstantMode(): void {
     this.instantMode = !this.instantMode;
+    this.instantModeSource = 'user';
   }
 
   // Player Management
