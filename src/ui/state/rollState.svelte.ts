@@ -23,6 +23,7 @@ import {
   serializePersistedState,
   type RollStorage,
 } from '../../core/persistence';
+import { COUNT_PER_ROLL_LIMITS, SERIES_LENGTH_LIMITS, clampInt } from '../../core/limits';
 import { LocalCryptoRollProvider, type IRollProvider } from '../../core/provider';
 import type { DiceArena3D } from '../../three/DiceArena3D';
 
@@ -250,7 +251,7 @@ export class RollState {
   setCountPerRoll(count: number): void {
     if (this.isRolling) return;
     if (!Number.isFinite(count)) return;
-    const clamped = Math.min(10, Math.max(1, Math.round(count)));
+    const clamped = clampInt(count, COUNT_PER_ROLL_LIMITS);
     if (this.countPerRoll === clamped) return;
     if (this.rejectWhileSeriesRuns(this.isConfigLocked)) return;
     this.countPerRoll = clamped;
@@ -260,7 +261,7 @@ export class RollState {
   setSeriesLength(length: number): void {
     if (this.isRolling) return;
     if (!Number.isFinite(length)) return;
-    const clamped = Math.min(21, Math.max(1, Math.round(length)));
+    const clamped = clampInt(length, SERIES_LENGTH_LIMITS);
     if (this.seriesLength === clamped) return;
     if (this.rejectWhileSeriesRuns(this.isSeriesInProgress)) return;
     this.seriesLength = clamped;

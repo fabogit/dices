@@ -14,6 +14,10 @@ const CONTAINER_FILES = [
   'src/ui/series/StatisticalBreakdown.svelte',
 ];
 
+const CONTAINER_TEST_FILES = CONTAINER_FILES.map((file) =>
+  file.replace(/\/([^/]+)\.svelte$/, '/__tests__/$1.test.ts'),
+);
+
 const NO_ROLL_STATE_MESSAGE =
   'Presentational subcomponents must not import rollState; pass typed props and callbacks from a panel container.';
 
@@ -161,7 +165,8 @@ export default defineConfig(({ mode }) => ({
         },
       },
       {
-        files: CONTAINER_FILES,
+        // Containers and their tests are the only UI files allowed to touch the rollState singleton
+        files: [...CONTAINER_FILES, ...CONTAINER_TEST_FILES],
         rules: {
           'no-restricted-imports': 'off',
         },
