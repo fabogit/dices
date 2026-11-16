@@ -159,6 +159,26 @@ describe('Tabs primitive', () => {
     await fireEvent.keyDown(tablist, { key: 'ArrowRight' });
     expect(onSelect).not.toHaveBeenCalled();
   });
+
+  it('starts keyboard navigation from index 0 when activeTab is missing in tabs', async () => {
+    const onSelect = vi.fn<(id: string) => void>();
+    const { getByRole } = render(Tabs, {
+      props: {
+        tabs: sampleTabs,
+        activeTab: 'missing-tab',
+        ariaLabel: 'Analysis views',
+        onSelect,
+      },
+    });
+
+    const scoreboardTab = getByRole('tab', { name: /Scoreboard/ });
+    const historyTab = getByRole('tab', { name: /History/ });
+
+    scoreboardTab.focus();
+    await fireEvent.keyDown(scoreboardTab, { key: 'ArrowLeft' });
+    expect(onSelect).toHaveBeenCalledWith('history');
+    expect(document.activeElement).toBe(historyTab);
+  });
 });
 
 describe('CollapsiblePanel primitive', () => {
@@ -259,6 +279,22 @@ describe('CollapsiblePanel primitive', () => {
     expect(getByRole('button', { name: 'Show Arena for 3D Dice' }).textContent).toContain(
       'Show Arena',
     );
+  });
+
+  it('renders directly with as="div" and omits aria-labelledby on initial mount', () => {
+    const { container } = render(CollapsiblePanel, {
+      props: {
+        as: 'div',
+        title: 'Inline Section',
+        collapsed: false,
+        onToggle: vi.fn<() => void>(),
+        children: htmlSnippet('<div>Body</div>'),
+      },
+    });
+
+    const root = container.firstElementChild;
+    expect(root?.tagName.toLowerCase()).toBe('div');
+    expect(root?.hasAttribute('aria-labelledby')).toBe(false);
   });
 });
 
