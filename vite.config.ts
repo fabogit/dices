@@ -60,6 +60,9 @@ export default defineConfig(({ mode }) => ({
       '.svelte-check/**',
       'e2e/**/*.png',
       'pnpm-lock.yaml',
+      // Generated and rewritten by release-please on every release PR
+      'CHANGELOG.md',
+      '.release-please-manifest.json',
     ],
   },
   lint: {
