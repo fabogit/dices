@@ -875,7 +875,6 @@ describe('RollState Controller', () => {
 
   it('ignores clearQuickRolls while a quick roll is in flight', async () => {
     const { arena, land, isAnimating } = createDeferredArena();
-    state.setArena(arena);
     state.instantMode = true;
     state.setMode('quick');
 
@@ -883,6 +882,7 @@ describe('RollState Controller', () => {
     expect(initialRoll?.roundIndex).toBe(0);
     expect(state.quickRollCount).toBe(1);
 
+    state.setArena(arena);
     state.instantMode = false;
     const inFlight = state.executeQuickRoll();
     await vi.waitFor(() => expect(isAnimating()).toBe(true));
