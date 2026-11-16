@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { rollState } from './rollState.svelte';
+  import { rollState } from './state/rollState.svelte';
   import { computeQuickRollSessionStats, computeQuickRollStats } from '../core/engine';
   import { dieLabel, formatSigned, formatTime } from '../lib/format';
   import CoinPills from './primitives/CoinPills.svelte';

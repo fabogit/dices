@@ -5,7 +5,7 @@
   import CollapsiblePanel from './primitives/CollapsiblePanel.svelte';
   import DeltaBadge from './primitives/DeltaBadge.svelte';
   import StatBox from './primitives/StatBox.svelte';
-  import { rollState } from './rollState.svelte';
+  import { rollState } from './state/rollState.svelte';
 
   let { section = 'all' }: { section?: 'all' | 'scoreboard' | 'analytics' } = $props();
 

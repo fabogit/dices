@@ -3,7 +3,7 @@ import { computeRoundResult, computeSeriesSummary } from '../../core/engine';
 import type { PersistedStateV2, RollStorage } from '../../core/persistence';
 import type { IRollProvider } from '../../core/provider';
 import type { DieFaces } from '../../core/types';
-import { RollState } from '../rollState.svelte';
+import { RollState } from '../state/rollState.svelte';
 
 /**
  * Arena double whose roll animation only finishes when the test calls `land()`.

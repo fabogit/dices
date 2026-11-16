@@ -6,7 +6,7 @@
   import QuickResultPanel from './ui/QuickResultPanel.svelte';
   import Dialog from './ui/primitives/Dialog.svelte';
   import Tabs from './ui/primitives/Tabs.svelte';
-  import { rollState } from './ui/rollState.svelte';
+  import { rollState } from './ui/state/rollState.svelte';
 
   const appVersion = typeof __APP_VERSION__ !== 'undefined' ? __APP_VERSION__ : '1.0.2';
   const appAuthor = typeof __APP_AUTHOR__ !== 'undefined' ? __APP_AUTHOR__ : 'fabogit';
