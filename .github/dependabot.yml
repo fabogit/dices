@@ -15,8 +15,11 @@ updates:
           - '@playwright/test'
           - 'playwright'
     ignore:
-      # `vite` is aliased to `@voidzero-dev/vite-plus-core` and pinned alongside `vite-plus` (#34).
-      # Update `vite-plus` first, then sync the `vite` alias and `pnpm-workspace.yaml` overrides together.
+      # `vite-plus`, the `vite` alias (`package.json`), `pnpm-workspace.yaml` overrides (`vite@*`, `vitest@*`),
+      # and `peerDependencyRules.allowedVersions.vite` must all stay pinned to the exact same version (#34).
+      # Upgrade procedure: run `vp migrate` (updates `vite-plus`, the `vite` alias, and `vitest` overrides),
+      # then update `peerDependencyRules.allowedVersions.vite` and `@vitest/coverage-v8` manually to match.
+      - dependency-name: 'vite-plus'
       - dependency-name: 'vite'
       # Must stay pinned to the exact Vitest version bundled by `vite-plus`.
       - dependency-name: '@vitest/coverage-v8'
