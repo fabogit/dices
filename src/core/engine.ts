@@ -614,18 +614,26 @@ function buildCoinSummaryFields(coinStats: CoinSeriesStats): {
   };
 }
 
+function isCoinRound(round: RoundResult): round is CoinRoundResult {
+  return round.kind === 'coin';
+}
+
+function isDiceRound(round: RoundResult): round is DiceRoundResult {
+  return round.kind === 'dice';
+}
+
 export function computeSeriesSummary(
   id: string,
   config: CoinRollConfig,
   playerName: string,
-  rounds: RoundResult[],
+  rounds: CoinRoundResult[],
   completedAt?: number,
 ): CoinSeriesSummary;
 export function computeSeriesSummary(
   id: string,
   config: DiceRollConfig,
   playerName: string,
-  rounds: RoundResult[],
+  rounds: DiceRoundResult[],
   completedAt?: number,
 ): DiceSeriesSummary;
 export function computeSeriesSummary(
@@ -649,23 +657,30 @@ export function computeSeriesSummary(
     config: { ...config },
     playerId: config.playerId,
     playerName,
-    rounds: [...rounds],
     ...metrics,
     completedAt,
   };
 
   if (analytics.kind === 'coin') {
+    if (!rounds.every(isCoinRound)) {
+      throw new Error('computeSeriesSummary: coin config received non-coin rounds');
+    }
     return {
       ...baseSummary,
       kind: 'coin',
+      rounds: [...rounds],
       analytics,
       ...buildCoinSummaryFields(analytics.coinStats),
     };
   }
 
+  if (!rounds.every(isDiceRound)) {
+    throw new Error('computeSeriesSummary: dice config received non-dice rounds');
+  }
   return {
     ...baseSummary,
     kind: 'dice',
+    rounds: [...rounds],
     analytics,
   };
 }

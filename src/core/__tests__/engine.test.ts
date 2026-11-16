@@ -1000,3 +1000,32 @@ describe('statistical template helpers', () => {
     expect(face2?.deltaDirection).toBe('negative');
   });
 });
+
+describe('computeSeriesSummary rounds typing', () => {
+  const coinConfig: RollConfig = { faces: 2, countPerRoll: 1, seriesLength: 2, playerId: 'p' };
+  const diceConfig: RollConfig = { faces: 6, countPerRoll: 1, seriesLength: 2, playerId: 'p' };
+
+  it('narrows rounds to coin rounds after a kind check', () => {
+    const summary = computeSeriesSummary('s', coinConfig, 'A', [computeRoundResult(0, [1], 2)]);
+    if (summary.kind !== 'coin') throw new Error('expected coin summary');
+    expect(summary.rounds[0].roundWinnerSide).toBe('HEADS');
+  });
+
+  it('narrows rounds to dice rounds after a kind check', () => {
+    const summary = computeSeriesSummary('s', diceConfig, 'A', [computeRoundResult(0, [4], 6)]);
+    if (summary.kind !== 'dice') throw new Error('expected dice summary');
+    expect(summary.rounds[0].sum).toBe(4);
+  });
+
+  it('throws when a coin config receives dice rounds', () => {
+    expect(() =>
+      computeSeriesSummary('s', coinConfig, 'A', [computeRoundResult(0, [4], 6)]),
+    ).toThrow(/coin config received non-coin rounds/);
+  });
+
+  it('throws when a dice config receives coin rounds', () => {
+    expect(() =>
+      computeSeriesSummary('s', diceConfig, 'A', [computeRoundResult(0, [1], 2)]),
+    ).toThrow(/dice config received non-dice rounds/);
+  });
+});

@@ -123,7 +123,6 @@ export interface BaseSeriesSummary {
   config: RollConfig;
   playerId: string;
   playerName: string;
-  rounds: RoundResult[];
   totalSum: number;
   overallMax: number;
   overallMin: number;
@@ -136,6 +135,7 @@ export interface BaseSeriesSummary {
 
 export interface CoinSeriesSummary extends BaseSeriesSummary {
   kind: 'coin';
+  rounds: CoinRoundResult[];
   analytics: CoinSeriesAnalytics;
   coinSeriesWinner: CoinSide | 'TIE';
   totalHeads: number;
@@ -146,6 +146,7 @@ export interface CoinSeriesSummary extends BaseSeriesSummary {
 
 export interface DiceSeriesSummary extends BaseSeriesSummary {
   kind: 'dice';
+  rounds: DiceRoundResult[];
   analytics: DiceSeriesAnalytics;
 }
 
