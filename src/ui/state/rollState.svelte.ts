@@ -17,6 +17,7 @@ import {
   DEFAULT_PLAYER,
   defaultStorage,
   hydratePersistedState,
+  MAX_PLAYER_NAME_LENGTH,
   PLAYER_PALETTE,
   serializePersistedState,
   type RollStorage,
@@ -274,7 +275,7 @@ export class RollState {
   // Player Management
   addPlayer(name: string): void {
     if (this.isRolling) return;
-    const trimmed = name.trim().slice(0, 24);
+    const trimmed = name.trim().slice(0, MAX_PLAYER_NAME_LENGTH);
     if (!trimmed) return;
     if (this.rejectWhileSeriesRuns(this.isSeriesInProgress)) return;
     const nextIndex = this.players.length;
