@@ -15,10 +15,16 @@ export default defineConfig({
     strictPort: true,
   },
   build: {
-    rollupOptions: {
+    rolldownOptions: {
       output: {
-        manualChunks: {
-          three: ['three'],
+        codeSplitting: {
+          groups: [
+            {
+              name: 'three',
+              test: /node_modules[/\\]three[/\\]/,
+              priority: 20,
+            },
+          ],
         },
       },
     },
