@@ -22,19 +22,8 @@ test.describe('FaceSelector Keyboard Navigation (Issue #31)', () => {
     await expect(radiogroup).toBeVisible();
 
     const d6Radio = radiogroup.getByRole('radio', { name: 'd6' });
-    await expect(d6Radio).toHaveAttribute('aria-checked', 'true');
-    await expect(d6Radio).toHaveAttribute('tabindex', '0');
-
-    for (const name of INSTRUMENT_NAMES) {
-      if (name !== 'd6') {
-        const other = radiogroup.getByRole('radio', { name });
-        await expect(other).toHaveAttribute('aria-checked', 'false');
-        await expect(other).toHaveAttribute('tabindex', '-1');
-      }
-    }
-
     await d6Radio.focus();
-    await expect(d6Radio).toBeFocused();
+    await expectActiveRadio(radiogroup, 'd6');
 
     // Forward arrows: ArrowRight -> d8, ArrowDown -> d10
     await page.keyboard.press('ArrowRight');

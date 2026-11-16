@@ -11,7 +11,7 @@
 
   const { selectedFaces, disabled, onSelect }: Props = $props();
 
-  let buttons = $state<Array<HTMLButtonElement | undefined>>([]);
+  let buttons: Array<HTMLButtonElement | undefined> = [];
 
   function handleKeyDown(e: KeyboardEvent) {
     if (disabled) return;
