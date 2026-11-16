@@ -6,10 +6,9 @@
   import RightPanel from './ui/layout/RightPanel.svelte';
   import { rollState } from './ui/state/rollState.svelte';
 
-  const appVersion = typeof __APP_VERSION__ !== 'undefined' ? __APP_VERSION__ : '1.0.2';
-  const appAuthor = typeof __APP_AUTHOR__ !== 'undefined' ? __APP_AUTHOR__ : 'fabogit';
-  const buildYear =
-    typeof __BUILD_YEAR__ !== 'undefined' ? __BUILD_YEAR__ : new Date().getFullYear().toString();
+  const appVersion = __APP_VERSION__;
+  const appAuthor = __APP_AUTHOR__;
+  const buildYear = __BUILD_YEAR__;
 </script>
 
 <a href="#main-content" class="skip-link sr-only">Skip to main content</a>
