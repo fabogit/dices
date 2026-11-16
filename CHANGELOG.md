@@ -1,5 +1,14 @@
 # Changelog
 
+## [1.1.1](https://github.com/fabogit/dices/compare/v1.1.0...v1.1.1) (2026-11-16)
+
+
+### Bug Fixes
+
+* **players:** reject duplicate names and keep the add-player dialog open on failure ([#63](https://github.com/fabogit/dices/issues/63)) ([#69](https://github.com/fabogit/dices/issues/69)) ([576c68d](https://github.com/fabogit/dices/commit/576c68d445b6944d5efcd1395e69759a92d564c1))
+* **state:** keep manual Fast choice over OS reduced-motion changes ([#64](https://github.com/fabogit/dices/issues/64)) ([#70](https://github.com/fabogit/dices/issues/70)) ([81e9462](https://github.com/fabogit/dices/commit/81e9462059ce89d6b3815e0841b78e106953c87d))
+* **ui:** re-sync custom series-length input after clamping ([#62](https://github.com/fabogit/dices/issues/62)) ([#67](https://github.com/fabogit/dices/issues/67)) ([425b48f](https://github.com/fabogit/dices/commit/425b48f374e11f08092b4c94adef78b9471ccf65))
+
 ## [1.1.0](https://github.com/fabogit/dices/compare/v1.0.2...v1.1.0) (2026-11-16)
 
 
