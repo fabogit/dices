@@ -27,8 +27,8 @@
   <!-- Prominent Latest Quick Result Hero Card -->
   {#if rollState.latestQuickRoll}
     {@const latest = rollState.latestQuickRoll}
-    {@const heroFaces = latest.faces ?? rollState.faces}
-    {@const stats = computeQuickRollStats(latest, heroFaces)}
+    {@const heroFaces = latest.faces}
+    {@const stats = computeQuickRollStats(latest)}
     <div class="latest-hero-card" role="region" aria-label="Latest Quick Roll Result">
       <div class="hero-top-row">
         <span class="hero-instrument">
@@ -211,7 +211,7 @@
       >
         <ul class="feed-list" role="list">
           {#each rollState.quickRolls as item (item.id)}
-            {@const itemFaces = item.faces ?? rollState.faces}
+            {@const itemFaces = item.faces}
             <li class="feed-item">
               <div class="feed-item-left">
                 <span class="feed-index">#{item.roundIndex + 1}</span>

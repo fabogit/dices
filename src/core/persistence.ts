@@ -1,5 +1,54 @@
 import { ALLOWED_FACES, type SeriesSummary } from './types';
 
+export const HISTORY_STORAGE_KEY = 'dices_history_v1';
+
+export interface RollStorage {
+  load(): unknown;
+  save(state: unknown): void;
+}
+
+function getBrowserStorage(): Storage | null {
+  if (typeof window === 'undefined') {
+    return null;
+  }
+  try {
+    return window.localStorage ?? (typeof localStorage !== 'undefined' ? localStorage : null);
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Default browser localStorage-backed persistence adapter for series history.
+ */
+export function defaultStorage(key: string = HISTORY_STORAGE_KEY): RollStorage {
+  return {
+    load(): unknown {
+      const storage = getBrowserStorage();
+      if (!storage) {
+        return null;
+      }
+      try {
+        const raw = storage.getItem(key);
+        return raw ? JSON.parse(raw) : null;
+      } catch {
+        return null;
+      }
+    },
+    save(state: unknown): void {
+      const storage = getBrowserStorage();
+      if (!storage) {
+        return;
+      }
+      try {
+        storage.setItem(key, JSON.stringify(state));
+      } catch {
+        // Ignore storage quota or access errors in sandbox / restricted browsers
+      }
+    },
+  };
+}
+
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
 }
@@ -16,6 +65,7 @@ function isPersistedRoundResult(value: unknown): boolean {
     isFiniteNumber(value.max) &&
     isFiniteNumber(value.min) &&
     isFiniteNumber(value.timestamp) &&
+    (ALLOWED_FACES as readonly unknown[]).includes(value.faces) &&
     (value.headsCount === undefined || isFiniteNumber(value.headsCount)) &&
     Array.isArray(value.values) &&
     value.values.length > 0 &&
