@@ -13,6 +13,6 @@ This checklist covers Svelte template semantics and architectural constraints th
 
 ## Architecture & Tooling Boundaries
 
-- [ ] **Container / Presentational split (`src/ui/primitives/**`):** Primitives must not import `rollState` or the `getRollState` context accessor (enforced by the `lint` block in `vite.config.ts` via `no-restricted-imports`).
+- [ ] **Container / Presentational split (`src/ui/containers/**`):** Only containers in `src/ui/containers/` may read the store with `getRollState`; every other UI folder (primitives included) is presentational and must not import `rollState` or `getRollState` (enforced by the `lint` block in `vite.config.ts` via `no-restricted-imports`, default deny for `src/ui/**`). A new container goes in `src/ui/containers/` with a test in its `__tests__/`; coverage includes it automatically.
 - [ ] **Accessibility (`a11y_*`):** Verify `svelte-check --fail-on-warnings` passes without new `svelte-ignore` suppressions lacking written justification.
 - [ ] **TypeScript 7 re-upgrade tracking (`[TECHNICAL DEBT]`):** `package.json` uses `typescript@^6.0.3` uniformly because `svelte-check@4.7.8` gates out `typescript >= 7` unless TS 6 is also installed via `@typescript/native` alias. Revisit upgrading to TypeScript 7 once `svelte-check` removes the TS 6 dependency.

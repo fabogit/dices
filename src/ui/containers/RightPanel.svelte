@@ -1,10 +1,10 @@
 <script lang="ts">
-  import HistoryPanel from '../history/HistoryPanel.svelte';
   import Tabs from '../primitives/Tabs.svelte';
-  import QuickResultPanel from '../quick/QuickResultPanel.svelte';
-  import SeriesScoreboard from '../series/SeriesScoreboard.svelte';
-  import StatisticalBreakdown from '../series/StatisticalBreakdown.svelte';
   import { getRollState } from '../state/rollStateContext';
+  import HistoryPanel from './HistoryPanel.svelte';
+  import QuickResultPanel from './QuickResultPanel.svelte';
+  import SeriesScoreboard from './SeriesScoreboard.svelte';
+  import StatisticalBreakdown from './StatisticalBreakdown.svelte';
 
   const rollState = getRollState();
 
@@ -18,7 +18,7 @@
       label: 'Scoreboard',
       badge:
         rollState.rounds.length > 0
-          ? `${rollState.rounds.length}/${rollState.seriesLength}`
+          ? `${rollState.rounds.length}/${rollState.summary.config.seriesLength}`
           : undefined,
     },
     { id: 'analytics', label: 'Breakdown' },

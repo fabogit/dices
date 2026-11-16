@@ -4,7 +4,7 @@
   import DeltaBadge from '../primitives/DeltaBadge.svelte';
   import StatBox from '../primitives/StatBox.svelte';
   import { getRollState } from '../state/rollStateContext';
-  import DistributionChart from './DistributionChart.svelte';
+  import DistributionChart from '../series/DistributionChart.svelte';
 
   const rollState = getRollState();
 

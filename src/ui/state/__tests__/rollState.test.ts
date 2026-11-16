@@ -762,6 +762,38 @@ describe('RollState Controller', () => {
     expect(state.summary.config.countPerRoll).toBe(2);
   });
 
+  // Containers display the running series' length (summary.config.seriesLength) next to its
+  // rounds, while ControlPanel edits `seriesLength`. Unlike `faces`, the two must never diverge.
+  it('keeps the series length setting equal to the running series length', async () => {
+    const expectInSync = (): void => {
+      expect(state.summary.config.seriesLength).toBe(state.seriesLength);
+    };
+    state.instantMode = true;
+
+    state.setSeriesLength(2);
+    expectInSync();
+    await state.rollNextRound();
+    state.setSeriesLength(5); // rejected mid-series
+    expect(state.seriesLength).toBe(2);
+    expectInSync();
+
+    await state.rollNextRound();
+    expect(state.isComplete).toBe(true);
+    // A completed series survives a Quick-mode die change, but not a length change
+    state.setMode('quick');
+    state.setFaces(20);
+    expect(state.rounds).toHaveLength(2);
+    state.setSeriesLength(4);
+    expect(state.rounds).toHaveLength(0);
+    expectInSync();
+
+    state.setMode('series');
+    state.addPlayer('Alice');
+    state.setActivePlayer('player-1');
+    expectInSync();
+    expect(state.summary.config.seriesLength).toBe(4);
+  });
+
   it('keeps announcement coherent and locks setup while Round 1 is in flight', async () => {
     const { arena, land, isAnimating } = createDeferredArena();
     state.setArena(arena);

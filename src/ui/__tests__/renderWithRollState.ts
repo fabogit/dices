@@ -1,6 +1,7 @@
 import { render } from '@testing-library/svelte';
 import type { Component } from 'svelte';
 import type { RollStorage } from '../../core/persistence';
+import type { IRollProvider } from '../../core/provider';
 import { RollState, type RollStateOptions } from '../state/rollState.svelte';
 import RollStateHarness from './RollStateHarness.svelte';
 
@@ -11,6 +12,22 @@ export function createMemoryStorage(initialPayload: unknown = null): RollStorage
     load: () => stored,
     save: (payload) => {
       stored = payload;
+    },
+  };
+}
+
+/**
+ * Deterministic provider: each `rollRound` call returns the next planned round's values
+ * (whatever the requested faces/count) and throws once the plan is exhausted.
+ */
+export function createScriptedProvider(...rounds: number[][]): IRollProvider {
+  const queue = rounds.map((values) => [...values]);
+  return {
+    kind: 'local-csprng',
+    rollRound: async () => {
+      const next = queue.shift();
+      if (!next) throw new Error('Scripted provider exhausted: plan one round per roll.');
+      return next;
     },
   };
 }

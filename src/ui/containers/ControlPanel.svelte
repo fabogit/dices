@@ -3,7 +3,7 @@
   import RangeStepper from '../primitives/RangeStepper.svelte';
   import { COUNT_PER_ROLL_LIMITS, SERIES_LENGTH_LIMITS } from '../../core/limits';
   import { getRollState } from '../state/rollStateContext';
-  import FaceSelector from './FaceSelector.svelte';
+  import FaceSelector from '../controls/FaceSelector.svelte';
 
   const rollState = getRollState();
 
