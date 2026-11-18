@@ -25,6 +25,9 @@ const SVELTE_BRANCH_FLOORS: Record<string, number> = {
   'src/ui/history/Leaderboard.svelte': 80,
   'src/ui/series/RoundsTable.svelte': 81,
   'src/ui/primitives/Tabs.svelte': 84,
+  'src/ui/containers/ControlPanel.svelte': 72,
+  'src/ui/containers/SeriesScoreboard.svelte': 62,
+  'src/ui/containers/StatisticalBreakdown.svelte': 78,
 };
 
 // Vitest checks every threshold glob independently and a file matching two globs must pass
