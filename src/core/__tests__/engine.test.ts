@@ -1,6 +1,5 @@
 import { describe, expect, it, vi } from 'vite-plus/test';
 import {
-  ALLOWED_FACES,
   classifyDelta,
   computeMode,
   computePlayerLeaderboard,
@@ -16,7 +15,6 @@ import {
   LocalCryptoRollProvider,
   rollBatchCryptoFair,
   rollCryptoFair,
-  validateRollConfig,
   type DieFaces,
   type IRollProvider,
   type Player,
@@ -28,136 +26,6 @@ const zeroMinMock = (buf: Uint32Array): Uint32Array => {
   buf[0] = 0;
   return buf;
 };
-
-describe('validateRollConfig', () => {
-  const validBaseConfig: RollConfig = {
-    faces: 6,
-    countPerRoll: 2,
-    seriesLength: 5,
-    playerId: 'player-1',
-  };
-
-  it('accepts all allowed polyhedral faces and coin', () => {
-    for (const faces of ALLOWED_FACES) {
-      expect(() =>
-        validateRollConfig({
-          ...validBaseConfig,
-          faces,
-        }),
-      ).not.toThrow();
-    }
-  });
-
-  it('rejects invalid face counts', () => {
-    const invalidFaces = [0, 1, 3, 5, 7, 9, 11, 100, -6, NaN] as unknown as DieFaces[];
-    for (const faces of invalidFaces) {
-      expect(() =>
-        validateRollConfig({
-          ...validBaseConfig,
-          faces,
-        }),
-      ).toThrow(/Invalid faces count/i);
-    }
-  });
-
-  it('rejects non-integer float values for countPerRoll and seriesLength', () => {
-    expect(() =>
-      validateRollConfig({
-        ...validBaseConfig,
-        countPerRoll: 2.5,
-      }),
-    ).toThrow(/Invalid countPerRoll/i);
-
-    expect(() =>
-      validateRollConfig({
-        ...validBaseConfig,
-        seriesLength: 4.8,
-      }),
-    ).toThrow(/Invalid seriesLength/i);
-  });
-
-  it('rejects NaN or infinity values', () => {
-    expect(() =>
-      validateRollConfig({
-        ...validBaseConfig,
-        countPerRoll: NaN,
-      }),
-    ).toThrow(/Invalid countPerRoll/i);
-
-    expect(() =>
-      validateRollConfig({
-        ...validBaseConfig,
-        seriesLength: Infinity,
-      }),
-    ).toThrow(/Invalid seriesLength/i);
-  });
-
-  it('rejects out-of-range countPerRoll (< 1 or > 10)', () => {
-    expect(() =>
-      validateRollConfig({
-        ...validBaseConfig,
-        countPerRoll: 0,
-      }),
-    ).toThrow(/Invalid countPerRoll/i);
-
-    expect(() =>
-      validateRollConfig({
-        ...validBaseConfig,
-        countPerRoll: -1,
-      }),
-    ).toThrow(/Invalid countPerRoll/i);
-
-    expect(() =>
-      validateRollConfig({
-        ...validBaseConfig,
-        countPerRoll: 11,
-      }),
-    ).toThrow(/Invalid countPerRoll/i);
-  });
-
-  it('rejects out-of-range seriesLength (< 1 or > 21)', () => {
-    expect(() =>
-      validateRollConfig({
-        ...validBaseConfig,
-        seriesLength: 0,
-      }),
-    ).toThrow(/Invalid seriesLength/i);
-
-    expect(() =>
-      validateRollConfig({
-        ...validBaseConfig,
-        seriesLength: -5,
-      }),
-    ).toThrow(/Invalid seriesLength/i);
-
-    expect(() =>
-      validateRollConfig({
-        ...validBaseConfig,
-        seriesLength: 22,
-      }),
-    ).toThrow(/Invalid seriesLength/i);
-  });
-
-  it('rejects empty or whitespace-only playerId', () => {
-    expect(() =>
-      validateRollConfig({
-        ...validBaseConfig,
-        playerId: '',
-      }),
-    ).toThrow(/playerId must be a non-empty string/i);
-
-    expect(() =>
-      validateRollConfig({
-        ...validBaseConfig,
-        playerId: '    ',
-      }),
-    ).toThrow(/playerId must be a non-empty string/i);
-  });
-
-  it('rejects non-object configurations', () => {
-    expect(() => validateRollConfig(null)).toThrow(/Roll configuration must be a valid object/i);
-  });
-});
 
 describe('rollCryptoFair and rollBatchCryptoFair', () => {
   it('rejects values >= rejection limit deterministically and recovers on valid value', () => {

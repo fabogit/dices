@@ -17,7 +17,9 @@ import {
   DEFAULT_PLAYER,
   defaultStorage,
   hydratePersistedState,
+  MAX_HISTORY_ENTRIES,
   MAX_PLAYER_NAME_LENGTH,
+  MAX_QUICK_ROLLS,
   PLAYER_PALETTE,
   serializePersistedState,
   type RollStorage,
@@ -357,7 +359,7 @@ export class RollState {
 
       const round = computeRoundResult(index, values, faces, ts);
       this.quickRollCount += 1;
-      this.quickRolls = [round, ...this.quickRolls.slice(0, 24)];
+      this.quickRolls = [round, ...this.quickRolls.slice(0, MAX_QUICK_ROLLS - 1)];
 
       if (this.mode === 'quick') {
         if (round.kind === 'coin') {
@@ -417,7 +419,7 @@ export class RollState {
           rounds,
           Date.now(),
         );
-        this.history = [completedSummary, ...this.history.slice(0, 49)];
+        this.history = [completedSummary, ...this.history.slice(0, MAX_HISTORY_ENTRIES - 1)];
         this.saveState();
       }
 

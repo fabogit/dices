@@ -1,3 +1,5 @@
+import { ALLOWED_FACES, type RollConfig } from './types';
+
 export interface IntLimits {
   readonly min: number;
   readonly max: number;
@@ -21,4 +23,45 @@ export function isIntWithinLimits(value: unknown, limits: IntLimits): value is n
     value >= limits.min &&
     value <= limits.max
   );
+}
+
+function isObjectRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
+
+export function validateRollConfig(config: unknown): asserts config is RollConfig {
+  if (!isObjectRecord(config)) {
+    throw new Error('Roll configuration must be a valid object');
+  }
+
+  if (!(ALLOWED_FACES as readonly unknown[]).includes(config.faces)) {
+    throw new Error(
+      `Invalid faces count: ${String(config.faces)}. Allowed values are: ${ALLOWED_FACES.join(', ')}`,
+    );
+  }
+
+  if (!isIntWithinLimits(config.countPerRoll, COUNT_PER_ROLL_LIMITS)) {
+    throw new Error(
+      `Invalid countPerRoll: ${String(config.countPerRoll)}. Must be an integer between ${COUNT_PER_ROLL_LIMITS.min} and ${COUNT_PER_ROLL_LIMITS.max}`,
+    );
+  }
+
+  if (!isIntWithinLimits(config.seriesLength, SERIES_LENGTH_LIMITS)) {
+    throw new Error(
+      `Invalid seriesLength: ${String(config.seriesLength)}. Must be an integer between ${SERIES_LENGTH_LIMITS.min} and ${SERIES_LENGTH_LIMITS.max}`,
+    );
+  }
+
+  if (typeof config.playerId !== 'string' || config.playerId.trim().length === 0) {
+    throw new Error('playerId must be a non-empty string');
+  }
+}
+
+export function isValidRollConfig(value: unknown): value is RollConfig {
+  try {
+    validateRollConfig(value);
+    return true;
+  } catch {
+    return false;
+  }
 }
