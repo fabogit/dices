@@ -133,33 +133,23 @@ export default defineConfig(({ mode }) => ({
       'typescript/no-confusing-void-expression': 'off', // 35
       'eslint/no-await-in-loop': 'off', // 18
       'typescript/strict-boolean-expressions': 'off', // 14
-      'typescript/no-unsafe-assignment': 'off', // 10
       'eslint/max-lines': 'off', // 9
-      'typescript/no-unsafe-argument': 'off', // 9
       'unicorn/no-array-callback-reference': 'off', // 7
       'eslint/sort-vars': 'off', // 6
       'typescript/no-unsafe-member-access': 'off', // 5
       'eslint/require-await': 'off', // 4
-      'unicorn/prefer-string-replace-all': 'off', // 4
       'typescript/require-await': 'off', // 4
-      'typescript/no-unsafe-call': 'off', // 4
       'unicorn/prefer-query-selector': 'off', // 3
-      'unicorn/new-for-builtins': 'off', // 3
       'typescript/strict-void-return': 'off', // 3
       'unicorn/prefer-math-min-max': 'off', // 2
       'eslint/no-promise-executor-return': 'off', // 2
       'unicorn/no-immediate-mutation': 'off', // 2
       'oxc/no-map-spread': 'off', // 2
       'unicorn/no-useless-undefined': 'off', // 2
-      'typescript/no-unsafe-return': 'off', // 2
       'unicorn/prefer-number-coercion': 'off', // 1
-      'unicorn/prefer-import-meta-properties': 'off', // 1
       'unicorn/prefer-at': 'off', // 1
       'unicorn/prefer-dom-node-dataset': 'off', // 1
       'unicorn/no-object-as-default-parameter': 'off', // 1
-      'typescript/no-deprecated': 'off', // 1
-      'typescript/prefer-nullish-coalescing': 'off', // 1
-      'typescript/switch-exhaustiveness-check': 'off', // 1
       'typescript/require-array-sort-compare': 'error',
     },
     overrides: [

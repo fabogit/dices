@@ -9,7 +9,7 @@ describe('computeRoundResult', () => {
 
     expect(round).toEqual({
       kind: 'dice',
-      id: expect.any(String),
+      id: expect.any(String) as string,
       roundIndex: 0,
       values: [4, 6, 1, 5],
       sum: 16,

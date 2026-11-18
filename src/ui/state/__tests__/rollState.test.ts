@@ -4,6 +4,7 @@ import { computeSeriesSummary } from '../../../core/series-analytics';
 import type { PersistedStateV2, RollStorage } from '../../../core/persistence';
 import type { IRollProvider } from '../../../core/provider';
 import type { DieFaces } from '../../../core/types';
+import type { DiceArena3D } from '../../../three/DiceArena3D';
 import { RollState } from '../rollState.svelte';
 
 /**
@@ -15,13 +16,13 @@ function createDeferredArena() {
     resolveLanding?.();
     resolveLanding = undefined;
   };
-  const arena: any = {
+  const arena = {
     rollVisual: () =>
       new Promise<void>((resolve) => {
         resolveLanding = resolve;
       }),
     skipCurrentAnimation: land,
-  };
+  } as unknown as DiceArena3D;
   return { arena, land, isAnimating: () => resolveLanding !== undefined };
 }
 
@@ -401,7 +402,7 @@ describe('RollState Controller', () => {
     let rollVisualCalled = false;
     let skipAnimationCalled = false;
 
-    const mockArena: any = {
+    const mockArena = {
       rollVisual: async () => {
         rollVisualCalled = true;
       },
@@ -410,7 +411,7 @@ describe('RollState Controller', () => {
       },
       render: () => {},
       dispose: () => {},
-    };
+    } as unknown as DiceArena3D;
 
     state.setArena(mockArena);
     state.skipAnimation();
@@ -932,10 +933,10 @@ describe('RollState Controller', () => {
 
   it('keeps the rolled result when the 3D animation fails', async () => {
     const consoleError = vi.spyOn(console, 'error').mockImplementation(() => {});
-    const mockArena: any = {
+    const mockArena = {
       rollVisual: () => Promise.reject(new Error('DiceArena3D is disposed')),
       skipCurrentAnimation: () => {},
-    };
+    } as unknown as DiceArena3D;
     state.setArena(mockArena);
 
     try {
