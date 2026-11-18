@@ -125,7 +125,7 @@ export default defineConfig(({ mode }) => ({
     rules: {
       'eslint/no-underscore-dangle': 'off',
       // `perf` and `pedantic` are enabled above, but these rules still have violations today
-      // (count = diagnostics when enabled). Turn each back on after fixing its violations (#79).
+      // (count = diagnostics when enabled). Triage tracked in #91: fix and re-enable, or decline with a rationale.
       'eslint/require-unicode-regexp': 'off', // 222
       'typescript/prefer-readonly-parameter-types': 'off', // 208
       'eslint/max-lines-per-function': 'off', // 89
@@ -171,7 +171,7 @@ export default defineConfig(({ mode }) => ({
         plugins: ['vitest'],
         rules: {
           'typescript/no-unsafe-type-assertion': 'off',
-          // Still has violations (27) with `pedantic` enabled; see the note on the top-level rules (#79).
+          // Still has violations (27) with `pedantic` enabled; see the note on the top-level rules (#91).
           'vitest/no-conditional-in-test': 'off',
         },
       },
