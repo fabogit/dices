@@ -70,7 +70,7 @@ describe('Tabs primitive', () => {
     const panels = Array.from(container.querySelectorAll<HTMLElement>('[role="tabpanel"]'));
     expect(panels).toHaveLength(3);
     for (const tab of getAllByRole('tab')) {
-      const panelEl = document.getElementById(tab.getAttribute('aria-controls')!);
+      const panelEl = document.querySelector(`[id="${tab.getAttribute('aria-controls')!}"]`);
       expect(panelEl?.getAttribute('role')).toBe('tabpanel');
       expect(panelEl?.getAttribute('aria-labelledby')).toBe(tab.id);
     }
