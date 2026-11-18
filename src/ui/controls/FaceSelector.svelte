@@ -17,7 +17,7 @@
     if (disabled) return;
 
     const currentIndex = ALLOWED_FACES.indexOf(selectedFaces);
-    const startIndex = currentIndex >= 0 ? currentIndex : 0;
+    const startIndex = Math.max(currentIndex, 0);
     let nextIndex = -1;
 
     if (e.key === 'ArrowRight' || e.key === 'ArrowDown') {

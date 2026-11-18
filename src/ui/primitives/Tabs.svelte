@@ -20,7 +20,7 @@
 
   function handleKeyDown(e: KeyboardEvent) {
     const currentIndex = tabs.findIndex((t) => t.id === activeTab);
-    const startIndex = currentIndex >= 0 ? currentIndex : 0;
+    const startIndex = Math.max(currentIndex, 0);
     let nextIndex = -1;
 
     if (e.key === 'ArrowRight') {

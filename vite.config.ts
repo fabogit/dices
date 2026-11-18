@@ -147,8 +147,6 @@ export default defineConfig(({ mode }) => ({
       // and to turn synchronous throws into rejections.
       'eslint/require-await': 'off',
       'typescript/require-await': 'off',
-      // Deferred: violations in Tabs.svelte and FaceSelector.svelte; fix in 91b, after #75.
-      'unicorn/prefer-math-min-max': 'off',
       'typescript/require-array-sort-compare': 'error',
     },
     overrides: [
