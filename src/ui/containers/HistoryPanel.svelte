@@ -36,7 +36,10 @@
 
 <CollapsiblePanel
   as="aside"
-  variant="history"
+  class="surface-card"
+  --cp-gap="0.85rem"
+  --cp-body-gap="0.85rem"
+  --cp-header-gap="0.5rem"
   headingId={HEADING_ID}
   title="History & Leaderboard"
   collapsed={isCollapsed}

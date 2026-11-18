@@ -261,13 +261,13 @@ describe('CollapsiblePanel primitive', () => {
     expect(onToggleOne).toHaveBeenCalledOnce();
   });
 
-  it('supports semantic tags, headingLevel, badge/actions snippets, and custom toggle copy', async () => {
+  it('supports semantic tags, a root class, headingLevel, badge/actions snippets, and custom toggle copy', async () => {
     const onToggle = vi.fn<() => void>();
     const { container, getByRole, getByTestId, rerender } = render(CollapsiblePanel, {
       props: {
         as: 'aside',
+        class: 'surface-card',
         headingLevel: 'h3',
-        variant: 'arena',
         title: '3D Dice Arena',
         headingId: 'custom-arena-heading',
         bodyTestId: 'arena-body',
@@ -285,6 +285,9 @@ describe('CollapsiblePanel primitive', () => {
 
     const aside = container.querySelector('aside');
     expect(aside).toBeTruthy();
+    // The consumer class is appended to the primitive's own root class
+    expect(aside?.classList.contains('cp-root')).toBe(true);
+    expect(aside?.classList.contains('surface-card')).toBe(true);
     expect(aside?.getAttribute('aria-labelledby')).toBe('custom-arena-heading');
 
     const heading = container.querySelector('h3');
@@ -304,7 +307,6 @@ describe('CollapsiblePanel primitive', () => {
     await rerender({
       as: 'div',
       headingLevel: 'h3',
-      variant: 'analytics-nested',
       title: '3D Dice Arena',
       collapsed: true,
       onToggle,

@@ -23,7 +23,8 @@
   title="Quick Roll Feed"
   collapsed={isCollapsed}
   onToggle={() => (isCollapsed = !isCollapsed)}
-  variant="quick"
+  class="surface-card"
+  --cp-gap="0.85rem"
 >
   {#snippet badge()}
     <span class="count-badge">{rollState.quickRollCount} in session</span>

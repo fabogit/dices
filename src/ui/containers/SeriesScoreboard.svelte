@@ -11,10 +11,10 @@
   const summary = $derived(rollState.summary);
 </script>
 
-<section class="series-scoreboard" aria-labelledby="scoreboard-heading">
+<section class="series-scoreboard surface-card" aria-labelledby="scoreboard-heading">
   <CollapsiblePanel
     as="div"
-    variant="scoreboard"
+    --cp-title-wrap="wrap"
     headingId="scoreboard-heading"
     title="Live Series Scoreboard"
     collapsed={isCollapsed}
@@ -58,11 +58,6 @@
     display: flex;
     flex-direction: column;
     gap: 1rem;
-    padding: 1.25rem;
-    background: var(--surface-panel);
-    border: 1px solid var(--border-color);
-    border-radius: 0.75rem;
-    backdrop-filter: blur(8px);
   }
 
   .series-badge {

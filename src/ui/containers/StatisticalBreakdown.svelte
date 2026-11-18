@@ -12,10 +12,13 @@
   let isCollapsed = $state(false);
 </script>
 
-<section class="statistical-breakdown" aria-labelledby="analytics-heading">
+<section class="statistical-breakdown surface-card" aria-labelledby="analytics-heading">
   <CollapsiblePanel
     as="div"
-    variant="analytics"
+    --cp-gap="0.75rem"
+    --cp-body-gap="0.75rem"
+    --cp-heading-letter-spacing="-0.01em"
+    --cp-title-wrap="wrap"
     headingLevel="h2"
     headingId="analytics-heading"
     title="Statistical Breakdown ({dieLabel(rollState.seriesFaces)})"
@@ -68,11 +71,6 @@
     display: flex;
     flex-direction: column;
     gap: 1rem;
-    padding: 1.25rem;
-    background: var(--surface-panel);
-    border: 1px solid var(--border-color);
-    border-radius: 0.75rem;
-    backdrop-filter: blur(8px);
   }
 
   .dice-count-tag {

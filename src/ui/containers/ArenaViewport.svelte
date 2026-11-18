@@ -59,7 +59,8 @@
   title="3D Dice Arena"
   collapsed={isCollapsed}
   onToggle={toggleCollapse}
-  variant="arena"
+  --cp-gap="0.5rem"
+  --cp-body-gap="0.65rem"
   headingId="arena-heading"
   expandText="Show Arena"
   collapseText="Hide Arena"

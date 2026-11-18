@@ -1,20 +1,21 @@
 <script lang="ts">
   import type { Snippet } from 'svelte';
+  import type { ClassValue } from 'svelte/elements';
 
-  export type CollapsibleVariant =
-    | 'control'
-    | 'arena'
-    | 'scoreboard'
-    | 'analytics'
-    | 'analytics-nested'
-    | 'quick'
-    | 'history';
-
+  /**
+   * Styling hooks (the primitive knows nothing about its consumers):
+   * - `class` is applied to the root element, for shared global utilities such as `surface-card`.
+   * - CSS custom properties tune the internal layout; pass them as component props
+   *   (`--cp-gap="0.5rem"`) or set them on any ancestor:
+   *   `--cp-gap` (root, default 1rem), `--cp-body-gap` (body, default 1rem),
+   *   `--cp-header-gap` (header, default normal), `--cp-heading-letter-spacing` (default normal),
+   *   `--cp-title-wrap` (heading + badge row, default nowrap).
+   */
   interface Props {
     title: string;
     collapsed: boolean;
     onToggle: () => void;
-    variant?: CollapsibleVariant;
+    class?: ClassValue;
     as?: 'section' | 'aside' | 'div';
     headingLevel?: 'h2' | 'h3';
     headingId?: string;
@@ -32,7 +33,7 @@
     title,
     collapsed,
     onToggle,
-    variant = 'control',
+    class: className,
     as = 'section',
     headingLevel = 'h2',
     headingId,
@@ -57,7 +58,7 @@
 
 <svelte:element
   this={as}
-  class="cp-root variant-{variant}"
+  class={['cp-root', className]}
   aria-labelledby={as === 'div' ? undefined : resolvedHeadingId}
 >
   <div class="cp-header">
@@ -113,67 +114,21 @@
   .cp-root {
     display: flex;
     flex-direction: column;
-  }
-
-  /* Card surface shared by control, quick, history */
-  .cp-root.variant-control,
-  .cp-root.variant-quick,
-  .cp-root.variant-history {
-    padding: 1.25rem;
-    background: var(--surface-panel);
-    border: 1px solid var(--border-color);
-    border-radius: 0.75rem;
-    backdrop-filter: blur(8px);
-  }
-
-  .cp-root.variant-control {
-    gap: 1rem;
-  }
-
-  .cp-root.variant-quick,
-  .cp-root.variant-history {
-    gap: 0.85rem;
-  }
-
-  .cp-root.variant-arena {
-    gap: 0.5rem;
-    width: 100%;
-  }
-
-  .cp-root.variant-scoreboard {
-    gap: 1rem;
-  }
-
-  .cp-root.variant-analytics {
-    gap: 0.75rem;
-  }
-
-  .cp-root.variant-analytics-nested {
-    gap: 0.75rem;
-    padding-top: 0.5rem;
-    border-top: 1px solid rgba(75, 85, 99, 0.3);
+    gap: var(--cp-gap, 1rem);
   }
 
   .cp-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-  }
-
-  .cp-root.variant-history .cp-header {
-    gap: 0.5rem;
+    gap: var(--cp-header-gap, normal);
   }
 
   .cp-title-with-badge {
     display: flex;
+    flex-wrap: var(--cp-title-wrap, nowrap);
     align-items: center;
     gap: 0.5rem;
-  }
-
-  .cp-root.variant-scoreboard .cp-title-with-badge,
-  .cp-root.variant-analytics .cp-title-with-badge,
-  .cp-root.variant-analytics-nested .cp-title-with-badge {
-    flex-wrap: wrap;
   }
 
   .cp-heading {
@@ -181,17 +136,7 @@
     font-size: 1.15rem;
     font-weight: 700;
     color: var(--text-heading);
-  }
-
-  .cp-root.variant-control .cp-heading,
-  .cp-root.variant-analytics .cp-heading {
-    letter-spacing: -0.01em;
-  }
-
-  .cp-root.variant-analytics-nested .cp-heading {
-    font-size: 0.95rem;
-    color: var(--text-body);
-    letter-spacing: -0.01em;
+    letter-spacing: var(--cp-heading-letter-spacing, normal);
   }
 
   .cp-action-group {
@@ -229,29 +174,7 @@
   .cp-body {
     display: flex;
     flex-direction: column;
-  }
-
-  .cp-root.variant-control .cp-body {
-    gap: 1.25rem;
-  }
-
-  .cp-root.variant-arena .cp-body {
-    width: 100%;
-    gap: 0.65rem;
-  }
-
-  .cp-root.variant-scoreboard .cp-body,
-  .cp-root.variant-quick .cp-body {
-    gap: 1rem;
-  }
-
-  .cp-root.variant-analytics .cp-body,
-  .cp-root.variant-analytics-nested .cp-body {
-    gap: 0.75rem;
-  }
-
-  .cp-root.variant-history .cp-body {
-    gap: 0.85rem;
+    gap: var(--cp-body-gap, 1rem);
   }
 
   .cp-body.collapsed {

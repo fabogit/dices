@@ -33,7 +33,9 @@
   title="Dice & Series Setup"
   collapsed={isCollapsed}
   onToggle={() => (isCollapsed = !isCollapsed)}
-  variant="control"
+  class="surface-card"
+  --cp-body-gap="1.25rem"
+  --cp-heading-letter-spacing="-0.01em"
 >
   {#if rollState.isConfigLocked}
     <p class="lock-hint" role="note">Series in progress. Reset the series to change the setup.</p>
