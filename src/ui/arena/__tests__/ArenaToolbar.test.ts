@@ -37,7 +37,7 @@ describe('ArenaToolbar', () => {
     expect(toolbar).toBeTruthy();
 
     const flipSingle = getByRole('button', { name: /Flip Coin/ });
-    const clearBtn = getByRole('button', { name: 'Clear quick roll feed' });
+    const clearBtn = getByRole('button', { name: 'Clear feed of all quick rolls' });
     expect(clearBtn.hasAttribute('disabled')).toBe(true);
 
     await fireEvent.click(flipSingle);

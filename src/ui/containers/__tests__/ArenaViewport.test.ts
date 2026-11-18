@@ -195,7 +195,7 @@ describe('ArenaViewport container', () => {
     await tick();
     expect(getByText('TAILS')).toBeTruthy();
 
-    await fireEvent.click(getByRole('button', { name: 'Clear quick roll feed' }));
+    await fireEvent.click(getByRole('button', { name: 'Clear feed of all quick rolls' }));
     expect(rollState.quickRolls).toHaveLength(0);
   });
 

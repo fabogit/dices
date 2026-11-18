@@ -1,5 +1,6 @@
 <script lang="ts">
   import CollapsiblePanel from '../primitives/CollapsiblePanel.svelte';
+  import Dialog from '../primitives/Dialog.svelte';
   import EmptyState from '../primitives/EmptyState.svelte';
   import { getRollState } from '../state/rollStateContext';
   import HistoryList from '../history/HistoryList.svelte';
@@ -8,6 +9,20 @@
   const rollState = getRollState();
 
   let isCollapsed = $state(false);
+  let confirmOpen = $state(false);
+  let clearTrigger: HTMLButtonElement | undefined = $state();
+
+  const seriesCount = $derived(rollState.history.length);
+
+  function closeConfirm() {
+    confirmOpen = false;
+    clearTrigger?.focus();
+  }
+
+  function confirmClear() {
+    rollState.clearHistory();
+    closeConfirm();
+  }
 </script>
 
 <CollapsiblePanel
@@ -23,7 +38,8 @@
       <button
         type="button"
         class="clear-btn"
-        onclick={() => rollState.clearHistory()}
+        bind:this={clearTrigger}
+        onclick={() => (confirmOpen = true)}
         aria-label="Clear all completed series history"
       >
         Clear
@@ -42,6 +58,22 @@
   {/if}
 </CollapsiblePanel>
 
+<Dialog open={confirmOpen} title="Clear history?" onClose={closeConfirm}>
+  <p class="confirm-text">
+    This permanently deletes {seriesCount} completed series from History and the Leaderboard. This cannot
+    be undone.
+  </p>
+  <div class="confirm-actions">
+    <!-- svelte-ignore a11y_autofocus -->
+    <button type="button" class="confirm-btn cancel" autofocus onclick={closeConfirm}>
+      Cancel
+    </button>
+    <button type="button" class="confirm-btn danger" onclick={confirmClear}>
+      Delete history
+    </button>
+  </div>
+</Dialog>
+
 <style>
   .clear-btn {
     padding: 0.25rem 0.5rem;
@@ -58,6 +90,44 @@
     background: var(--surface-elevated);
     color: var(--color-danger);
     border-color: var(--color-danger-bold);
+  }
+
+  .confirm-text {
+    margin: 0 0 1rem 0;
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+  }
+
+  .confirm-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.5rem;
+  }
+
+  .confirm-btn {
+    padding: 0.5rem 1rem;
+    min-block-size: 36px;
+    border-radius: 0.375rem;
+    font-size: 0.85rem;
+    font-weight: 600;
+    cursor: pointer;
+  }
+
+  .confirm-btn.cancel {
+    background: transparent;
+    border: 1px solid var(--border-muted);
+    color: var(--text-secondary);
+  }
+
+  .confirm-btn.danger {
+    background: transparent;
+    border: 1px solid var(--color-danger-bold);
+    color: var(--color-danger-light);
+  }
+
+  .confirm-btn.danger:hover {
+    background: var(--color-danger-bold);
+    color: var(--text-white);
   }
 
   button:focus-visible {

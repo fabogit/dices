@@ -38,7 +38,7 @@ describe('QuickRollFeed', () => {
     expect(diceRow.getByText('2, 5')).toBeTruthy();
     expect(diceRow.getByText('7')).toBeTruthy();
 
-    const clearBtn = getByRole('button', { name: 'Clear quick roll feed' });
+    const clearBtn = getByRole('button', { name: 'Clear quick roll feed list' });
     expect(clearBtn.hasAttribute('disabled')).toBe(false);
     await fireEvent.click(clearBtn);
     expect(onClear).toHaveBeenCalledOnce();

@@ -53,7 +53,7 @@ test.describe('Quick Roll Mode Flow', () => {
     await expect(feedItems).toHaveCount(2);
 
     // Clear feed via toolbar clear button
-    const clearFeedBtn = toolbar.getByRole('button', { name: 'Clear quick roll feed' });
+    const clearFeedBtn = toolbar.getByRole('button', { name: 'Clear feed of all quick rolls' });
     await expect(clearFeedBtn).toBeEnabled();
     await clearFeedBtn.click();
 

@@ -30,6 +30,12 @@ async function completeSeries(times: number): Promise<void> {
   await tick();
 }
 
+async function openConfirm(getByRole: (r: string, o?: object) => HTMLElement) {
+  await fireEvent.click(getByRole('button', { name: 'Clear all completed series history' }));
+  await tick();
+  return getByRole('dialog', { name: 'Clear history?' });
+}
+
 describe('HistoryPanel container', () => {
   afterEach(() => {
     rollState.dispose();
@@ -54,11 +60,59 @@ describe('HistoryPanel container', () => {
     expect(getAllByRole('button', { name: 'Clear all completed series history' })).toHaveLength(1);
   });
 
-  it('clears the history through the store and persists it', async () => {
-    const { getByRole, getByText } = renderPanel([3]);
+  it('asks for confirmation with the series count before clearing', async () => {
+    const { getByRole } = renderPanel([3], [4]);
+    await completeSeries(2);
+
+    const dialog = await openConfirm(getByRole);
+
+    expect(dialog.textContent).toContain('deletes 2 completed series');
+    expect(rollState.history).toHaveLength(2);
+  });
+
+  it('shows the count for a single series', async () => {
+    const { getByRole } = renderPanel([3]);
     await completeSeries(1);
 
-    await fireEvent.click(getByRole('button', { name: 'Clear all completed series history' }));
+    const dialog = await openConfirm(getByRole);
+
+    expect(dialog.textContent).toContain('deletes 1 completed series');
+  });
+
+  it('keeps history and storage when cancelled', async () => {
+    const { getByRole, queryByRole } = renderPanel([3]);
+    await completeSeries(1);
+    const trigger = getByRole('button', { name: 'Clear all completed series history' });
+    await openConfirm(getByRole);
+
+    await fireEvent.click(getByRole('button', { name: 'Cancel' }));
+    await tick();
+
+    expect(rollState.history).toHaveLength(1);
+    expect(storage.load()).toMatchObject({ history: [expect.anything()] });
+    expect(queryByRole('dialog')).toBeNull();
+    expect(document.activeElement).toBe(trigger);
+  });
+
+  it('keeps history when the dialog is dismissed with Escape', async () => {
+    const { getByRole } = renderPanel([3]);
+    await completeSeries(1);
+    const dialog = await openConfirm(getByRole);
+
+    await fireEvent.keyDown(dialog, { key: 'Escape' });
+    (dialog as HTMLDialogElement).close();
+    await tick();
+
+    expect(rollState.history).toHaveLength(1);
+  });
+
+  it('clears the history through the store and persists it once confirmed', async () => {
+    const { getByRole, getByText } = renderPanel([3]);
+    await completeSeries(1);
+    await openConfirm(getByRole);
+
+    await fireEvent.click(getByRole('button', { name: 'Delete history' }));
+    await tick();
 
     expect(rollState.history).toEqual([]);
     expect(storage.load()).toMatchObject({ history: [] });
