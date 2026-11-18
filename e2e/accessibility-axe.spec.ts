@@ -7,15 +7,10 @@ import { test, expect, type Page } from '@playwright/test';
  * rule globally.
  */
 /**
- * Known violations, each scoped to one rule on one node. Remove an entry when the app is fixed.
- * - label-content-name-mismatch on the quick toolbar clear button (axe reports its selector as
- *   .secondary-btn, the only node flagged): visible text "Clear Feed"
- *   vs aria-label "Clear quick roll feed" (WCAG 2.5.3, label in name). The duplicated accessible
- *   name of the two clear-feed buttons is tracked in #81.
+ * Known violations, each scoped to one rule on one node, tied to an owning ticket.
+ * Remove an entry when the app is fixed. Currently none.
  */
-const KNOWN_VIOLATIONS: ReadonlyArray<{ rule: string; target: string }> = [
-  { rule: 'label-content-name-mismatch', target: '.secondary-btn' },
-];
+const KNOWN_VIOLATIONS: ReadonlyArray<{ rule: string; target: string }> = [];
 
 async function scan(page: Page) {
   const results = await new AxeBuilder({ page })
@@ -63,6 +58,21 @@ test.describe('Accessibility (axe-core)', () => {
     await page.goto('/');
     await page.getByRole('button', { name: 'Add new local player' }).click();
     await expect(page.getByRole('dialog', { name: 'Add Local Player' })).toBeVisible();
+    expect(await scan(page)).toEqual([]);
+  });
+
+  test('clear-history confirm dialog has no violations', async ({ page }) => {
+    await page.goto('/');
+    await page.getByRole('button', { name: 'Single (1)' }).click();
+    const rollBtn = page.getByRole('toolbar', { name: 'Roll controls' }).getByRole('button', {
+      name: /Roll Round|Roll \d+d\d+|Flip|Series Complete/,
+    });
+    await rollBtn.click();
+    await expect(rollBtn).toHaveText(/Series Complete/i);
+
+    await page.getByRole('tab', { name: /History/i }).click();
+    await page.getByRole('button', { name: 'Clear all completed series history' }).click();
+    await expect(page.getByRole('dialog', { name: 'Clear history?' })).toBeVisible();
     expect(await scan(page)).toEqual([]);
   });
 });
