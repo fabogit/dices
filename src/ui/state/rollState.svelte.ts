@@ -207,7 +207,7 @@ export class RollState {
   }
 
   get latestRound(): RoundResult | null {
-    return this.series.rounds.length > 0 ? this.series.rounds[this.series.rounds.length - 1] : null;
+    return this.series.rounds.at(-1) ?? null;
   }
 
   get latestQuickRoll(): RoundResult | null {
@@ -471,7 +471,9 @@ export class RollState {
 
         if (!this.isComplete && isActive() && !this.instantMode) {
           // Brief pause between animated rounds
-          await new Promise((resolve) => setTimeout(resolve, 450));
+          await new Promise((resolve) => {
+            setTimeout(resolve, 450);
+          });
         }
       }
     } finally {

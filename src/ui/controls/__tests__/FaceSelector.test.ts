@@ -133,12 +133,12 @@ describe('FaceSelector', () => {
 
   it('falls back to index 0 when selectedFaces is not in ALLOWED_FACES', async () => {
     const onSelect = vi.fn<(faces: DieFaces) => void>();
+    const invalidFaces: unknown = 99;
     const props: ComponentProps<typeof FaceSelector> = {
-      selectedFaces: 6,
+      selectedFaces: invalidFaces as DieFaces,
       disabled: false,
       onSelect,
     };
-    Object.assign(props, { selectedFaces: 99 });
 
     const { getByRole } = render(FaceSelector, { props });
     const coinRadio = getByRole('radio', { name: 'Coin (d2)' });

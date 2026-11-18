@@ -139,17 +139,8 @@ export default defineConfig(({ mode }) => ({
       'typescript/no-unsafe-member-access': 'off', // 5
       'eslint/require-await': 'off', // 4
       'typescript/require-await': 'off', // 4
-      'unicorn/prefer-query-selector': 'off', // 3
-      'typescript/strict-void-return': 'off', // 3
       'unicorn/prefer-math-min-max': 'off', // 2
-      'eslint/no-promise-executor-return': 'off', // 2
-      'unicorn/no-immediate-mutation': 'off', // 2
       'oxc/no-map-spread': 'off', // 2
-      'unicorn/no-useless-undefined': 'off', // 2
-      'unicorn/prefer-number-coercion': 'off', // 1
-      'unicorn/prefer-at': 'off', // 1
-      'unicorn/prefer-dom-node-dataset': 'off', // 1
-      'unicorn/no-object-as-default-parameter': 'off', // 1
       'typescript/require-array-sort-compare': 'error',
     },
     overrides: [
