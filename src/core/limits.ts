@@ -11,6 +11,12 @@ export const COUNT_PER_ROLL_LIMITS = { min: 1, max: 10 } as const satisfies IntL
 /** Number of rounds in a series. */
 export const SERIES_LENGTH_LIMITS = { min: 1, max: 21 } as const satisfies IntLimits;
 
+/** Completed series kept in memory and in storage, newest first. */
+export const MAX_HISTORY_ENTRIES = 50;
+
+/** Quick-roll results kept in the feed, newest first (not persisted). */
+export const MAX_QUICK_ROLLS = 25;
+
 /** Rounds a finite number to the nearest integer and clamps it into `limits`. */
 export function clampInt(value: number, limits: IntLimits): number {
   return Math.min(limits.max, Math.max(limits.min, Math.round(value)));

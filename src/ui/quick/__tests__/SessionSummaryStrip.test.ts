@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vite-plus/test';
 import { render } from '@testing-library/svelte';
-import { computeQuickRollSessionStats, computeRoundResult } from '../../../core/engine';
+import { computeQuickRollSessionStats } from '../../../core/quick-stats';
+import { computeRoundResult } from '../../../core/round';
 import SessionSummaryStrip from '../SessionSummaryStrip.svelte';
 
 describe('SessionSummaryStrip', () => {

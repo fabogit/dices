@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { getCoinSplitPercentages } from '../../core/engine';
+  import { getCoinSplitPercentages } from '../../core/series-analytics';
   import type { SeriesSummary } from '../../core/types';
   import { dieLabel, formatTime } from '../../lib/format';
 

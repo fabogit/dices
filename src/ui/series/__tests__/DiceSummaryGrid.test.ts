@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vite-plus/test';
 import { render } from '@testing-library/svelte';
-import { computeRoundResult, computeSeriesSummary } from '../../../core/engine';
+import { computeRoundResult } from '../../../core/round';
+import { computeSeriesSummary } from '../../../core/series-analytics';
 import type { DiceRollConfig } from '../../../core/types';
 import DiceSummaryGrid from '../DiceSummaryGrid.svelte';
 

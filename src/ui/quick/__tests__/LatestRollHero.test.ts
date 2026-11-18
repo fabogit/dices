@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vite-plus/test';
 import { render, within } from '@testing-library/svelte';
-import { computeQuickRollStats, computeRoundResult } from '../../../core/engine';
+import { computeQuickRollStats } from '../../../core/quick-stats';
+import { computeRoundResult } from '../../../core/round';
 import LatestRollHero from '../LatestRollHero.svelte';
 
 describe('LatestRollHero', () => {

@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { getCoinSplitPercentages } from '../../core/engine';
+  import { getCoinSplitPercentages } from '../../core/series-analytics';
   import type { CoinSeriesSummary } from '../../core/types';
 
   interface Props {

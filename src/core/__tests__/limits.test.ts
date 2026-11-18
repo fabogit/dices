@@ -5,10 +5,8 @@ import {
   clampInt,
   isIntWithinLimits,
   validateRollConfig,
-  ALLOWED_FACES,
-  type DieFaces,
-  type RollConfig,
-} from '..';
+} from '../limits';
+import { ALLOWED_FACES, type DieFaces, type RollConfig } from '../types';
 
 describe('roll limits', () => {
   it('exposes the documented bounds', () => {

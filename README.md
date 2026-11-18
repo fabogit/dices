@@ -53,7 +53,7 @@ The architecture cleanly decouples mathematical random generation, domain statis
                     ┌──────────────────┴──────────────────┐
                     ▼                                     ▼
 ┌───────────────────────────────────────┐  ┌──────────────────────────────────────────────────────────┐
-│    Pure Domain Analytics (engine.ts)  │  │                DiceArena3D (DiceArena3D.ts)              │
+│    Pure Domain Analytics (core/*.ts)  │  │                DiceArena3D (DiceArena3D.ts)              │
 │ - Round Evaluation & Mode Calculation │  │ - Three.js PerspectiveCamera, Scene, & WebGLRenderer     │
 │ - Quick Roll & Session Statistics     │  │ - Procedural Mesh Factory (geometries.ts)                │
 │ - Series Analytics (Δ, σ, Criticals)  │  │ - Face Normal Alignment to Quaternion Math               │
@@ -151,7 +151,7 @@ The rejection probability is mathematically negligible while ensuring 100% unifo
 
 ### 4. Statistical Breakdown & Player Leaderboard
 
-For every completed series, `computeSeriesSummary` in `src/core/engine.ts` computes an exhaustive analytical breakdown:
+For every completed series, `computeSeriesSummary` in `src/core/series-analytics.ts` computes an exhaustive analytical breakdown:
 
 - **Theoretical Expectation:** $E[\text{Round Sum}] = M \times \frac{N + 1}{2}$.
 - **Average Delta ($\Delta$):** Observed mean round sum minus theoretical expectation ($\bar{s} - E$).

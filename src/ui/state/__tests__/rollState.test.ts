@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vite-plus/test';
-import { computeRoundResult, computeSeriesSummary } from '../../../core/engine';
+import { computeRoundResult } from '../../../core/round';
+import { computeSeriesSummary } from '../../../core/series-analytics';
 import type { PersistedStateV2, RollStorage } from '../../../core/persistence';
 import type { IRollProvider } from '../../../core/provider';
 import type { DieFaces } from '../../../core/types';
