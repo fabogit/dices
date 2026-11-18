@@ -3,8 +3,10 @@
   import CollapsiblePanel from '../primitives/CollapsiblePanel.svelte';
   import DeltaBadge from '../primitives/DeltaBadge.svelte';
   import StatBox from '../primitives/StatBox.svelte';
-  import { rollState } from '../state/rollState.svelte';
+  import { getRollState } from '../state/rollStateContext';
   import DistributionChart from './DistributionChart.svelte';
+
+  const rollState = getRollState();
 
   const analytics = $derived(rollState.summary.analytics);
   let isCollapsed = $state(false);

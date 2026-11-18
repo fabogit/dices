@@ -2,8 +2,10 @@
   import CollapsiblePanel from '../primitives/CollapsiblePanel.svelte';
   import RangeStepper from '../primitives/RangeStepper.svelte';
   import { COUNT_PER_ROLL_LIMITS, SERIES_LENGTH_LIMITS } from '../../core/limits';
-  import { rollState } from '../state/rollState.svelte';
+  import { getRollState } from '../state/rollStateContext';
   import FaceSelector from './FaceSelector.svelte';
+
+  const rollState = getRollState();
 
   const PRESETS: Array<{ label: string; length: number }> = [
     { label: 'Single (1)', length: 1 },

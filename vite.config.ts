@@ -18,8 +18,12 @@ const CONTAINER_TEST_FILES = CONTAINER_FILES.map((file) =>
   file.replace(/\/([^/]+)\.svelte$/, '/__tests__/$1.test.ts'),
 );
 
+// Basename glob: matches both the store module (rollState.svelte) and its context accessor
+// (rollStateContext: getRollState/setRollState), so presentational folders cannot reach the store.
+const ROLL_STATE_IMPORTS = '*rollState*';
+
 const NO_ROLL_STATE_MESSAGE =
-  'Presentational subcomponents must not import rollState; pass typed props and callbacks from a panel container.';
+  'Presentational subcomponents must not import rollState or getRollState; pass typed props and callbacks from a panel container.';
 
 export default defineConfig(({ mode }) => ({
   plugins: [svelte(), ...(mode === 'test' ? [svelteTesting()] : [])],
@@ -115,9 +119,9 @@ export default defineConfig(({ mode }) => ({
             {
               patterns: [
                 {
-                  group: ['*rollState*', '**/lib/*', '../lib/*', '../../lib/*'],
+                  group: [ROLL_STATE_IMPORTS, '**/lib/*', '../lib/*', '../../lib/*'],
                   message:
-                    'Presentational primitives must not import rollState or lib helpers; pass typed props and callbacks instead.',
+                    'Presentational primitives must not import rollState, getRollState or lib helpers; pass typed props and callbacks instead.',
                 },
               ],
             },
@@ -138,7 +142,7 @@ export default defineConfig(({ mode }) => ({
             {
               patterns: [
                 {
-                  group: ['*rollState*'],
+                  group: [ROLL_STATE_IMPORTS],
                   message: NO_ROLL_STATE_MESSAGE,
                 },
               ],
@@ -154,7 +158,7 @@ export default defineConfig(({ mode }) => ({
             {
               patterns: [
                 {
-                  group: ['*rollState*'],
+                  group: [ROLL_STATE_IMPORTS],
                   message: NO_ROLL_STATE_MESSAGE,
                 },
                 {
@@ -168,7 +172,7 @@ export default defineConfig(({ mode }) => ({
         },
       },
       {
-        // Containers and their tests are the only UI files allowed to touch the rollState singleton
+        // Containers and their tests are the only UI files allowed to read the store (getRollState)
         files: [...CONTAINER_FILES, ...CONTAINER_TEST_FILES],
         rules: {
           'no-restricted-imports': 'off',

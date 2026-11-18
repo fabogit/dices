@@ -3,7 +3,9 @@
   import CoinSummaryCards from './CoinSummaryCards.svelte';
   import DiceSummaryGrid from './DiceSummaryGrid.svelte';
   import RoundsTable from './RoundsTable.svelte';
-  import { rollState } from '../state/rollState.svelte';
+  import { getRollState } from '../state/rollStateContext';
+
+  const rollState = getRollState();
 
   let isCollapsed = $state(false);
   const summary = $derived(rollState.summary);

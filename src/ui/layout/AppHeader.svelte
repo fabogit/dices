@@ -2,7 +2,9 @@
   import { MAX_PLAYER_NAME_LENGTH } from '../../core/persistence';
   import Dialog from '../primitives/Dialog.svelte';
   import type { AddPlayerResult } from '../state/rollState.svelte';
-  import { rollState } from '../state/rollState.svelte';
+  import { getRollState } from '../state/rollStateContext';
+
+  const rollState = getRollState();
 
   let showAddPlayerModal = $state(false);
   let newPlayerName = $state('');

@@ -1,12 +1,11 @@
-import {
-  ALLOWED_FACES,
-  type AppMode,
-  type DieFaces,
-  type Player,
-  type PlayerLeaderboardEntry,
-  type RollConfig,
-  type RoundResult,
-  type SeriesSummary,
+import type {
+  AppMode,
+  DieFaces,
+  Player,
+  PlayerLeaderboardEntry,
+  RollConfig,
+  RoundResult,
+  SeriesSummary,
 } from '../../core/types';
 import {
   computePlayerLeaderboard,
@@ -74,7 +73,8 @@ export class RollState {
 
   // History & Single Source of Truth for the Active/Current Series
   history: SeriesSummary[] = $state([]);
-  private series: SeriesState = $state.raw(this.createSeriesState());
+  // Created once in the constructor, after the persisted active player is hydrated
+  private series: SeriesState;
 
   // Session-only Quick Rolls (Quick mode, feed capped at 25)
   quickRolls: RoundResult[] = $state([]);
@@ -98,7 +98,7 @@ export class RollState {
     this.players = hydrated.players;
     this.activePlayerId = hydrated.activePlayerId;
     this.history = hydrated.history;
-    this.series = this.createSeriesState();
+    this.series = $state.raw(this.createSeriesState());
     this.setupMotionMediaListener();
   }
 
@@ -151,8 +151,9 @@ export class RollState {
   }
 
   /**
-   * Releases the OS reduced-motion listener. Idempotent. The app singleton lives for the whole
-   * page lifetime and is never disposed; call this for short-lived instances (e.g. tests).
+   * Releases the OS reduced-motion listener. Idempotent. The app root instance (created in
+   * `main.ts`) lives for the whole page lifetime and is never disposed; call this for
+   * short-lived instances (e.g. tests).
    */
   dispose(): void {
     this.motionListenerAbort?.abort();
@@ -526,6 +527,3 @@ export class RollState {
     this.announcerMessage = 'Roll history cleared.';
   }
 }
-
-export { ALLOWED_FACES };
-export const rollState = new RollState();

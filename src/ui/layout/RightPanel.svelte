@@ -4,7 +4,9 @@
   import QuickResultPanel from '../quick/QuickResultPanel.svelte';
   import SeriesScoreboard from '../series/SeriesScoreboard.svelte';
   import StatisticalBreakdown from '../series/StatisticalBreakdown.svelte';
-  import { rollState } from '../state/rollState.svelte';
+  import { getRollState } from '../state/rollStateContext';
+
+  const rollState = getRollState();
 
   type RightPanelTab = 'scoreboard' | 'analytics' | 'history';
 
