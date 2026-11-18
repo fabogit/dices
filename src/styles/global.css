@@ -19,6 +19,15 @@ body {
   white-space: nowrap !important;
 }
 
+/* Card surface shared by the top-level panels (layout stays with each component) */
+.surface-card {
+  padding: 1.25rem;
+  background: var(--surface-panel);
+  border: 1px solid var(--border-color);
+  border-radius: 0.75rem;
+  backdrop-filter: blur(8px);
+}
+
 .collapse-toggle-btn {
   display: inline-flex;
   align-items: center;

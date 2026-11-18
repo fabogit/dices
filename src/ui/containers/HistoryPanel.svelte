@@ -9,7 +9,13 @@
 
   const rollState = getRollState();
 
-  let isCollapsed = $state(false);
+  interface Props {
+    /** Bindable so RightPanel can keep it while this panel is unmounted by a mode switch. */
+    collapsed?: boolean;
+  }
+
+  let { collapsed = $bindable(false) }: Props = $props();
+
   let confirmOpen = $state(false);
   let clearTrigger: HTMLButtonElement | undefined = $state();
 
@@ -35,12 +41,14 @@
 </script>
 
 <CollapsiblePanel
+  bind:collapsed
   as="aside"
-  variant="history"
+  class="surface-card"
+  --cp-gap="0.85rem"
+  --cp-body-gap="0.85rem"
+  --cp-header-gap="0.5rem"
   headingId={HEADING_ID}
   title="History & Leaderboard"
-  collapsed={isCollapsed}
-  onToggle={() => (isCollapsed = !isCollapsed)}
 >
   {#snippet actions()}
     {#if rollState.history.length > 0}

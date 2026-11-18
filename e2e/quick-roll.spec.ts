@@ -61,4 +61,36 @@ test.describe('Quick Roll Mode Flow', () => {
     await expect(quickPanel.getByText('Ready to Roll', { exact: true })).toBeVisible();
     await expect(feedItems).toHaveCount(0);
   });
+
+  test('keeps the right-hand panels collapsed across a Quick Roll <-> Series round trip', async ({
+    page,
+  }) => {
+    await page.goto('/');
+
+    const modeGroup = page.getByRole('group', { name: 'Application mode' });
+    const quickModeBtn = modeGroup.getByRole('button', { name: /Quick Roll/i });
+    const seriesModeBtn = modeGroup.getByRole('button', { name: /Series/i });
+
+    // The toggle's accessible name flips with its state, so match both names
+    const scoreboardToggle = page.getByRole('button', { name: /Live Series Scoreboard$/ });
+    const quickToggle = page.getByRole('button', { name: /Quick Roll Feed$/ });
+
+    await expect(scoreboardToggle).toHaveAttribute('aria-expanded', 'true');
+    await scoreboardToggle.click();
+    await expect(scoreboardToggle).toHaveAttribute('aria-expanded', 'false');
+
+    await quickModeBtn.click();
+    await expect(quickToggle).toHaveAttribute('aria-expanded', 'true');
+    await quickToggle.click();
+    await expect(quickToggle).toHaveAttribute('aria-expanded', 'false');
+    await expect(page.getByText('Ready to Roll', { exact: true })).toBeHidden();
+
+    await seriesModeBtn.click();
+    await expect(scoreboardToggle).toHaveAttribute('aria-expanded', 'false');
+    await expect(page.getByRole('progressbar', { name: /Series round completion/ })).toBeHidden();
+
+    await quickModeBtn.click();
+    await expect(quickToggle).toHaveAttribute('aria-expanded', 'false');
+    await expect(page.getByText('Ready to Roll', { exact: true })).toBeHidden();
+  });
 });

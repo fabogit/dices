@@ -220,15 +220,10 @@ describe('Tabs primitive', () => {
 });
 
 describe('CollapsiblePanel primitive', () => {
-  it('assigns unique $props.id() values across multiple instances and toggles aria-expanded', async () => {
-    const onToggleOne = vi.fn<() => void>();
-    const onToggleTwo = vi.fn<() => void>();
-
+  it('assigns unique $props.id() values across multiple instances and wires aria-expanded', () => {
     const first = render(CollapsiblePanel, {
       props: {
         title: 'First Panel',
-        collapsed: false,
-        onToggle: onToggleOne,
         children: htmlSnippet('<p>Body One</p>'),
       },
     });
@@ -237,7 +232,6 @@ describe('CollapsiblePanel primitive', () => {
       props: {
         title: 'Second Panel',
         collapsed: true,
-        onToggle: onToggleTwo,
         children: htmlSnippet('<p>Body Two</p>'),
       },
     });
@@ -251,28 +245,64 @@ describe('CollapsiblePanel primitive', () => {
     expect(controlsTwo).toBeTruthy();
     expect(controlsOne).not.toBe(controlsTwo);
 
+    // Without a `collapsed` prop the panel starts expanded
     expect(btnOne.getAttribute('aria-expanded')).toBe('true');
     expect(btnTwo.getAttribute('aria-expanded')).toBe('false');
 
     const bodyTwo = document.querySelector(`[id="${controlsTwo!}"]`);
     expect(bodyTwo?.classList.contains('collapsed')).toBe(true);
-
-    await fireEvent.click(btnOne);
-    expect(onToggleOne).toHaveBeenCalledOnce();
   });
 
-  it('supports semantic tags, headingLevel, badge/actions snippets, and custom toggle copy', async () => {
-    const onToggle = vi.fn<() => void>();
+  it('toggles its own state when the consumer does not bind collapsed', async () => {
+    const { getByRole, getByTestId } = render(CollapsiblePanel, {
+      props: {
+        title: 'Setup',
+        bodyTestId: 'setup-body',
+        children: htmlSnippet('<p>Body</p>'),
+      },
+    });
+
+    await fireEvent.click(getByRole('button', { name: 'Hide Setup' }));
+    const showBtn = getByRole('button', { name: 'Show Setup' });
+    expect(showBtn.getAttribute('aria-expanded')).toBe('false');
+    expect(showBtn.textContent).toContain('Show');
+    expect(getByTestId('setup-body').classList.contains('collapsed')).toBe(true);
+
+    await fireEvent.click(showBtn);
+    expect(getByRole('button', { name: 'Hide Setup' }).getAttribute('aria-expanded')).toBe('true');
+    expect(getByTestId('setup-body').classList.contains('collapsed')).toBe(false);
+  });
+
+  it('writes the toggled state back through bind:collapsed', async () => {
+    // Accessor props are what `bind:collapsed` compiles to in a parent component. The getter
+    // is not reactive here, so only the write-back is asserted; RightPanel tests the full loop.
+    const writes: boolean[] = [];
+    const { getByRole } = render(CollapsiblePanel, {
+      props: {
+        title: 'History',
+        get collapsed() {
+          return true;
+        },
+        set collapsed(next: boolean) {
+          writes.push(next);
+        },
+        children: htmlSnippet('<p>Body</p>'),
+      },
+    });
+
+    await fireEvent.click(getByRole('button', { name: 'Show History' }));
+    expect(writes).toEqual([false]);
+  });
+
+  it('supports semantic tags, a root class, headingLevel, badge/actions snippets, and custom toggle copy', async () => {
     const { container, getByRole, getByTestId, rerender } = render(CollapsiblePanel, {
       props: {
         as: 'aside',
+        class: 'surface-card',
         headingLevel: 'h3',
-        variant: 'arena',
         title: '3D Dice Arena',
         headingId: 'custom-arena-heading',
         bodyTestId: 'arena-body',
-        collapsed: false,
-        onToggle,
         expandText: 'Show Arena',
         collapseText: 'Hide Arena',
         expandAriaLabel: 'Show Arena for 3D Dice',
@@ -285,6 +315,9 @@ describe('CollapsiblePanel primitive', () => {
 
     const aside = container.querySelector('aside');
     expect(aside).toBeTruthy();
+    // The consumer class is appended to the primitive's own root class
+    expect(aside?.classList.contains('cp-root')).toBe(true);
+    expect(aside?.classList.contains('surface-card')).toBe(true);
     expect(aside?.getAttribute('aria-labelledby')).toBe('custom-arena-heading');
 
     const heading = container.querySelector('h3');
@@ -297,17 +330,17 @@ describe('CollapsiblePanel primitive', () => {
     expect(collapseBtn.textContent).toContain('Hide Arena');
     expect(getByTestId('arena-body').classList.contains('collapsed')).toBe(false);
 
-    // The toggle rendered next to the actions snippet must also fire onToggle
+    // The toggle rendered next to the actions snippet must also toggle the panel
     await fireEvent.click(collapseBtn);
-    expect(onToggle).toHaveBeenCalledOnce();
+    const expandBtn = getByRole('button', { name: 'Show Arena for 3D Dice' });
+    expect(expandBtn.textContent).toContain('Show Arena');
+    expect(getByTestId('arena-body').classList.contains('collapsed')).toBe(true);
 
     await rerender({
       as: 'div',
       headingLevel: 'h3',
-      variant: 'analytics-nested',
       title: '3D Dice Arena',
-      collapsed: true,
-      onToggle,
+      collapsed: false,
       expandText: 'Show Arena',
       collapseText: 'Hide Arena',
       expandAriaLabel: 'Show Arena for 3D Dice',
@@ -318,8 +351,8 @@ describe('CollapsiblePanel primitive', () => {
     const divRoot = container.querySelector('.cp-root');
     expect(divRoot?.tagName.toLowerCase()).toBe('div');
     expect(divRoot?.getAttribute('aria-labelledby')).toBeNull();
-    expect(getByRole('button', { name: 'Show Arena for 3D Dice' }).textContent).toContain(
-      'Show Arena',
+    expect(getByRole('button', { name: 'Hide Arena for 3D Dice' }).textContent).toContain(
+      'Hide Arena',
     );
   });
 
@@ -328,8 +361,6 @@ describe('CollapsiblePanel primitive', () => {
       props: {
         as: 'div',
         title: 'Inline Section',
-        collapsed: false,
-        onToggle: vi.fn<() => void>(),
         children: htmlSnippet('<div>Body</div>'),
       },
     });
