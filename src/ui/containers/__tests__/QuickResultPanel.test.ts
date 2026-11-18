@@ -70,7 +70,7 @@ describe('QuickResultPanel container', () => {
     const { getByRole, getByText } = renderPanel([5]);
     await quickRoll(1);
 
-    await fireEvent.click(getByRole('button', { name: 'Clear quick roll feed' }));
+    await fireEvent.click(getByRole('button', { name: 'Clear quick roll feed list' }));
 
     expect(rollState.quickRolls).toEqual([]);
     expect(getByText('0 in session')).toBeTruthy();

@@ -58,9 +58,9 @@
       class="action-btn secondary-btn btn-clear-quick"
       disabled={isRolling || quickRollsCount === 0}
       onclick={onClearQuickRolls}
-      aria-label="Clear quick roll feed"
+      aria-label="Clear feed of all quick rolls"
     >
-      ↺ Clear Feed
+      <span aria-hidden="true">↺</span> Clear Feed
     </button>
   {:else}
     <button

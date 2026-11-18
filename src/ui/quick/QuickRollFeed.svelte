@@ -21,7 +21,7 @@
       class="clear-feed-btn"
       disabled={isRolling}
       onclick={onClear}
-      aria-label="Clear quick roll feed"
+      aria-label="Clear quick roll feed list"
     >
       Clear
     </button>
