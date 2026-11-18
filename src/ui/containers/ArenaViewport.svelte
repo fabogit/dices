@@ -3,8 +3,8 @@
   import type { DiceArena3D } from '../../three/DiceArena3D';
   import CollapsiblePanel from '../primitives/CollapsiblePanel.svelte';
   import { getRollState } from '../state/rollStateContext';
-  import ArenaHud from './ArenaHud.svelte';
-  import ArenaToolbar from './ArenaToolbar.svelte';
+  import ArenaHud from '../arena/ArenaHud.svelte';
+  import ArenaToolbar from '../arena/ArenaToolbar.svelte';
 
   const rollState = getRollState();
 
@@ -76,7 +76,7 @@
       isComplete={rollState.isComplete}
       instantMode={rollState.instantMode}
       roundsCount={rollState.rounds.length}
-      seriesLength={rollState.seriesLength}
+      seriesLength={rollState.summary.config.seriesLength}
       roll={currentRoll}
       rollFaces={currentRollFaces}
     />
@@ -92,7 +92,7 @@
     instantMode={rollState.instantMode}
     quickRollsCount={rollState.quickRolls.length}
     roundsCount={rollState.rounds.length}
-    seriesLength={rollState.seriesLength}
+    seriesLength={rollState.summary.config.seriesLength}
     onQuickRoll={() => rollState.executeQuickRoll()}
     onClearQuickRolls={() => rollState.clearQuickRolls()}
     onRollRound={() => rollState.rollNextRound()}

@@ -1,29 +1,18 @@
 import { svelte } from '@sveltejs/vite-plugin-svelte';
 import { svelteTesting } from '@testing-library/svelte/vite';
-import { coverageConfigDefaults, defineConfig } from 'vite-plus';
+import { defineConfig } from 'vite-plus';
 import pkg from './package.json' with { type: 'json' };
 
-const CONTAINER_FILES = [
-  'src/ui/layout/AppHeader.svelte',
-  'src/ui/layout/RightPanel.svelte',
-  'src/ui/controls/ControlPanel.svelte',
-  'src/ui/arena/ArenaViewport.svelte',
-  'src/ui/history/HistoryPanel.svelte',
-  'src/ui/quick/QuickResultPanel.svelte',
-  'src/ui/series/SeriesScoreboard.svelte',
-  'src/ui/series/StatisticalBreakdown.svelte',
-];
-
-const CONTAINER_TEST_FILES = CONTAINER_FILES.map((file) =>
-  file.replace(/\/([^/]+)\.svelte$/, '/__tests__/$1.test.ts'),
-);
+// Containers are the only UI components that read the store (getRollState); every other UI
+// folder is presentational. Living in one folder lets lint match them with a glob instead of a list.
+const CONTAINERS = 'src/ui/containers/**';
 
 // Basename glob: matches both the store module (rollState.svelte) and its context accessor
 // (rollStateContext: getRollState/setRollState), so presentational folders cannot reach the store.
 const ROLL_STATE_IMPORTS = '*rollState*';
 
 const NO_ROLL_STATE_MESSAGE =
-  'Presentational subcomponents must not import rollState or getRollState; pass typed props and callbacks from a panel container.';
+  'Presentational components must not import rollState or getRollState; pass typed props and callbacks from a container in src/ui/containers/.';
 
 export default defineConfig(({ mode }) => ({
   plugins: [svelte(), ...(mode === 'test' ? [svelteTesting()] : [])],
@@ -112,6 +101,23 @@ export default defineConfig(({ mode }) => ({
         },
       },
       {
+        // Default deny: every UI folder is presentational unless an override below says otherwise
+        files: ['src/ui/**'],
+        rules: {
+          'no-restricted-imports': [
+            'error',
+            {
+              patterns: [
+                {
+                  group: [ROLL_STATE_IMPORTS],
+                  message: NO_ROLL_STATE_MESSAGE,
+                },
+              ],
+            },
+          ],
+        },
+      },
+      {
         files: ['src/ui/primitives/**'],
         rules: {
           'no-restricted-imports': [
@@ -122,28 +128,6 @@ export default defineConfig(({ mode }) => ({
                   group: [ROLL_STATE_IMPORTS, '**/lib/*', '../lib/*', '../../lib/*'],
                   message:
                     'Presentational primitives must not import rollState, getRollState or lib helpers; pass typed props and callbacks instead.',
-                },
-              ],
-            },
-          ],
-        },
-      },
-      {
-        files: [
-          'src/ui/series/**',
-          'src/ui/quick/**',
-          'src/ui/layout/**',
-          'src/ui/history/**',
-          'src/ui/controls/**',
-        ],
-        rules: {
-          'no-restricted-imports': [
-            'error',
-            {
-              patterns: [
-                {
-                  group: [ROLL_STATE_IMPORTS],
-                  message: NO_ROLL_STATE_MESSAGE,
                 },
               ],
             },
@@ -172,8 +156,8 @@ export default defineConfig(({ mode }) => ({
         },
       },
       {
-        // Containers and their tests are the only UI files allowed to read the store (getRollState)
-        files: [...CONTAINER_FILES, ...CONTAINER_TEST_FILES],
+        // The store itself, the test harness that provides it, and the containers (with their tests)
+        files: ['src/ui/state/**', 'src/ui/__tests__/**', CONTAINERS],
         rules: {
           'no-restricted-imports': 'off',
         },
@@ -194,9 +178,8 @@ export default defineConfig(({ mode }) => ({
         'src/three/DiceArena3D.ts',
         'src/ui/state/rollState.svelte.ts',
         'src/ui/primitives/**/*.svelte',
-        'src/ui/{layout,controls,arena,history,quick,series}/*.svelte',
+        'src/ui/{containers,layout,controls,arena,history,quick,series}/*.svelte',
       ],
-      exclude: [...coverageConfigDefaults.exclude, ...CONTAINER_FILES],
       thresholds: {
         statements: 90,
         branches: 80,

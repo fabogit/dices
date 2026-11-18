@@ -1,8 +1,8 @@
 <script lang="ts">
   import CollapsiblePanel from '../primitives/CollapsiblePanel.svelte';
-  import CoinSummaryCards from './CoinSummaryCards.svelte';
-  import DiceSummaryGrid from './DiceSummaryGrid.svelte';
-  import RoundsTable from './RoundsTable.svelte';
+  import CoinSummaryCards from '../series/CoinSummaryCards.svelte';
+  import DiceSummaryGrid from '../series/DiceSummaryGrid.svelte';
+  import RoundsTable from '../series/RoundsTable.svelte';
   import { getRollState } from '../state/rollStateContext';
 
   const rollState = getRollState();

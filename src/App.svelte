@@ -1,10 +1,10 @@
 <script lang="ts">
   import { untrack } from 'svelte';
-  import ArenaViewport from './ui/arena/ArenaViewport.svelte';
-  import ControlPanel from './ui/controls/ControlPanel.svelte';
+  import AppHeader from './ui/containers/AppHeader.svelte';
+  import ArenaViewport from './ui/containers/ArenaViewport.svelte';
+  import ControlPanel from './ui/containers/ControlPanel.svelte';
+  import RightPanel from './ui/containers/RightPanel.svelte';
   import AppFooter from './ui/layout/AppFooter.svelte';
-  import AppHeader from './ui/layout/AppHeader.svelte';
-  import RightPanel from './ui/layout/RightPanel.svelte';
   import type { RollState } from './ui/state/rollState.svelte';
   import { setRollState } from './ui/state/rollStateContext';
 

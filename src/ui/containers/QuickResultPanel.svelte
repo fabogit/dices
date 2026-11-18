@@ -3,9 +3,9 @@
   import CollapsiblePanel from '../primitives/CollapsiblePanel.svelte';
   import EmptyState from '../primitives/EmptyState.svelte';
   import { getRollState } from '../state/rollStateContext';
-  import LatestRollHero from './LatestRollHero.svelte';
-  import QuickRollFeed from './QuickRollFeed.svelte';
-  import SessionSummaryStrip from './SessionSummaryStrip.svelte';
+  import LatestRollHero from '../quick/LatestRollHero.svelte';
+  import QuickRollFeed from '../quick/QuickRollFeed.svelte';
+  import SessionSummaryStrip from '../quick/SessionSummaryStrip.svelte';
 
   const rollState = getRollState();
 

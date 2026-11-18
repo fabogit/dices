@@ -2,8 +2,8 @@
   import CollapsiblePanel from '../primitives/CollapsiblePanel.svelte';
   import EmptyState from '../primitives/EmptyState.svelte';
   import { getRollState } from '../state/rollStateContext';
-  import HistoryList from './HistoryList.svelte';
-  import Leaderboard from './Leaderboard.svelte';
+  import HistoryList from '../history/HistoryList.svelte';
+  import Leaderboard from '../history/Leaderboard.svelte';
 
   const rollState = getRollState();
 
