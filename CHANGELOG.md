@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.1.5](https://github.com/fabogit/dices/compare/v1.1.4...v1.1.5) (2026-11-18)
+
+
+### Refactoring
+
+* **ui:** split AppHeader and StatisticalBreakdown into presentational components ([#96](https://github.com/fabogit/dices/issues/96)) ([3204e12](https://github.com/fabogit/dices/commit/3204e123924b05a8edff762da8e9f8a851bad4d0))
+* **ui:** type Tabs ids and let Tabs own the tabpanel wiring ([#95](https://github.com/fabogit/dices/issues/95)) ([f203de1](https://github.com/fabogit/dices/commit/f203de1b8dc901f4d148911261158d3983148173))
+
 ## [1.1.4](https://github.com/fabogit/dices/compare/v1.1.3...v1.1.4) (2026-11-18)
 
 
