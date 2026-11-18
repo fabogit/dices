@@ -1,9 +1,9 @@
 <script lang="ts">
-  import { dieLabel, formatSigned } from '../../lib/format';
+  import { dieLabel } from '../../lib/format';
   import CollapsiblePanel from '../primitives/CollapsiblePanel.svelte';
-  import DeltaBadge from '../primitives/DeltaBadge.svelte';
-  import StatBox from '../primitives/StatBox.svelte';
   import { getRollState } from '../state/rollStateContext';
+  import CoinAnalyticsGrid from '../series/CoinAnalyticsGrid.svelte';
+  import DiceAnalyticsGrid from '../series/DiceAnalyticsGrid.svelte';
   import DistributionChart from '../series/DistributionChart.svelte';
 
   const rollState = getRollState();
@@ -12,7 +12,7 @@
   let isCollapsed = $state(false);
 </script>
 
-<section class="series-scoreboard" aria-labelledby="analytics-heading">
+<section class="statistical-breakdown" aria-labelledby="analytics-heading">
   <CollapsiblePanel
     as="div"
     variant="analytics"
@@ -50,96 +50,13 @@
 
     <!-- Analytics Key Metrics Grid -->
     {#if analytics.kind === 'coin'}
-      {@const coinStats = analytics.coinStats}
-
-      <div
-        class="analytics-metrics-grid coin-analytics-grid"
-        data-testid="analytics-metrics"
-        data-variant="coin"
-      >
-        <!-- Heads Share -->
-        <StatBox
-          label="Heads Share"
-          value="{coinStats.headsPercentage.toFixed(1)}%"
-          valueTone="heads"
-        >
-          {#if analytics.totalDiceRolled > 0}
-            <DeltaBadge
-              tone={coinStats.headsDeltaPercentage >= 0 ? 'positive' : 'negative'}
-              text="{formatSigned(coinStats.headsDeltaPercentage, 1)}% vs 50%"
-            />
-          {/if}
-        </StatBox>
-
-        <!-- Tails Share -->
-        <StatBox
-          label="Tails Share"
-          value="{coinStats.tailsPercentage.toFixed(1)}%"
-          valueTone="tails"
-        >
-          {#if analytics.totalDiceRolled > 0}
-            <DeltaBadge
-              tone={coinStats.tailsDeltaPercentage >= 0 ? 'positive' : 'negative'}
-              text="{formatSigned(coinStats.tailsDeltaPercentage, 1)}% vs 50%"
-            />
-          {/if}
-        </StatBox>
-
-        <!-- Balance Deviation (z) -->
-        <StatBox
-          label="Balance Deviation (z)"
-          value={analytics.totalDiceRolled > 0 ? formatSigned(analytics.zScore, 2) : '0.00'}
-          subtext={coinStats.zQualitative}
-        />
-
-        <!-- Round Split -->
-        <StatBox
-          label="Round Split"
-          value="{coinStats.headsRoundsWon}H / {coinStats.tailsRoundsWon}T{coinStats.tieRounds > 0
-            ? ` / ${coinStats.tieRounds} Tie`
-            : ''}"
-          subtext="across {rollState.rounds.length} rounds"
-        />
-      </div>
+      <CoinAnalyticsGrid {analytics} roundsCount={rollState.rounds.length} />
     {:else}
-      <!-- Polyhedral d4..d20 Analytics Grid -->
-      <div class="analytics-metrics-grid" data-testid="analytics-metrics" data-variant="polyhedral">
-        <!-- Expected vs Actual Round Average -->
-        <StatBox label="Expected Avg (E[X])" value={analytics.expectedRoundAverage.toFixed(1)}>
-          {#if rollState.rounds.length > 0}
-            <DeltaBadge
-              tone={analytics.averageDelta >= 0 ? 'positive' : 'negative'}
-              text="{formatSigned(analytics.averageDelta, 1)} Δ"
-            />
-            <span class="zscore-tag">
-              (z: {formatSigned(analytics.zScore, 2)})
-            </span>
-          {/if}
-        </StatBox>
-
-        <!-- Population Standard Deviation of Round Sums -->
-        <StatBox
-          label="Std Deviation (σ)"
-          value={rollState.rounds.length > 0 ? analytics.standardDeviation.toFixed(2) : '0.00'}
-          subtext="across round sums (σ)"
-        />
-
-        <!-- Critical Max Rate (= N) -->
-        <StatBox
-          label="Crit Max (= {rollState.seriesFaces})"
-          value="{analytics.criticalMaxRate.toFixed(1)}%"
-          valueTone="crit-max"
-          subtext="({analytics.criticalMaxCount}/{analytics.totalDiceRolled})"
-        />
-
-        <!-- Critical Min Rate (= 1) -->
-        <StatBox
-          label="Crit Min (= 1)"
-          value="{analytics.criticalMinRate.toFixed(1)}%"
-          valueTone="crit-min"
-          subtext="({analytics.criticalMinCount}/{analytics.totalDiceRolled})"
-        />
-      </div>
+      <DiceAnalyticsGrid
+        {analytics}
+        faces={rollState.seriesFaces}
+        roundsCount={rollState.rounds.length}
+      />
     {/if}
 
     <DistributionChart distribution={analytics.distribution} faces={rollState.seriesFaces} />
@@ -147,7 +64,7 @@
 </section>
 
 <style>
-  .series-scoreboard {
+  .statistical-breakdown {
     display: flex;
     flex-direction: column;
     gap: 1rem;
@@ -236,16 +153,5 @@
     font-size: 0.825rem;
     line-height: 1.4;
     color: var(--text-body);
-  }
-
-  .analytics-metrics-grid {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 0.5rem;
-  }
-
-  .zscore-tag {
-    font-size: 0.7rem;
-    color: var(--text-secondary);
   }
 </style>
