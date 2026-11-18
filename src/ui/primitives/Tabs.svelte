@@ -1,27 +1,20 @@
-<script lang="ts">
-  export interface TabItem {
-    id: string;
-    label: string;
-    badge?: string | number;
-  }
+<script lang="ts" generics="T extends string">
+  import type { Snippet } from 'svelte';
 
   interface Props {
-    tabs: ReadonlyArray<TabItem>;
-    activeTab: string;
+    tabs: ReadonlyArray<{ id: T; label: string; badge?: string | number }>;
+    activeTab: T;
     ariaLabel: string;
-    onSelect: (id: string) => void;
-    tabIdPrefix?: string;
-    panelIdPrefix?: string;
+    onSelect: (id: T) => void;
+    /** Renders the content of one tab; Tabs owns the tabpanel wrapper and its ARIA wiring. */
+    panel: Snippet<[T]>;
   }
 
-  let {
-    tabs,
-    activeTab,
-    ariaLabel,
-    onSelect,
-    tabIdPrefix = 'tab',
-    panelIdPrefix = 'tabpanel',
-  }: Props = $props();
+  let { tabs, activeTab, ariaLabel, onSelect, panel }: Props = $props();
+
+  const uid = $props.id();
+  const tabDomId = (id: T) => `${uid}-tab-${id}`;
+  const panelDomId = (id: T) => `${uid}-panel-${id}`;
 
   let tablistEl: HTMLDivElement | undefined = $state();
 
@@ -45,24 +38,24 @@
       const nextTab = tabs[nextIndex]!;
       onSelect(nextTab.id);
       const nextBtn = tablistEl?.querySelector<HTMLButtonElement>(
-        `#${CSS.escape(`${tabIdPrefix}-${nextTab.id}`)}`,
+        `#${CSS.escape(tabDomId(nextTab.id))}`,
       );
       nextBtn?.focus();
     }
   }
 </script>
 
-<div bind:this={tablistEl} class="right-panel-tabs" role="tablist" aria-label={ariaLabel}>
+<div bind:this={tablistEl} class="tabs-list" role="tablist" aria-label={ariaLabel}>
   {#each tabs as tab (tab.id)}
     {@const isActive = activeTab === tab.id}
     <button
-      id="{tabIdPrefix}-{tab.id}"
+      id={tabDomId(tab.id)}
       type="button"
       role="tab"
       class="panel-tab-btn"
       class:active={isActive}
       aria-selected={isActive}
-      aria-controls="{panelIdPrefix}-{tab.id}"
+      aria-controls={panelDomId(tab.id)}
       tabindex={isActive ? 0 : -1}
       onkeydown={handleKeyDown}
       onclick={() => onSelect(tab.id)}
@@ -75,8 +68,19 @@
   {/each}
 </div>
 
+{#each tabs as tab (tab.id)}
+  <div
+    id={panelDomId(tab.id)}
+    role="tabpanel"
+    aria-labelledby={tabDomId(tab.id)}
+    hidden={activeTab !== tab.id}
+  >
+    {@render panel(tab.id)}
+  </div>
+{/each}
+
 <style>
-  .right-panel-tabs {
+  .tabs-list {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
     gap: 0.25rem;

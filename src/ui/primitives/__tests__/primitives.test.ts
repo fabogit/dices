@@ -17,6 +17,10 @@ function htmlSnippet(html: string) {
 }
 
 describe('Tabs primitive', () => {
+  const panelSnippet = createRawSnippet((id: () => string) => ({
+    render: () => `<p>Panel ${id()}</p>`,
+  }));
+
   const sampleTabs = [
     { id: 'scoreboard', label: 'Scoreboard', badge: '2/3' },
     { id: 'analytics', label: 'Breakdown' },
@@ -31,6 +35,7 @@ describe('Tabs primitive', () => {
         activeTab: 'scoreboard',
         ariaLabel: 'Analysis views',
         onSelect,
+        panel: panelSnippet,
       },
     });
 
@@ -43,13 +48,50 @@ describe('Tabs primitive', () => {
 
     expect(scoreboardTab.getAttribute('aria-selected')).toBe('true');
     expect(scoreboardTab.getAttribute('tabindex')).toBe('0');
-    expect(scoreboardTab.getAttribute('aria-controls')).toBe('tabpanel-scoreboard');
     expect(scoreboardTab.textContent).toContain('2/3');
 
     expect(breakdownTab.getAttribute('aria-selected')).toBe('false');
     expect(breakdownTab.getAttribute('tabindex')).toBe('-1');
 
     expect(historyTab.textContent).toContain('5');
+  });
+
+  it('wires each tab to its own tabpanel through generated ids and renders the panel snippet', () => {
+    const { getByRole, getAllByRole, getByText, container } = render(Tabs, {
+      props: {
+        tabs: sampleTabs,
+        activeTab: 'analytics',
+        ariaLabel: 'Analysis views',
+        onSelect: vi.fn<(id: string) => void>(),
+        panel: panelSnippet,
+      },
+    });
+
+    const panels = Array.from(container.querySelectorAll<HTMLElement>('[role="tabpanel"]'));
+    expect(panels).toHaveLength(3);
+    for (const tab of getAllByRole('tab')) {
+      const panelEl = document.getElementById(tab.getAttribute('aria-controls')!);
+      expect(panelEl?.getAttribute('role')).toBe('tabpanel');
+      expect(panelEl?.getAttribute('aria-labelledby')).toBe(tab.id);
+    }
+    expect(panels.map((el) => el.hidden)).toEqual([true, false, true]);
+    expect(getByRole('tabpanel', { name: /Breakdown/ }).textContent).toBe('Panel analytics');
+    expect(getByText('Panel history')).toBeTruthy();
+  });
+
+  it('generates unique ids per instance', () => {
+    const props = {
+      tabs: sampleTabs,
+      activeTab: 'scoreboard',
+      ariaLabel: 'Analysis views',
+      onSelect: vi.fn<(id: string) => void>(),
+      panel: panelSnippet,
+    };
+    const first = render(Tabs, { props });
+    const second = render(Tabs, { props });
+
+    const ids = [...first.getAllByRole('tab'), ...second.getAllByRole('tab')].map((t) => t.id);
+    expect(new Set(ids).size).toBe(6);
   });
 
   it('invokes onSelect on click and supports ArrowRight, ArrowLeft, Home, End keyboard navigation', async () => {
@@ -61,17 +103,13 @@ describe('Tabs primitive', () => {
         activeTab: 'scoreboard',
         ariaLabel: 'Analysis views',
         onSelect,
-        tabIdPrefix: 'custom-tab',
-        panelIdPrefix: 'custom-panel',
+        panel: panelSnippet,
       },
     });
 
     const scoreboardTab = getByRole('tab', { name: /Scoreboard/ });
     const breakdownTab = getByRole('tab', { name: /Breakdown/ });
     const historyTab = getByRole('tab', { name: /History/ });
-
-    expect(scoreboardTab.getAttribute('id')).toBe('custom-tab-scoreboard');
-    expect(scoreboardTab.getAttribute('aria-controls')).toBe('custom-panel-scoreboard');
 
     // Click triggers selection
     await fireEvent.click(breakdownTab);
@@ -81,8 +119,7 @@ describe('Tabs primitive', () => {
       activeTab: 'analytics',
       ariaLabel: 'Analysis views',
       onSelect,
-      tabIdPrefix: 'custom-tab',
-      panelIdPrefix: 'custom-panel',
+      panel: panelSnippet,
     });
 
     // ArrowRight moves to History and focuses it
@@ -95,8 +132,7 @@ describe('Tabs primitive', () => {
       activeTab: 'history',
       ariaLabel: 'Analysis views',
       onSelect,
-      tabIdPrefix: 'custom-tab',
-      panelIdPrefix: 'custom-panel',
+      panel: panelSnippet,
     });
 
     // ArrowRight wraps around to Scoreboard
@@ -108,8 +144,7 @@ describe('Tabs primitive', () => {
       activeTab: 'scoreboard',
       ariaLabel: 'Analysis views',
       onSelect,
-      tabIdPrefix: 'custom-tab',
-      panelIdPrefix: 'custom-panel',
+      panel: panelSnippet,
     });
 
     // ArrowLeft wraps around to History
@@ -141,6 +176,7 @@ describe('Tabs primitive', () => {
         activeTab: 'unknown',
         ariaLabel: 'Analysis views',
         onSelect,
+        panel: panelSnippet,
       },
     });
 
@@ -154,6 +190,7 @@ describe('Tabs primitive', () => {
       activeTab: 'scoreboard',
       ariaLabel: 'Analysis views',
       onSelect,
+      panel: panelSnippet,
     });
     const tablist = getByRole('tablist', { name: 'Analysis views' });
     await fireEvent.keyDown(tablist, { key: 'ArrowRight' });
@@ -168,6 +205,7 @@ describe('Tabs primitive', () => {
         activeTab: 'missing-tab',
         ariaLabel: 'Analysis views',
         onSelect,
+        panel: panelSnippet,
       },
     });
 

@@ -43,7 +43,9 @@ describe('RightPanel container', () => {
     expect(getByRole('tab', { name: 'Scoreboard' }).getAttribute('aria-selected')).toBe('true');
     // Only the selected panel is exposed; the others stay mounted but hidden
     expect(getAllByRole('tabpanel')).toHaveLength(1);
-    expect(getByRole('tabpanel').id).toBe('tabpanel-scoreboard');
+    expect(getByRole('tabpanel').getAttribute('aria-labelledby')).toBe(
+      getByRole('tab', { name: 'Scoreboard' }).id,
+    );
   });
 
   it('switches panels from the tabs, keeping the others mounted but hidden', async () => {
@@ -51,11 +53,18 @@ describe('RightPanel container', () => {
 
     await fireEvent.click(getByRole('tab', { name: 'Breakdown' }));
     expect(getByRole('tab', { name: 'Breakdown' }).getAttribute('aria-selected')).toBe('true');
-    expect(getByRole('tabpanel').id).toBe('tabpanel-analytics');
-    expect(container.querySelector<HTMLElement>('#tabpanel-scoreboard')?.hidden).toBe(true);
+    expect(getByRole('tabpanel').getAttribute('aria-labelledby')).toBe(
+      getByRole('tab', { name: 'Breakdown' }).id,
+    );
+    const scoreboardPanel = container.querySelector<HTMLElement>(
+      `[aria-labelledby="${getByRole('tab', { name: 'Scoreboard' }).id}"]`,
+    );
+    expect(scoreboardPanel?.hidden).toBe(true);
 
     await fireEvent.keyDown(getByRole('tab', { name: 'Breakdown' }), { key: 'ArrowRight' });
-    expect(getByRole('tabpanel').id).toBe('tabpanel-history');
+    expect(getByRole('tabpanel').getAttribute('aria-labelledby')).toBe(
+      getByRole('tab', { name: 'History' }).id,
+    );
   });
 
   it('badges the scoreboard with the series progress and the history with its size', async () => {
