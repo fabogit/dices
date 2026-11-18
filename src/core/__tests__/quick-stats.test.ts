@@ -151,3 +151,31 @@ describe('computeQuickRollSessionStats', () => {
     expect(emptyCoinSession.insight).toContain('No coin rolls');
   });
 });
+
+describe('quick-roll stats for rounds without values', () => {
+  it('keeps single-throw percentages and z-score at zero', () => {
+    const coin = computeQuickRollStats(computeRoundResult(0, [], 2));
+    expect(coin).toMatchObject({ headsPercentage: 0, tailsPercentage: 0 });
+    expect(coin.insight).toBe('Even split (0H / 0T).');
+
+    const dice = computeQuickRollStats(computeRoundResult(0, [], 6));
+    expect(dice).toMatchObject({ expectedSum: 0, sumDelta: 0, zScore: 0 });
+    expect(dice.insight).toBe('Typical roll: sum 0 (E[X] 0.0).');
+  });
+
+  it('keeps session averages at zero when the matching throws hold no dice', () => {
+    const coinSession = computeQuickRollSessionStats([computeRoundResult(0, [], 2)], 2);
+    if (coinSession.kind !== 'coin') throw new Error('Expected coin quick roll session stats');
+    expect(coinSession).toMatchObject({ headsPercentage: 0, tailsPercentage: 0 });
+    expect(coinSession.insight).toBe(
+      '1 throws (0 coins): 0.0% Heads / 0.0% Tails (evenly balanced).',
+    );
+
+    const diceSession = computeQuickRollSessionStats([computeRoundResult(0, [], 6)], 6);
+    if (diceSession.kind !== 'dice') throw new Error('Expected dice quick roll session stats');
+    expect(diceSession.actualAverage).toBe(0);
+    expect(diceSession.insight).toBe(
+      '1 throws (0 dice): avg die 0.00 (-3.50 vs E[X] 3.5). 0 max crits, 0 nat 1s.',
+    );
+  });
+});

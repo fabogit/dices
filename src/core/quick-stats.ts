@@ -1,3 +1,11 @@
+import {
+  generateCoinQuickRollInsight,
+  generateCoinQuickSessionInsight,
+  generateDiceQuickRollInsight,
+  generateDiceQuickSessionInsight,
+  generateEmptyQuickSessionInsight,
+  getCoinBalanceVerdict,
+} from './insights';
 import type {
   CoinQuickRollSessionStats,
   CoinQuickRollStats,
@@ -25,18 +33,13 @@ export function computeQuickRollStats(round: RoundResult): QuickRollStats {
     const headsPercentage = count > 0 ? (headsCount / count) * 100 : 0;
     const tailsPercentage = count > 0 ? (tailsCount / count) * 100 : 0;
 
-    let insight = '';
-    if (count === 1) {
-      insight = headsCount === 1 ? 'Landed Heads (winning face).' : 'Landed Tails.';
-    } else {
-      if (headsCount > tailsCount) {
-        insight = `Heads majority (${headsCount}H / ${tailsCount}T, ${headsPercentage.toFixed(0)}%).`;
-      } else if (tailsCount > headsCount) {
-        insight = `Tails majority (${tailsCount}T / ${headsCount}H, ${tailsPercentage.toFixed(0)}%).`;
-      } else {
-        insight = `Even split (${headsCount}H / ${tailsCount}T).`;
-      }
-    }
+    const insight = generateCoinQuickRollInsight({
+      count,
+      headsCount,
+      tailsCount,
+      headsPercentage,
+      tailsPercentage,
+    });
 
     return {
       kind: 'coin',
@@ -64,38 +67,16 @@ export function computeQuickRollStats(round: RoundResult): QuickRollStats {
   const criticalMaxCount = round.values.filter((v) => v === actualFaces).length;
   const criticalMinCount = round.values.filter((v) => v === 1).length;
 
-  let insight = '';
-  if (count === 1) {
-    const val = round.values[0] ?? 0;
-    if (val === actualFaces) {
-      insight = `Natural ${actualFaces}! Maximum possible roll.`;
-    } else if (val === 1) {
-      insight = 'Natural 1. Minimum possible roll.';
-    } else if (sumDelta > 0) {
-      insight = `Rolled ${val} (+${sumDelta.toFixed(1)} vs E[X] ${expectedSum.toFixed(1)}). Above average.`;
-    } else if (sumDelta < 0) {
-      insight = `Rolled ${val} (${sumDelta.toFixed(1)} vs E[X] ${expectedSum.toFixed(1)}). Below average.`;
-    } else {
-      insight = `Rolled ${val} (exact expected average ${expectedSum.toFixed(1)}).`;
-    }
-  } else {
-    const critParts: string[] = [];
-    if (criticalMaxCount > 0) {
-      critParts.push(`${criticalMaxCount}x nat ${actualFaces}`);
-    }
-    if (criticalMinCount > 0) {
-      critParts.push(`${criticalMinCount}x nat 1`);
-    }
-    const critText = critParts.length > 0 ? ` (${critParts.join(', ')})` : '';
-
-    if (zScore >= 1.0) {
-      insight = `High roll: sum ${sum} (+${sumDelta.toFixed(1)} vs E[X] ${expectedSum.toFixed(1)})${critText}.`;
-    } else if (zScore <= -1.0) {
-      insight = `Low roll: sum ${sum} (${sumDelta.toFixed(1)} vs E[X] ${expectedSum.toFixed(1)})${critText}.`;
-    } else {
-      insight = `Typical roll: sum ${sum} (E[X] ${expectedSum.toFixed(1)})${critText}.`;
-    }
-  }
+  const insight = generateDiceQuickRollInsight({
+    faces: actualFaces,
+    values: round.values,
+    sum,
+    expectedSum,
+    sumDelta,
+    zScore,
+    criticalMaxCount,
+    criticalMinCount,
+  });
 
   return {
     kind: 'dice',
@@ -141,7 +122,7 @@ export function computeQuickRollSessionStats(
       faces: currentFaces,
       matchingThrows: 0,
       totalDiceCount: 0,
-      insight: `No ${currentFaces === 2 ? 'coin' : `d${currentFaces}`} rolls in this session yet.`,
+      insight: generateEmptyQuickSessionInsight(currentFaces),
     };
   }
 
@@ -156,16 +137,14 @@ export function computeQuickRollSessionStats(
         ? (totalHeads - 0.5 * totalDiceCount) / (0.5 * Math.sqrt(totalDiceCount))
         : 0;
 
-    let balanceVerdict = 'Evenly balanced';
-    if (Math.abs(coinZ) < 1.0) {
-      balanceVerdict = 'Evenly balanced';
-    } else if (coinZ >= 1.0) {
-      balanceVerdict = 'Heads-leaning';
-    } else {
-      balanceVerdict = 'Tails-leaning';
-    }
-
-    const insight = `${matchingThrows} throws (${totalDiceCount} coins): ${headsPercentage.toFixed(1)}% Heads / ${tailsPercentage.toFixed(1)}% Tails (${balanceVerdict.toLowerCase()}).`;
+    const balanceVerdict = getCoinBalanceVerdict(coinZ);
+    const insight = generateCoinQuickSessionInsight({
+      matchingThrows,
+      totalDiceCount,
+      headsPercentage,
+      tailsPercentage,
+      balanceVerdict,
+    });
 
     return {
       kind: 'coin',
@@ -189,8 +168,15 @@ export function computeQuickRollSessionStats(
   const criticalMaxCount = allValues.filter((v) => v === currentFaces).length;
   const criticalMinCount = allValues.filter((v) => v === 1).length;
 
-  const sign = averageDelta >= 0 ? '+' : '';
-  const insight = `${matchingThrows} throws (${totalDiceCount} dice): avg die ${actualAverage.toFixed(2)} (${sign}${averageDelta.toFixed(2)} vs E[X] ${expectedAverage.toFixed(1)}). ${criticalMaxCount} max crits, ${criticalMinCount} nat 1s.`;
+  const insight = generateDiceQuickSessionInsight({
+    matchingThrows,
+    totalDiceCount,
+    actualAverage,
+    expectedAverage,
+    averageDelta,
+    criticalMaxCount,
+    criticalMinCount,
+  });
 
   return {
     kind: 'dice',

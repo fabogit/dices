@@ -2,6 +2,7 @@ import {
   generateSeriesInsightSummary,
   getCoinZQualitative,
   getSampleReliabilityLabel,
+  type SeriesInsightInput,
 } from './insights';
 import type {
   CoinRollConfig,
@@ -269,6 +270,20 @@ export function computeSeriesAnalytics(config: RollConfig, rounds: RoundResult[]
     distribution,
   };
 
+  const insightInput: SeriesInsightInput = {
+    faces: config.faces,
+    totalDiceRolled,
+    roundAverage,
+    expectedRoundAverage,
+    zScore,
+    sampleReliability,
+    criticalMaxCount,
+    criticalMaxRate,
+    criticalMinCount,
+    criticalMinRate,
+    hottestFaces,
+  };
+
   if (config.faces === 2) {
     const headsCount = criticalMaxCount;
     const tailsCount = criticalMinCount;
@@ -304,21 +319,7 @@ export function computeSeriesAnalytics(config: RollConfig, rounds: RoundResult[]
       zQualitative: getCoinZQualitative(zScore, sampleReliability),
     };
 
-    const insightSummary = generateSeriesInsightSummary(
-      config.faces,
-      totalDiceRolled,
-      rounds.length,
-      roundAverage,
-      expectedRoundAverage,
-      zScore,
-      sampleReliability,
-      criticalMaxCount,
-      criticalMaxRate,
-      criticalMinCount,
-      criticalMinRate,
-      hottestFaces,
-      coinStats,
-    );
+    const insightSummary = generateSeriesInsightSummary({ ...insightInput, coinStats });
 
     return {
       ...baseAnalytics,
@@ -328,20 +329,7 @@ export function computeSeriesAnalytics(config: RollConfig, rounds: RoundResult[]
     };
   }
 
-  const insightSummary = generateSeriesInsightSummary(
-    config.faces,
-    totalDiceRolled,
-    rounds.length,
-    roundAverage,
-    expectedRoundAverage,
-    zScore,
-    sampleReliability,
-    criticalMaxCount,
-    criticalMaxRate,
-    criticalMinCount,
-    criticalMinRate,
-    hottestFaces,
-  );
+  const insightSummary = generateSeriesInsightSummary(insightInput);
 
   return {
     ...baseAnalytics,
