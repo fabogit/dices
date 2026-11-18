@@ -13,8 +13,8 @@
    */
   interface Props {
     title: string;
-    collapsed: boolean;
-    onToggle: () => void;
+    /** Bindable; omit it to let the panel keep its own state (expanded by default). */
+    collapsed?: boolean;
     class?: ClassValue;
     as?: 'section' | 'aside' | 'div';
     headingLevel?: 'h2' | 'h3';
@@ -31,8 +31,7 @@
 
   let {
     title,
-    collapsed,
-    onToggle,
+    collapsed = $bindable(false),
     class: className,
     as = 'section',
     headingLevel = 'h2',
@@ -54,6 +53,10 @@
     collapsed ? (expandAriaLabel ?? `Show ${title}`) : (collapseAriaLabel ?? `Hide ${title}`),
   );
   const toggleText = $derived(collapsed ? expandText : collapseText);
+
+  function toggle() {
+    collapsed = !collapsed;
+  }
 </script>
 
 <svelte:element
@@ -83,7 +86,7 @@
           class="collapse-toggle-btn"
           aria-expanded={!collapsed}
           aria-controls={bodyId}
-          onclick={onToggle}
+          onclick={toggle}
           aria-label={toggleLabel}
         >
           <span class="chevron" aria-hidden="true">{collapsed ? '▸' : '▾'}</span>
@@ -96,7 +99,7 @@
         class="collapse-toggle-btn"
         aria-expanded={!collapsed}
         aria-controls={bodyId}
-        onclick={onToggle}
+        onclick={toggle}
         aria-label={toggleLabel}
       >
         <span class="chevron" aria-hidden="true">{collapsed ? '▸' : '▾'}</span>

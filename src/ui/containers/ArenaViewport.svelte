@@ -10,7 +10,6 @@
 
   let canvasElement: HTMLCanvasElement;
   let arena: DiceArena3D | null = null;
-  let isCollapsed = $state(false);
 
   const currentRoll = $derived(
     rollState.mode === 'quick' ? rollState.latestQuickRoll : rollState.latestRound,
@@ -49,16 +48,10 @@
       }
     };
   });
-
-  function toggleCollapse() {
-    isCollapsed = !isCollapsed;
-  }
 </script>
 
 <CollapsiblePanel
   title="3D Dice Arena"
-  collapsed={isCollapsed}
-  onToggle={toggleCollapse}
   --cp-gap="0.5rem"
   --cp-body-gap="0.65rem"
   headingId="arena-heading"

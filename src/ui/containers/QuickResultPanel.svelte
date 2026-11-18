@@ -9,8 +9,6 @@
 
   const rollState = getRollState();
 
-  let isCollapsed = $state(false);
-
   const sessionStats = $derived(
     computeQuickRollSessionStats(rollState.quickRolls, rollState.faces),
   );
@@ -19,13 +17,7 @@
   );
 </script>
 
-<CollapsiblePanel
-  title="Quick Roll Feed"
-  collapsed={isCollapsed}
-  onToggle={() => (isCollapsed = !isCollapsed)}
-  class="surface-card"
-  --cp-gap="0.85rem"
->
+<CollapsiblePanel title="Quick Roll Feed" class="surface-card" --cp-gap="0.85rem">
   {#snippet badge()}
     <span class="count-badge">{rollState.quickRollCount} in session</span>
   {/snippet}

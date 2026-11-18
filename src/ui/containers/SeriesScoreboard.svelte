@@ -7,7 +7,6 @@
 
   const rollState = getRollState();
 
-  let isCollapsed = $state(false);
   const summary = $derived(rollState.summary);
 </script>
 
@@ -17,8 +16,6 @@
     --cp-title-wrap="wrap"
     headingId="scoreboard-heading"
     title="Live Series Scoreboard"
-    collapsed={isCollapsed}
-    onToggle={() => (isCollapsed = !isCollapsed)}
   >
     {#snippet badge()}
       <span class="series-badge">

@@ -9,7 +9,6 @@
 
   const rollState = getRollState();
 
-  let isCollapsed = $state(false);
   let confirmOpen = $state(false);
   let clearTrigger: HTMLButtonElement | undefined = $state();
 
@@ -42,8 +41,6 @@
   --cp-header-gap="0.5rem"
   headingId={HEADING_ID}
   title="History & Leaderboard"
-  collapsed={isCollapsed}
-  onToggle={() => (isCollapsed = !isCollapsed)}
 >
   {#snippet actions()}
     {#if rollState.history.length > 0}

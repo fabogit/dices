@@ -9,7 +9,6 @@
   const rollState = getRollState();
 
   const analytics = $derived(rollState.summary.analytics);
-  let isCollapsed = $state(false);
 </script>
 
 <section class="statistical-breakdown surface-card" aria-labelledby="analytics-heading">
@@ -22,8 +21,6 @@
     headingLevel="h2"
     headingId="analytics-heading"
     title="Statistical Breakdown ({dieLabel(rollState.seriesFaces)})"
-    collapsed={isCollapsed}
-    onToggle={() => (isCollapsed = !isCollapsed)}
     expandAriaLabel="Show Statistical Breakdown & Distribution"
     collapseAriaLabel="Hide Statistical Breakdown & Distribution"
     bodyTestId="analytics-body"

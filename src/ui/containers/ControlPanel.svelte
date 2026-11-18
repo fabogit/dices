@@ -13,8 +13,6 @@
     { label: 'Bo5 (5)', length: 5 },
   ];
 
-  let isCollapsed = $state(false);
-
   // Setup is frozen while dice are in the air and while a series is under way
   const controlsDisabled = $derived(rollState.isRolling || rollState.isConfigLocked);
 
@@ -31,8 +29,6 @@
 
 <CollapsiblePanel
   title="Dice & Series Setup"
-  collapsed={isCollapsed}
-  onToggle={() => (isCollapsed = !isCollapsed)}
   class="surface-card"
   --cp-body-gap="1.25rem"
   --cp-heading-letter-spacing="-0.01em"
