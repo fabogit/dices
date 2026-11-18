@@ -28,6 +28,8 @@ const SVELTE_BRANCH_FLOORS: Record<string, number> = {
   'src/ui/containers/ControlPanel.svelte': 72,
   'src/ui/containers/SeriesScoreboard.svelte': 62,
   'src/ui/containers/StatisticalBreakdown.svelte': 78,
+  // Its only uncovered branches are the `?? ''` Svelte emits for `<select value>` and `<option value>`
+  'src/ui/header/PlayerSelector.svelte': 66,
 };
 
 // Vitest checks every threshold glob independently and a file matching two globs must pass
@@ -254,7 +256,7 @@ export default defineConfig(({ mode }) => ({
         'src/ui/state/rollState.svelte.ts',
         'src/ui/state/announcements.ts',
         'src/ui/primitives/**/*.svelte',
-        'src/ui/{containers,layout,controls,arena,history,quick,series}/*.svelte',
+        'src/ui/{containers,layout,header,controls,arena,history,quick,series}/*.svelte',
       ],
       thresholds: {
         // `perFile` is set on each glob below (not at the top level): a top-level `perFile` would
