@@ -1,5 +1,5 @@
 import { computeRoundResult, computeSeriesSummary } from './engine';
-import { isValidRollConfig } from './limits';
+import { MAX_HISTORY_ENTRIES, isValidRollConfig } from './limits';
 import type { Player, RollConfig, SeriesSummary } from './types';
 
 export const STATE_STORAGE_KEY = 'dices_state_v2';
@@ -18,8 +18,6 @@ export const DEFAULT_PLAYER: Player = {
   color: PLAYER_PALETTE[0],
 };
 
-export const MAX_HISTORY_ENTRIES = 50;
-export const MAX_QUICK_ROLLS = 25;
 export const MAX_PLAYER_NAME_LENGTH = 24;
 
 export interface RollStorage {

@@ -17,14 +17,18 @@ import {
   DEFAULT_PLAYER,
   defaultStorage,
   hydratePersistedState,
-  MAX_HISTORY_ENTRIES,
   MAX_PLAYER_NAME_LENGTH,
-  MAX_QUICK_ROLLS,
   PLAYER_PALETTE,
   serializePersistedState,
   type RollStorage,
 } from '../../core/persistence';
-import { COUNT_PER_ROLL_LIMITS, SERIES_LENGTH_LIMITS, clampInt } from '../../core/limits';
+import {
+  COUNT_PER_ROLL_LIMITS,
+  MAX_HISTORY_ENTRIES,
+  MAX_QUICK_ROLLS,
+  SERIES_LENGTH_LIMITS,
+  clampInt,
+} from '../../core/limits';
 import { LocalCryptoRollProvider, type IRollProvider } from '../../core/provider';
 import type { DiceArena3D } from '../../three/DiceArena3D';
 
