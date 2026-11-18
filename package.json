@@ -17,7 +17,7 @@
     "lint": "vp lint",
     "format": "vp fmt --write",
     "format:check": "vp fmt --check",
-    "check:types": "tsc --noEmit && tsc --noEmit -p tsconfig.e2e.json",
+    "check:types": "tsc --noEmit -p tsconfig.e2e.json",
     "check:svelte": "svelte-check --tsconfig ./tsconfig.json --fail-on-warnings",
     "check": "pnpm run check:types && pnpm run check:svelte && vp check"
   },
@@ -25,6 +25,7 @@
     "three": "^0.187.0"
   },
   "devDependencies": {
+    "@axe-core/playwright": "4.14.0",
     "@playwright/test": "1.65.0",
     "@sveltejs/vite-plugin-svelte": "^7.3.1",
     "@testing-library/svelte": "^5.4.2",

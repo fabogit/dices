@@ -119,9 +119,50 @@ export default defineConfig(({ mode }) => ({
     categories: {
       correctness: 'error',
       suspicious: 'warn',
+      perf: 'warn',
+      pedantic: 'warn',
     },
     rules: {
       'eslint/no-underscore-dangle': 'off',
+      // `perf` and `pedantic` are enabled above, but these rules still have violations today
+      // (count = diagnostics when enabled). Triage tracked in #91: fix and re-enable, or decline with a rationale.
+      'eslint/require-unicode-regexp': 'off', // 222
+      'typescript/prefer-readonly-parameter-types': 'off', // 208
+      'eslint/max-lines-per-function': 'off', // 89
+      'eslint/no-inline-comments': 'off', // 53
+      'typescript/no-confusing-void-expression': 'off', // 35
+      'eslint/no-await-in-loop': 'off', // 18
+      'typescript/strict-boolean-expressions': 'off', // 14
+      'typescript/no-unsafe-assignment': 'off', // 10
+      'eslint/max-lines': 'off', // 9
+      'eslint/no-negated-condition': 'off', // 9
+      'unicorn/no-negated-condition': 'off', // 9
+      'typescript/no-unsafe-argument': 'off', // 9
+      'unicorn/no-array-callback-reference': 'off', // 7
+      'eslint/sort-vars': 'off', // 6
+      'typescript/no-unsafe-member-access': 'off', // 5
+      'eslint/require-await': 'off', // 4
+      'unicorn/prefer-string-replace-all': 'off', // 4
+      'typescript/require-await': 'off', // 4
+      'typescript/no-unsafe-call': 'off', // 4
+      'unicorn/prefer-query-selector': 'off', // 3
+      'unicorn/new-for-builtins': 'off', // 3
+      'typescript/strict-void-return': 'off', // 3
+      'unicorn/prefer-math-min-max': 'off', // 2
+      'eslint/no-promise-executor-return': 'off', // 2
+      'unicorn/no-immediate-mutation': 'off', // 2
+      'oxc/no-map-spread': 'off', // 2
+      'eslint/no-lonely-if': 'off', // 2
+      'unicorn/no-useless-undefined': 'off', // 2
+      'typescript/no-unsafe-return': 'off', // 2
+      'unicorn/prefer-number-coercion': 'off', // 1
+      'unicorn/prefer-import-meta-properties': 'off', // 1
+      'unicorn/prefer-at': 'off', // 1
+      'unicorn/prefer-dom-node-dataset': 'off', // 1
+      'unicorn/no-object-as-default-parameter': 'off', // 1
+      'typescript/no-deprecated': 'off', // 1
+      'typescript/prefer-nullish-coalescing': 'off', // 1
+      'typescript/switch-exhaustiveness-check': 'off', // 1
       'typescript/require-array-sort-compare': 'error',
     },
     overrides: [
@@ -130,6 +171,8 @@ export default defineConfig(({ mode }) => ({
         plugins: ['vitest'],
         rules: {
           'typescript/no-unsafe-type-assertion': 'off',
+          // Still has violations (27) with `pedantic` enabled; see the note on the top-level rules (#91).
+          'vitest/no-conditional-in-test': 'off',
         },
       },
       {

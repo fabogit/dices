@@ -6,7 +6,11 @@ export default defineConfig({
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 2 : 0,
   workers: process.env.CI ? 1 : 2,
-  reporter: [['html', { open: 'never' }], ['list']],
+  // On CI the 'github' reporter annotates tests that only passed on retry as warnings, so flaky
+  // tests stay visible without failing the job (retries: 2 is kept on purpose).
+  reporter: process.env.CI
+    ? [['github'], ['html', { open: 'never' }], ['list']]
+    : [['html', { open: 'never' }], ['list']],
   expect: {
     toHaveScreenshot: {
       maxDiffPixels: 0,
