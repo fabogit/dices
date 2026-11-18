@@ -259,6 +259,10 @@ describe('CollapsiblePanel primitive', () => {
     expect(collapseBtn.textContent).toContain('Hide Arena');
     expect(getByTestId('arena-body').classList.contains('collapsed')).toBe(false);
 
+    // The toggle rendered next to the actions snippet must also fire onToggle
+    await fireEvent.click(collapseBtn);
+    expect(onToggle).toHaveBeenCalledOnce();
+
     await rerender({
       as: 'div',
       headingLevel: 'h3',
