@@ -654,6 +654,65 @@ describe('computePlayerLeaderboard', () => {
     expect(alice.totalRolls).toBe(11);
     expect(alice.normalizedLuckScore).toBeCloseTo(109.09, 1);
   });
+
+  it('keeps history-only players with a neutral color and ranks players without series last', () => {
+    const configGhost: RollConfig = {
+      faces: 6,
+      countPerRoll: 1,
+      seriesLength: 1,
+      playerId: 'ghost',
+    };
+    const ghostRound = computeRoundResult(0, [3], 6);
+    const ghostSummary = computeSeriesSummary('s-ghost', configGhost, 'Ghost', [ghostRound]);
+
+    const leaderboard = computePlayerLeaderboard([ghostSummary], players);
+
+    expect(leaderboard.map((entry) => entry.playerId)).toEqual(['ghost', 'p1', 'p2']);
+    expect(leaderboard[0]).toMatchObject({
+      playerName: 'Ghost',
+      color: '#94a3b8',
+      seriesPlayed: 1,
+      totalRolls: 1,
+    });
+    expect(leaderboard[1]).toMatchObject({
+      playerName: 'Alice',
+      seriesPlayed: 0,
+      totalRolls: 0,
+      normalizedLuckScore: 100,
+      criticalMaxRate: 0,
+      coinSeriesWon: 0,
+    });
+    expect('coinTosses' in leaderboard[1]).toBe(false);
+
+    const reversed = computePlayerLeaderboard([ghostSummary], [players[1], players[0]]);
+    expect(reversed.map((entry) => entry.playerId)).toEqual(['ghost', 'p2', 'p1']);
+  });
+
+  it('scores empty coin and dice series as neutral luck without coin toss fields', () => {
+    const coinConfig: RollConfig = {
+      faces: 2,
+      countPerRoll: 1,
+      seriesLength: 1,
+      playerId: 'p1',
+    };
+    const diceConfig: RollConfig = {
+      faces: 6,
+      countPerRoll: 1,
+      seriesLength: 1,
+      playerId: 'p2',
+    };
+    const emptyCoin = computeSeriesSummary('s-coin-empty', coinConfig, 'Alice', []);
+    const emptyDice = computeSeriesSummary('s-dice-empty', diceConfig, 'Bob', []);
+
+    const leaderboard = computePlayerLeaderboard([emptyCoin, emptyDice], players);
+    const alice = leaderboard.find((p) => p.playerId === 'p1')!;
+    const bob = leaderboard.find((p) => p.playerId === 'p2')!;
+
+    expect(alice).toMatchObject({ seriesPlayed: 1, totalRolls: 0, normalizedLuckScore: 100 });
+    expect(alice.coinSeriesWon).toBe(0);
+    expect('coinTosses' in alice).toBe(false);
+    expect(bob).toMatchObject({ seriesPlayed: 1, totalRolls: 0, normalizedLuckScore: 100 });
+  });
 });
 
 describe('computeQuickRollStats', () => {
