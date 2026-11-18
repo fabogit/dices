@@ -89,6 +89,7 @@ export default defineConfig(({ mode }) => ({
       'playwright-report/**',
       'test-results/**',
       '.svelte-check/**',
+      '.claude/**',
       'e2e/**/*.png',
       'pnpm-lock.yaml',
       // Generated and rewritten by release-please on every release PR
@@ -114,6 +115,7 @@ export default defineConfig(({ mode }) => ({
       'playwright-report/**',
       'test-results/**',
       '.svelte-check/**',
+      '.claude/**',
     ],
     categories: {
       correctness: 'error',
