@@ -9,6 +9,13 @@
 
   const rollState = getRollState();
 
+  interface Props {
+    /** Bindable so RightPanel can keep it while this panel is unmounted by a mode switch. */
+    collapsed?: boolean;
+  }
+
+  let { collapsed = $bindable(false) }: Props = $props();
+
   const sessionStats = $derived(
     computeQuickRollSessionStats(rollState.quickRolls, rollState.faces),
   );
@@ -17,7 +24,7 @@
   );
 </script>
 
-<CollapsiblePanel title="Quick Roll Feed" class="surface-card" --cp-gap="0.85rem">
+<CollapsiblePanel bind:collapsed title="Quick Roll Feed" class="surface-card" --cp-gap="0.85rem">
   {#snippet badge()}
     <span class="count-badge">{rollState.quickRollCount} in session</span>
   {/snippet}

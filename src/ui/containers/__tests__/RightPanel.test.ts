@@ -82,6 +82,44 @@ describe('RightPanel container', () => {
     expect(getByRole('tab', { name: 'History 1' })).toBeTruthy();
   });
 
+  it('keeps each panel collapsed across a quick <-> series round trip', async () => {
+    const { getByRole } = renderPanel();
+    const expanded = (name: string) =>
+      getByRole('button', { name, hidden: true }).getAttribute('aria-expanded');
+
+    // Collapse the scoreboard and the (hidden) breakdown; leave history expanded
+    await fireEvent.click(getByRole('button', { name: 'Hide Live Series Scoreboard' }));
+    await fireEvent.click(
+      getByRole('button', { name: 'Hide Statistical Breakdown & Distribution', hidden: true }),
+    );
+
+    rollState.setMode('quick');
+    await tick();
+    await fireEvent.click(getByRole('button', { name: 'Hide Quick Roll Feed' }));
+
+    rollState.setMode('series');
+    await tick();
+    expect(expanded('Show Live Series Scoreboard')).toBe('false');
+    expect(expanded('Show Statistical Breakdown & Distribution')).toBe('false');
+    expect(expanded('Hide History & Leaderboard')).toBe('true');
+    await fireEvent.click(
+      getByRole('button', { name: 'Hide History & Leaderboard', hidden: true }),
+    );
+
+    rollState.setMode('quick');
+    await tick();
+    expect(expanded('Show Quick Roll Feed')).toBe('false');
+
+    // Expanding is remembered too
+    await fireEvent.click(getByRole('button', { name: 'Show Quick Roll Feed' }));
+    rollState.setMode('series');
+    await tick();
+    expect(expanded('Show History & Leaderboard')).toBe('false');
+    rollState.setMode('quick');
+    await tick();
+    expect(expanded('Hide Quick Roll Feed')).toBe('true');
+  });
+
   it('reads the series length from the same source as the scoreboard', async () => {
     const { getByRole, getByText } = renderPanel([6]);
     rollState.setSeriesLength(5);

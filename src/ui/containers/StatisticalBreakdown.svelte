@@ -8,11 +8,19 @@
 
   const rollState = getRollState();
 
+  interface Props {
+    /** Bindable so RightPanel can keep it while this panel is unmounted by a mode switch. */
+    collapsed?: boolean;
+  }
+
+  let { collapsed = $bindable(false) }: Props = $props();
+
   const analytics = $derived(rollState.summary.analytics);
 </script>
 
 <section class="statistical-breakdown surface-card" aria-labelledby="analytics-heading">
   <CollapsiblePanel
+    bind:collapsed
     as="div"
     --cp-gap="0.75rem"
     --cp-body-gap="0.75rem"

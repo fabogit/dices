@@ -9,6 +9,13 @@
 
   const rollState = getRollState();
 
+  interface Props {
+    /** Bindable so RightPanel can keep it while this panel is unmounted by a mode switch. */
+    collapsed?: boolean;
+  }
+
+  let { collapsed = $bindable(false) }: Props = $props();
+
   let confirmOpen = $state(false);
   let clearTrigger: HTMLButtonElement | undefined = $state();
 
@@ -34,6 +41,7 @@
 </script>
 
 <CollapsiblePanel
+  bind:collapsed
   as="aside"
   class="surface-card"
   --cp-gap="0.85rem"

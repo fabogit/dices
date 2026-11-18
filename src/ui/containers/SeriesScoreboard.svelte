@@ -7,11 +7,19 @@
 
   const rollState = getRollState();
 
+  interface Props {
+    /** Bindable so RightPanel can keep it while this panel is unmounted by a mode switch. */
+    collapsed?: boolean;
+  }
+
+  let { collapsed = $bindable(false) }: Props = $props();
+
   const summary = $derived(rollState.summary);
 </script>
 
 <section class="series-scoreboard surface-card" aria-labelledby="scoreboard-heading">
   <CollapsiblePanel
+    bind:collapsed
     as="div"
     --cp-title-wrap="wrap"
     headingId="scoreboard-heading"

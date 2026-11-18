@@ -12,6 +12,17 @@
 
   let rightPanelTab = $state<RightPanelTab>('scoreboard');
 
+  // UI layout state, not domain state: it stays out of RollState and is never persisted.
+  // A mode switch unmounts the panels below while RightPanel stays mounted, so their collapsed
+  // flags live here and survive a quick <-> series round trip. Keeping the other mode's panels
+  // mounted but hidden instead would leave them subscribed to the store and updating off-screen.
+  let collapsed = $state<Record<'quick' | RightPanelTab, boolean>>({
+    quick: false,
+    scoreboard: false,
+    analytics: false,
+    history: false,
+  });
+
   const rightPanelTabs = $derived<
     ReadonlyArray<{ id: RightPanelTab; label: string; badge?: string | number }>
   >([
@@ -33,7 +44,7 @@
 </script>
 
 {#if rollState.mode === 'quick'}
-  <QuickResultPanel />
+  <QuickResultPanel bind:collapsed={collapsed.quick} />
 {:else}
   <Tabs
     tabs={rightPanelTabs}
@@ -43,11 +54,11 @@
   >
     {#snippet panel(id)}
       {#if id === 'scoreboard'}
-        <SeriesScoreboard />
+        <SeriesScoreboard bind:collapsed={collapsed.scoreboard} />
       {:else if id === 'analytics'}
-        <StatisticalBreakdown />
+        <StatisticalBreakdown bind:collapsed={collapsed.analytics} />
       {:else}
-        <HistoryPanel />
+        <HistoryPanel bind:collapsed={collapsed.history} />
       {/if}
     {/snippet}
   </Tabs>
