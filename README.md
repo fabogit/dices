@@ -82,7 +82,7 @@ The architecture cleanly decouples mathematical random generation, domain statis
 - **3D Graphics & Rendering:** [Three.js](https://threejs.org/) (`^0.187.0`), `@types/three` (`^0.187.0`)
 - **Language & Typings:** [TypeScript](https://www.typescriptlang.org/) (`^6.0.3`), ECMAScript 2022 Target
 - **Build Tooling & Bundler:** [Vite 8](https://vite.dev/) (Rolldown) via [Vite+](https://viteplus.dev/) (`^1.6.0`), `@sveltejs/vite-plugin-svelte` (`^7.3.1`), with `codeSplitting` groups isolating `three`
-- **Testing & Quality:** `vite-plus/test` ([Vitest](https://vitest.dev/) `5.1.0`) with `@vitest/coverage-v8`, [Playwright](https://playwright.dev/) (`^1.65.0`, Chromium E2E), GitHub Actions CI, and a `pnpm run check` gate combining `tsc --noEmit`, `svelte-check`, and `vp check` (`oxfmt`, `oxlint`, type-check)
+- **Testing & Quality:** `vite-plus/test` ([Vitest](https://vitest.dev/) `5.1.0`) with `@vitest/coverage-v8`, [Playwright](https://playwright.dev/) (`^1.65.0`, Chromium E2E), GitHub Actions CI, and a `pnpm run check` gate combining `tsc` (E2E project), `svelte-check`, and `vp check` (`oxfmt`, `oxlint`, type-check)
 - **Package Management & Engine:** [pnpm](https://pnpm.io/) (`pnpm@11.21.0`), Node.js `>=26.13.1` (pinned via `.node-version`)
 - **Cloud Infrastructure & Security:** [Cloudflare Pages](https://pages.cloudflare.com/) (`wrangler.jsonc`, `compatibility_date: 2026-11-01`), strict security headers via `public/_headers`
 
@@ -297,7 +297,7 @@ pnpm run preview
 ### Verification & Testing
 
 ```bash
-# Run the full static gate: tsc --noEmit, svelte-check, and vp check (oxfmt + oxlint + type-check)
+# Run the full static gate: tsc (e2e project), svelte-check, and vp check (oxfmt + oxlint + type-check)
 pnpm run check
 
 # Execute comprehensive Vitest unit/component test suite (171 tests across core, formatters, 3D, state, and UI components)
@@ -306,9 +306,11 @@ pnpm test
 # Run Vitest test suite with V8 code coverage and per-area threshold enforcement
 pnpm run test:coverage
 
-# Execute Chromium Playwright E2E test suite against the built production preview (18 tests across 10 specs, including visual regression baselines)
+# Execute Chromium Playwright E2E test suite against the built production preview (22 tests across 11 specs, including visual regression baselines)
 pnpm run test:e2e
 ```
+
+Why three type checkers: `svelte-check` (TypeScript 6, `tsconfig.json`) checks everything under `src/` (`.ts` and `.svelte`) plus `vite.config.ts` with the same strict options `tsc` would use, so a separate `tsc --noEmit` for `src` is redundant and was dropped. `tsc -p tsconfig.e2e.json` stays because `svelte-check` does not reach `e2e/` or `playwright.config.ts`. `vp check` runs oxlint's type-aware pass (tsgolint, TypeScript 7 engine) for lint rules that need type information.
 
 ### Cloudflare Pages Deployment
 
