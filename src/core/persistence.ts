@@ -1,4 +1,5 @@
-import { computeRoundResult, computeSeriesSummary } from './engine';
+import { computeRoundResult } from './round';
+import { computeSeriesSummary } from './series-analytics';
 import { MAX_HISTORY_ENTRIES, isValidRollConfig } from './limits';
 import type { Player, RollConfig, SeriesSummary } from './types';
 

@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vite-plus/test';
 import { isValidRollConfig } from '../limits';
-import { computeRoundResult, computeSeriesSummary } from '../engine';
+import { computeRoundResult } from '../round';
+import { computeSeriesSummary } from '../series-analytics';
 import {
   DEFAULT_PLAYER,
   defaultStorage,

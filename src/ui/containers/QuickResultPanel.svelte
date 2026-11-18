@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { computeQuickRollSessionStats, computeQuickRollStats } from '../../core/engine';
+  import { computeQuickRollSessionStats, computeQuickRollStats } from '../../core/quick-stats';
   import CollapsiblePanel from '../primitives/CollapsiblePanel.svelte';
   import EmptyState from '../primitives/EmptyState.svelte';
   import { getRollState } from '../state/rollStateContext';

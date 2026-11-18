@@ -7,12 +7,9 @@ import type {
   RoundResult,
   SeriesSummary,
 } from '../../core/types';
-import {
-  computePlayerLeaderboard,
-  computeRoundResult,
-  computeSeriesSummary,
-  createSeriesId,
-} from '../../core/engine';
+import { computePlayerLeaderboard } from '../../core/leaderboard';
+import { computeRoundResult, createSeriesId } from '../../core/round';
+import { computeSeriesSummary } from '../../core/series-analytics';
 import {
   DEFAULT_PLAYER,
   defaultStorage,

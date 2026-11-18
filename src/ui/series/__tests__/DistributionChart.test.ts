@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vite-plus/test';
 import { render } from '@testing-library/svelte';
-import { computeRoundResult, computeSeriesAnalytics } from '../../../core/engine';
+import { computeRoundResult } from '../../../core/round';
+import { computeSeriesAnalytics } from '../../../core/series-analytics';
 import DistributionChart from '../DistributionChart.svelte';
 
 describe('DistributionChart', () => {

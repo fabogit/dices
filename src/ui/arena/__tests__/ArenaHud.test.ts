@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vite-plus/test';
 import { render } from '@testing-library/svelte';
-import { computeRoundResult } from '../../../core/engine';
+import { computeRoundResult } from '../../../core/round';
 import ArenaHud from '../ArenaHud.svelte';
 
 const diceRoll = computeRoundResult(1, [2, 5], 6, 1_700_000_000_000, 'round-1');

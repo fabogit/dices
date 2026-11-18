@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from 'vite-plus/test';
 import { render, fireEvent, within } from '@testing-library/svelte';
-import { computeRoundResult } from '../../../core/engine';
+import { computeRoundResult } from '../../../core/round';
 import QuickRollFeed from '../QuickRollFeed.svelte';
 
 describe('QuickRollFeed', () => {
