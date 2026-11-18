@@ -18,15 +18,16 @@
 <!-- Player Selector & Actions (Series Mode Only) -->
 <div class="player-selector-group">
   <label for={selectId} class="player-label">Player:</label>
+  <!-- Template-literal values stop Svelte from emitting an uncoverable `?? ''` branch. -->
   <select
     id={selectId}
     class="player-select"
-    value={activePlayerId}
+    value={`${activePlayerId}`}
     {disabled}
     onchange={(e) => onSelect(e.currentTarget.value)}
   >
     {#each players as p (p.id)}
-      <option value={p.id}>{p.name}</option>
+      <option value={`${p.id}`}>{p.name}</option>
     {/each}
   </select>
 
