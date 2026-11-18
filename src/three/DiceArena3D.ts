@@ -444,7 +444,7 @@ export class DiceArena3D {
   private cleanupCurrentDice(): void {
     for (const mesh of this.currentDiceMeshes) {
       this.scene.remove(mesh);
-      mesh.geometry?.dispose();
+      mesh.geometry.dispose();
       if (Array.isArray(mesh.material)) {
         for (const mat of mesh.material) mat.dispose();
       } else {
