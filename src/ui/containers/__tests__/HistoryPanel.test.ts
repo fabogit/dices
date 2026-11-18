@@ -119,6 +119,20 @@ describe('HistoryPanel container', () => {
     expect(getByText(/No completed series yet/)).toBeTruthy();
   });
 
+  it('moves focus to the panel heading after confirming, since the trigger unmounts', async () => {
+    const { getByRole } = renderPanel([3]);
+    await completeSeries(1);
+    await openConfirm(getByRole);
+
+    await fireEvent.click(getByRole('button', { name: 'Delete history' }));
+    await tick();
+    await tick();
+
+    const heading = getByRole('heading', { name: 'History & Leaderboard' });
+    expect(document.activeElement).toBe(heading);
+    expect(heading.tabIndex).toBe(-1);
+  });
+
   it('collapses and expands its body', async () => {
     const { getByRole } = renderPanel();
     await fireEvent.click(getByRole('button', { name: 'Hide History & Leaderboard' }));

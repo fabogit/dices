@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { tick } from 'svelte';
   import CollapsiblePanel from '../primitives/CollapsiblePanel.svelte';
   import Dialog from '../primitives/Dialog.svelte';
   import EmptyState from '../primitives/EmptyState.svelte';
@@ -19,16 +20,24 @@
     clearTrigger?.focus();
   }
 
-  function confirmClear() {
+  const HEADING_ID = 'history-heading';
+
+  async function confirmClear() {
     rollState.clearHistory();
-    closeConfirm();
+    confirmOpen = false;
+    // The Clear trigger unmounts with the last series, so focus moves to the panel heading
+    // (which stays mounted) instead of being dropped on <body> (WCAG 2.4.3).
+    await tick();
+    const heading = document.querySelector<HTMLElement>(`#${HEADING_ID}`);
+    heading?.setAttribute('tabindex', '-1');
+    heading?.focus();
   }
 </script>
 
 <CollapsiblePanel
   as="aside"
   variant="history"
-  headingId="history-heading"
+  headingId={HEADING_ID}
   title="History & Leaderboard"
   collapsed={isCollapsed}
   onToggle={() => (isCollapsed = !isCollapsed)}

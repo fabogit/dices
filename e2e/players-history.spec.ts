@@ -182,6 +182,7 @@ test.describe('Player Management, Leaderboard, & History Persistence (Issue #13)
     await expect(confirmDialog).toContainText('3 completed series');
     await expect(confirmDialog.getByRole('button', { name: 'Cancel' })).toBeFocused();
     await confirmDialog.getByRole('button', { name: 'Delete history' }).click();
+    await expect(page.getByRole('heading', { name: 'History & Leaderboard' })).toBeFocused();
 
     await expect(page.getByText(/No completed series/i)).toBeVisible();
     await expect(clearBtn).not.toBeVisible();
