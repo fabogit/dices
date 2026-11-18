@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.1.3](https://github.com/fabogit/dices/compare/v1.1.2...v1.1.3) (2026-11-18)
+
+
+### Refactoring
+
+* **core:** move validateRollConfig to limits and share list caps ([#88](https://github.com/fabogit/dices/issues/88)) ([43ccbca](https://github.com/fabogit/dices/commit/43ccbcaeacb75eec4c4eae767e2b1d71ea5dabde)), closes [#77](https://github.com/fabogit/dices/issues/77)
+
 ## [1.1.2](https://github.com/fabogit/dices/compare/v1.1.1...v1.1.2) (2026-11-18)
 
 
