@@ -41,7 +41,7 @@ function field(value, key) {
  */
 export function findPlaywrightVersionProblems({ spec, installed, files }) {
   const problems = [];
-  if (!spec) {
+  if (spec === undefined || spec === '') {
     problems.push('Missing @playwright/test in package.json devDependencies.');
   } else if (!EXACT_VERSION.test(spec)) {
     problems.push(

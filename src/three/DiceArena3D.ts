@@ -132,7 +132,7 @@ export class DiceArena3D {
     // Directional key light with shadows
     const keyLight = new THREE.DirectionalLight(0xfff7ed, 2.0);
     keyLight.position.set(6, 18, 8);
-    if (this.renderer?.shadowMap.enabled) {
+    if (this.renderer?.shadowMap.enabled === true) {
       keyLight.castShadow = true;
       keyLight.shadow.mapSize.width = 1024;
       keyLight.shadow.mapSize.height = 1024;
@@ -444,10 +444,10 @@ export class DiceArena3D {
   private cleanupCurrentDice(): void {
     for (const mesh of this.currentDiceMeshes) {
       this.scene.remove(mesh);
-      mesh.geometry?.dispose();
+      mesh.geometry.dispose();
       if (Array.isArray(mesh.material)) {
         for (const mat of mesh.material) mat.dispose();
-      } else if (mesh.material) {
+      } else {
         mesh.material.dispose();
       }
     }

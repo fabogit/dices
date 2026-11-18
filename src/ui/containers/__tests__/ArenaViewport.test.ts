@@ -38,7 +38,7 @@ vi.mock('../../../three/DiceArena3D', () => ({
   DiceArena3D: class {
     private landing: (() => void) | undefined;
     readonly rollVisual = vi.fn<RollVisual>((_faces, _values, options) =>
-      options?.skipAnimation
+      options?.skipAnimation === true
         ? Promise.resolve()
         : new Promise<void>((resolve) => {
             this.landing = resolve;

@@ -17,7 +17,7 @@
     "lint": "vp lint",
     "format": "vp fmt --write",
     "format:check": "vp fmt --check",
-    "check:types": "tsc --noEmit -p tsconfig.e2e.json",
+    "check:types": "tsc --noEmit -p tsconfig.e2e.json && tsc --noEmit -p scripts/tsconfig.json",
     "check:svelte": "svelte-check --tsconfig ./tsconfig.json --fail-on-warnings",
     "check": "pnpm run check:types && pnpm run check:svelte && vp check"
   },

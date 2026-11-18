@@ -1,5 +1,5 @@
 import { vitePreprocess } from '@sveltejs/vite-plugin-svelte';
 
 export default {
-  preprocess: vitePreprocess({ style: !process.env.VITEST }),
+  preprocess: vitePreprocess({ style: (process.env.VITEST ?? '') === '' }),
 };
