@@ -82,7 +82,8 @@
 <style>
   .tabs-list {
     display: grid;
-    grid-template-columns: repeat(3, 1fr);
+    grid-auto-flow: column;
+    grid-auto-columns: 1fr;
     gap: 0.25rem;
     padding: 0.25rem;
     background: var(--surface-dark);
