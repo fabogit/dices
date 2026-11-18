@@ -12,7 +12,7 @@ let seriesIdSequence = 0;
 
 function generateRoundId(timestamp: number): string {
   roundIdSequence += 1;
-  const uuid = typeof crypto !== 'undefined' ? crypto.randomUUID?.() : undefined;
+  const uuid = typeof crypto === 'undefined' ? undefined : crypto.randomUUID?.();
   return uuid ?? `round-${timestamp}-${roundIdSequence}`;
 }
 
@@ -21,7 +21,7 @@ function generateRoundId(timestamp: number): string {
  */
 export function createSeriesId(timestamp: number = Date.now()): string {
   seriesIdSequence += 1;
-  const uuid = typeof crypto !== 'undefined' ? crypto.randomUUID?.() : undefined;
+  const uuid = typeof crypto === 'undefined' ? undefined : crypto.randomUUID?.();
   return uuid ?? `series-${timestamp}-${seriesIdSequence}`;
 }
 

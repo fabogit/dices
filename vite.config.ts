@@ -135,8 +135,6 @@ export default defineConfig(({ mode }) => ({
       'typescript/strict-boolean-expressions': 'off', // 14
       'typescript/no-unsafe-assignment': 'off', // 10
       'eslint/max-lines': 'off', // 9
-      'eslint/no-negated-condition': 'off', // 9
-      'unicorn/no-negated-condition': 'off', // 9
       'typescript/no-unsafe-argument': 'off', // 9
       'unicorn/no-array-callback-reference': 'off', // 7
       'eslint/sort-vars': 'off', // 6
@@ -152,7 +150,6 @@ export default defineConfig(({ mode }) => ({
       'eslint/no-promise-executor-return': 'off', // 2
       'unicorn/no-immediate-mutation': 'off', // 2
       'oxc/no-map-spread': 'off', // 2
-      'eslint/no-lonely-if': 'off', // 2
       'unicorn/no-useless-undefined': 'off', // 2
       'typescript/no-unsafe-return': 'off', // 2
       'unicorn/prefer-number-coercion': 'off', // 1

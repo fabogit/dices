@@ -42,7 +42,7 @@ export async function installDeterministicRng(
 
         if (array instanceof Uint32Array) {
           for (let i = 0; i < array.length; i++) {
-            array[i] = seq !== null ? seq[cursor++ % seq.length] : nextUint32();
+            array[i] = seq === null ? nextUint32() : seq[cursor++ % seq.length];
           }
           return array;
         }

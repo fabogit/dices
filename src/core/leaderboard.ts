@@ -48,12 +48,10 @@ export function computePlayerLeaderboard(
         if (s.coinSeriesWinner === 'HEADS') {
           coinSeriesWon++;
         }
+      } else if (s.analytics.expectedRoundAverage > 0 && s.rounds.length > 0) {
+        seriesLuck = (s.average / s.analytics.expectedRoundAverage) * 100;
       } else {
-        if (s.analytics.expectedRoundAverage > 0 && s.rounds.length > 0) {
-          seriesLuck = (s.average / s.analytics.expectedRoundAverage) * 100;
-        } else {
-          seriesLuck = 100;
-        }
+        seriesLuck = 100;
       }
 
       weightedLuckScoreSum += seriesLuck * rollsInSeries;

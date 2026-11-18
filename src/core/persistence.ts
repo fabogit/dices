@@ -58,7 +58,7 @@ function getBrowserStorage(): Storage | null {
     return null;
   }
   try {
-    return window.localStorage ?? (typeof localStorage !== 'undefined' ? localStorage : null);
+    return window.localStorage ?? (typeof localStorage === 'undefined' ? null : localStorage);
   } catch {
     return null;
   }

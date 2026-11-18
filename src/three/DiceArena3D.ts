@@ -105,7 +105,7 @@ export class DiceArena3D {
       });
       this.renderer.setSize(width, height, false);
       this.renderer.setPixelRatio(
-        typeof window !== 'undefined' ? Math.min(window.devicePixelRatio || 1, 2) : 1,
+        typeof window === 'undefined' ? 1 : Math.min(window.devicePixelRatio || 1, 2),
       );
 
       if (options.shadows !== false) {
@@ -337,7 +337,7 @@ export class DiceArena3D {
 
     return new Promise<void>((resolve) => {
       this.currentResolve = resolve;
-      const startTime = typeof performance !== 'undefined' ? performance.now() : Date.now();
+      const startTime = typeof performance === 'undefined' ? Date.now() : performance.now();
 
       const tick = () => {
         if (this.isDisposed || this.isContextLost) {
@@ -345,7 +345,7 @@ export class DiceArena3D {
           return;
         }
 
-        const now = typeof performance !== 'undefined' ? performance.now() : Date.now();
+        const now = typeof performance === 'undefined' ? Date.now() : performance.now();
         const elapsed = now - startTime;
         const progress = Math.min(elapsed / duration, 1.0);
 
@@ -389,10 +389,10 @@ export class DiceArena3D {
         this.render();
 
         if (progress < 1.0) {
-          if (typeof requestAnimationFrame !== 'undefined') {
-            this.animationFrameId = requestAnimationFrame(tick);
-          } else {
+          if (typeof requestAnimationFrame === 'undefined') {
             setTimeout(tick, 16);
+          } else {
+            this.animationFrameId = requestAnimationFrame(tick);
           }
         } else {
           // Final exact snap
@@ -407,10 +407,10 @@ export class DiceArena3D {
         }
       };
 
-      if (typeof requestAnimationFrame !== 'undefined') {
-        this.animationFrameId = requestAnimationFrame(tick);
-      } else {
+      if (typeof requestAnimationFrame === 'undefined') {
         setTimeout(tick, 16);
+      } else {
+        this.animationFrameId = requestAnimationFrame(tick);
       }
     });
   }
