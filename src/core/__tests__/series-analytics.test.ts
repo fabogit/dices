@@ -342,9 +342,21 @@ describe('computeSeriesAnalytics', () => {
     expect(computeSeriesAnalytics(configD20, fifteenDice).sampleReliability).toBe('moderate'); // 15 dice
 
     const thirtyDice = [
-      computeRoundResult(0, Array(10).fill(10), 20),
-      computeRoundResult(1, Array(10).fill(10), 20),
-      computeRoundResult(2, Array(10).fill(10), 20),
+      computeRoundResult(
+        0,
+        Array.from({ length: 10 }, () => 10),
+        20,
+      ),
+      computeRoundResult(
+        1,
+        Array.from({ length: 10 }, () => 10),
+        20,
+      ),
+      computeRoundResult(
+        2,
+        Array.from({ length: 10 }, () => 10),
+        20,
+      ),
     ];
     expect(computeSeriesAnalytics(configD20, thirtyDice).sampleReliability).toBe('solid'); // 30 dice
   });

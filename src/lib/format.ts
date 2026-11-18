@@ -20,6 +20,12 @@ export function formatSigned(value: number, decimals: number = 1): string {
   return `${value >= 0 ? '+' : ''}${value.toFixed(decimals)}`;
 }
 
+const COIN_LABELS: Record<DieLabelVariant, string> = {
+  default: 'Coin d2',
+  parens: 'Coin (d2)',
+  short: 'Coin',
+};
+
 /**
  * Formats a die face count for display, handling d2 coins across UI label variants.
  */
@@ -27,12 +33,5 @@ export function dieLabel(faces: DieFaces, variant: DieLabelVariant = 'default'):
   if (faces !== 2) {
     return `d${faces}`;
   }
-  switch (variant) {
-    case 'parens':
-      return 'Coin (d2)';
-    case 'short':
-      return 'Coin';
-    default:
-      return 'Coin d2';
-  }
+  return COIN_LABELS[variant];
 }

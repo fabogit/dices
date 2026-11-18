@@ -58,7 +58,7 @@ function getBrowserStorage(): Storage | null {
     return null;
   }
   try {
-    return window.localStorage ?? (typeof localStorage !== 'undefined' ? localStorage : null);
+    return window.localStorage ?? (typeof localStorage === 'undefined' ? null : localStorage);
   } catch {
     return null;
   }
@@ -204,9 +204,9 @@ export function sanitizePersistedPlayers(
 export function migrateV1ToV2(rawV1: unknown): PersistedStateV2 {
   const records = Array.isArray(rawV1)
     ? rawV1
-        .filter(isPersistedSeriesRecord)
+        .filter((record) => isPersistedSeriesRecord(record))
         .slice(0, MAX_HISTORY_ENTRIES)
-        .map(toPersistedSeriesRecord)
+        .map((record) => toPersistedSeriesRecord(record))
     : [];
 
   const playerMap = new Map<string, Player>([[DEFAULT_PLAYER.id, { ...DEFAULT_PLAYER }]]);
@@ -245,7 +245,7 @@ export function hydratePersistedState(raw: unknown): HydratedState {
     return {
       players: migrated.players,
       activePlayerId: migrated.activePlayerId,
-      history: migrated.history.map(hydrateSeriesRecord),
+      history: migrated.history.map((record) => hydrateSeriesRecord(record)),
     };
   }
 
@@ -253,9 +253,9 @@ export function hydratePersistedState(raw: unknown): HydratedState {
     const { players, activePlayerId } = sanitizePersistedPlayers(raw.players, raw.activePlayerId);
     const rawHistory = Array.isArray(raw.history) ? raw.history : [];
     const history = rawHistory
-      .filter(isPersistedSeriesRecord)
+      .filter((record) => isPersistedSeriesRecord(record))
       .slice(0, MAX_HISTORY_ENTRIES)
-      .map(hydrateSeriesRecord);
+      .map((record) => hydrateSeriesRecord(record));
 
     return { players, activePlayerId, history };
   }
@@ -279,7 +279,9 @@ export function serializePersistedState(state: {
     version: 2,
     players: state.players.map((p) => ({ ...p })),
     activePlayerId: state.activePlayerId,
-    history: state.history.slice(0, MAX_HISTORY_ENTRIES).map(toPersistedSeriesRecord),
+    history: state.history
+      .slice(0, MAX_HISTORY_ENTRIES)
+      .map((record) => toPersistedSeriesRecord(record)),
   };
 }
 

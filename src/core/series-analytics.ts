@@ -239,7 +239,12 @@ export function computeSeriesAnalytics(config: RollConfig, rounds: RoundResult[]
   }
 
   const distribution: FaceDistributionEntry[] = rawDistribution.map((entry) => ({
-    ...entry,
+    face: entry.face,
+    label: entry.label,
+    count: entry.count,
+    percentage: entry.percentage,
+    expectedPercentage: entry.expectedPercentage,
+    deltaPercentage: entry.deltaPercentage,
     barWidthPercentage: Math.min(100, (entry.percentage / distributionPeakPercentage) * 100),
     expectedMarkerPercentage: Math.min(
       100,
@@ -462,7 +467,7 @@ export function computeSeriesSummary(
   };
 
   if (analytics.kind === 'coin') {
-    if (!rounds.every(isCoinRound)) {
+    if (!rounds.every((round) => isCoinRound(round))) {
       throw new Error('computeSeriesSummary: coin config received non-coin rounds');
     }
     return {
@@ -474,7 +479,7 @@ export function computeSeriesSummary(
     };
   }
 
-  if (!rounds.every(isDiceRound)) {
+  if (!rounds.every((round) => isDiceRound(round))) {
     throw new Error('computeSeriesSummary: dice config received non-dice rounds');
   }
   return {

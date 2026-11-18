@@ -225,7 +225,7 @@ test.describe('Statistics Alignment & Descriptive Insights (Issue #12 & #13)', (
     let totalPct = 0;
     for (let i = 0; i < 6; i++) {
       const pctText = await distRows.nth(i).getByTestId('dist-pct').textContent();
-      totalPct += parseFloat(pctText?.replace('%', '') ?? '0');
+      totalPct += Number(pctText?.replace('%', '') ?? '0');
     }
     expect(Math.round(totalPct)).toBe(100);
 

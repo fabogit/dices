@@ -22,8 +22,8 @@ const LOCATOR_CALL_PATTERN = /\.locator\(\s*/g;
  * @returns {boolean}
  */
 function hasClassOrId(selector) {
-  const withoutPlaceholders = selector.replace(/\$\{[^}]*\}/g, '');
-  const withoutAttrs = withoutPlaceholders.replace(/\[[^\]]*\]/g, '');
+  const withoutPlaceholders = selector.replaceAll(/\$\{[^}]*\}/g, '');
+  const withoutAttrs = withoutPlaceholders.replaceAll(/\[[^\]]*\]/g, '');
   return /[.#]/.test(withoutAttrs);
 }
 
@@ -34,6 +34,7 @@ function hasClassOrId(selector) {
  * @returns {Map<string, string>}
  */
 function collectStringVariables(source) {
+  /** @type {Map<string, string>} */
   const vars = new Map();
   const pattern =
     /\b(?:const|let|var)\s+([A-Za-z_$][\w$]*)\s*(?::\s*string\s*)?=\s*(['"`])((?:\\.|(?!\2)[^\\])*)\2\s*[;,\n]/g;
@@ -98,7 +99,8 @@ function collectSpecFiles(dir) {
     }
   }
 
-  return files.toSorted((a, b) => (a < b ? -1 : a > b ? 1 : 0));
+  // oxlint-disable-next-line unicorn/no-array-sort -- `Array#toSorted` is not in the default lib the type-aware linter uses for scripts, so it would resolve to an unsafe `error` type; sorting a copy keeps the input unmodified
+  return [...files].sort((a, b) => (a < b ? -1 : a > b ? 1 : 0));
 }
 
 function runSelfTest() {
@@ -178,7 +180,7 @@ function runGuard() {
   let totalViolations = 0;
 
   for (const filePath of specFiles) {
-    const relPath = relative(E2E_DIR, filePath).replace(/\\/g, '/');
+    const relPath = relative(E2E_DIR, filePath).replaceAll('\\', '/');
     const violations = findForbiddenSelectors(readFileSync(filePath, 'utf8'));
     totalViolations += violations.length;
 

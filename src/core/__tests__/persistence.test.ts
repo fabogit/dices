@@ -22,9 +22,16 @@ import type { Player, RollConfig } from '../types';
 
 const d6Config: RollConfig = { faces: 6, countPerRoll: 2, seriesLength: 2, playerId: 'player-1' };
 
+const singleRoundD6Config: RollConfig = {
+  faces: 6,
+  countPerRoll: 2,
+  seriesLength: 1,
+  playerId: 'player-1',
+};
+
 function makeSummary(
   id: string,
-  config: RollConfig = { faces: 6, countPerRoll: 2, seriesLength: 1, playerId: 'player-1' },
+  config: RollConfig = singleRoundD6Config,
   playerName: string = 'Player 1',
   valuesPerRound: number[][] = [[3, 5]],
 ) {
@@ -281,6 +288,7 @@ describe('v1 to v2 migration and defaultStorage', () => {
   it('returns null and no-ops safely when window or localStorage is unavailable or throws', () => {
     const storage = defaultStorage('custom-v2', 'custom-v1');
 
+    // oxlint-disable-next-line unicorn/no-useless-undefined -- vi.stubGlobal needs an explicit value; undefined simulates a missing global
     vi.stubGlobal('window', undefined);
     expect(storage.load()).toBeNull();
     expect(() => storage.save({ version: 2 })).not.toThrow();

@@ -105,12 +105,12 @@ export class DiceArena3D {
       });
       this.renderer.setSize(width, height, false);
       this.renderer.setPixelRatio(
-        typeof window !== 'undefined' ? Math.min(window.devicePixelRatio || 1, 2) : 1,
+        typeof window === 'undefined' ? 1 : Math.min(window.devicePixelRatio || 1, 2),
       );
 
       if (options.shadows !== false) {
         this.renderer.shadowMap.enabled = true;
-        this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+        this.renderer.shadowMap.type = THREE.PCFShadowMap;
       }
     } catch {
       // In headless environments where WebGL is unavailable, renderer stays null
@@ -322,7 +322,7 @@ export class DiceArena3D {
     this.activeAnimations = animations;
 
     const duration = options.durationMs ?? 1200;
-    const skip = options.skipAnimation || duration <= 0;
+    const skip = options.skipAnimation === true || duration <= 0;
 
     if (skip || !this.renderer || this.isContextLost) {
       // Place immediately at rest (also while the GL context is lost, so the dice
@@ -337,7 +337,7 @@ export class DiceArena3D {
 
     return new Promise<void>((resolve) => {
       this.currentResolve = resolve;
-      const startTime = typeof performance !== 'undefined' ? performance.now() : Date.now();
+      const startTime = typeof performance === 'undefined' ? Date.now() : performance.now();
 
       const tick = () => {
         if (this.isDisposed || this.isContextLost) {
@@ -345,7 +345,7 @@ export class DiceArena3D {
           return;
         }
 
-        const now = typeof performance !== 'undefined' ? performance.now() : Date.now();
+        const now = typeof performance === 'undefined' ? Date.now() : performance.now();
         const elapsed = now - startTime;
         const progress = Math.min(elapsed / duration, 1.0);
 
@@ -389,10 +389,10 @@ export class DiceArena3D {
         this.render();
 
         if (progress < 1.0) {
-          if (typeof requestAnimationFrame !== 'undefined') {
-            this.animationFrameId = requestAnimationFrame(tick);
-          } else {
+          if (typeof requestAnimationFrame === 'undefined') {
             setTimeout(tick, 16);
+          } else {
+            this.animationFrameId = requestAnimationFrame(tick);
           }
         } else {
           // Final exact snap
@@ -407,10 +407,10 @@ export class DiceArena3D {
         }
       };
 
-      if (typeof requestAnimationFrame !== 'undefined') {
-        this.animationFrameId = requestAnimationFrame(tick);
-      } else {
+      if (typeof requestAnimationFrame === 'undefined') {
         setTimeout(tick, 16);
+      } else {
+        this.animationFrameId = requestAnimationFrame(tick);
       }
     });
   }
@@ -476,11 +476,12 @@ export class DiceArena3D {
     for (const obj of this.trayMeshes) {
       this.scene.remove(obj);
       if (obj instanceof THREE.Mesh) {
-        obj.geometry?.dispose();
-        if (Array.isArray(obj.material)) {
-          for (const mat of obj.material) mat.dispose();
-        } else if (obj.material) {
-          obj.material.dispose();
+        const geometry: unknown = obj.geometry;
+        const material: unknown = obj.material;
+        if (geometry instanceof THREE.BufferGeometry) geometry.dispose();
+        const materials: unknown[] = Array.isArray(material) ? material : [material];
+        for (const mat of materials) {
+          if (mat instanceof THREE.Material) mat.dispose();
         }
       }
     }

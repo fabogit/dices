@@ -254,7 +254,7 @@ describe('CollapsiblePanel primitive', () => {
     expect(btnOne.getAttribute('aria-expanded')).toBe('true');
     expect(btnTwo.getAttribute('aria-expanded')).toBe('false');
 
-    const bodyTwo = document.getElementById(controlsTwo!);
+    const bodyTwo = document.querySelector(`[id="${controlsTwo!}"]`);
     expect(bodyTwo?.classList.contains('collapsed')).toBe(true);
 
     await fireEvent.click(btnOne);
@@ -486,7 +486,7 @@ describe('CoinPills primitive', () => {
     const singleCoin = container.querySelectorAll('.mini-coin');
     expect(singleCoin).toHaveLength(1);
     expect(singleCoin[0]?.textContent?.trim()).toBe('T');
-    expect(singleCoin[0]?.getAttribute('data-testid')).toBeNull();
+    expect((singleCoin[0] as HTMLElement | undefined)?.dataset.testid).toBeUndefined();
   });
 });
 
@@ -590,7 +590,7 @@ describe('Dialog primitive', () => {
     expect(dialog.open).toBe(true);
     const labelledBy = dialog.getAttribute('aria-labelledby');
     expect(labelledBy).toBeTruthy();
-    expect(document.getElementById(labelledBy!)?.textContent).toBe('Add Local Player');
+    expect(document.querySelector(`[id="${labelledBy!}"]`)?.textContent).toBe('Add Local Player');
 
     // Click inside content does NOT close
     const inner = container.querySelector('[data-testid="inner"]')!;

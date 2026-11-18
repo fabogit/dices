@@ -9,7 +9,9 @@ function stubMatchMedia(matches = false) {
     (type: string, cb: Handler, options?: { signal?: AbortSignal }) => void
   >((_type, cb, options) => {
     handlers.add(cb);
-    options?.signal?.addEventListener('abort', () => handlers.delete(cb));
+    options?.signal?.addEventListener('abort', () => {
+      handlers.delete(cb);
+    });
   });
   const removeEventListener = vi.fn<(type: string, cb: Handler) => void>((_type, cb) => {
     handlers.delete(cb);
@@ -65,6 +67,7 @@ describe('RollState reduced-motion listener', () => {
   });
 
   it('works without matchMedia', () => {
+    // oxlint-disable-next-line unicorn/no-useless-undefined -- vi.stubGlobal needs an explicit value; undefined simulates a missing global
     vi.stubGlobal('matchMedia', undefined);
     const s = new RollState();
     expect(s.instantMode).toBe(false);

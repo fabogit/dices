@@ -9,7 +9,7 @@ import { RollState } from './ui/state/rollState.svelte';
 const rollState = new RollState();
 
 const app = mount(App, {
-  target: document.getElementById('app')!,
+  target: document.querySelector<HTMLElement>('#app')!,
   props: { rollState },
 });
 

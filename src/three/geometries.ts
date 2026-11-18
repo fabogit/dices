@@ -13,7 +13,8 @@ const textureCache = new Map<string, THREE.Texture>();
  * Face normals registry populated for all supported dice and their values 1..faces.
  */
 const FACE_NORMALS: Record<DieFaces, THREE.Vector3[]> = {
-  2: [],
+  // d2 face normals (value 1 -> HEADS: (0, 1, 0), value 2 -> TAILS: (0, -1, 0))
+  2: [new THREE.Vector3(0, 1, 0), new THREE.Vector3(0, -1, 0)],
   4: [],
   6: [],
   8: [],
@@ -21,9 +22,6 @@ const FACE_NORMALS: Record<DieFaces, THREE.Vector3[]> = {
   12: [],
   20: [],
 };
-
-// Initialize d2 face normals (value 1 -> HEADS: (0, 1, 0), value 2 -> TAILS: (0, -1, 0))
-FACE_NORMALS[2] = [new THREE.Vector3(0, 1, 0), new THREE.Vector3(0, -1, 0)];
 
 // Initialize d4 face normals
 {

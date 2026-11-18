@@ -21,7 +21,7 @@ export function createMemoryStorage(initialPayload: unknown = null): RollStorage
  * (whatever the requested faces/count) and throws once the plan is exhausted.
  */
 export function createScriptedProvider(...rounds: number[][]): IRollProvider {
-  const queue = rounds.map((values) => [...values]);
+  const queue = rounds.map((values) => values.slice());
   return {
     kind: 'local-csprng',
     rollRound: async () => {

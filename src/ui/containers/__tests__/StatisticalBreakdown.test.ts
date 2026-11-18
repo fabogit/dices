@@ -24,8 +24,10 @@ async function renderBreakdown(faces: DieFaces, count: number, ...rounds: number
   const metrics = view.getByTestId('analytics-metrics');
   /** The value row of the StatBox labelled `label`. */
   const statValue = (label: string): string =>
-    within(metrics).getByText(label).nextElementSibling?.textContent?.replace(/\s+/g, ' ').trim() ??
-    '';
+    within(metrics)
+      .getByText(label)
+      .nextElementSibling?.textContent?.replaceAll(/\s+/g, ' ')
+      .trim() ?? '';
   return { ...view, metrics, statValue };
 }
 

@@ -18,6 +18,23 @@ const BUMP_HINT =
 const read = (path) => readFileSync(new URL(path, `file://${ROOT_DIR}`), 'utf8');
 
 /**
+ * Parses a JSON file as `unknown` so every use has to be validated.
+ * @param {string} path Path relative to the repository root.
+ * @returns {unknown}
+ */
+const readJson = (path) => JSON.parse(read(path));
+
+/**
+ * Reads a property from an unknown value, yielding `undefined` when it is not an object.
+ * @param {unknown} value
+ * @param {string} key
+ * @returns {unknown}
+ */
+function field(value, key) {
+  return typeof value === 'object' && value !== null ? Reflect.get(value, key) : undefined;
+}
+
+/**
  * Returns a list of problems; empty when package.json spec, installed version and image tags agree.
  * @param {{ spec: string | undefined, installed: string, files: Record<string, string> }} input
  * @returns {string[]}
@@ -52,8 +69,13 @@ export function findPlaywrightVersionProblems({ spec, installed, files }) {
 }
 
 function main() {
-  const spec = JSON.parse(read('package.json')).devDependencies?.['@playwright/test'];
-  const installed = JSON.parse(read('node_modules/@playwright/test/package.json')).version;
+  const devDependencies = field(readJson('package.json'), 'devDependencies');
+  const rawSpec = field(devDependencies, '@playwright/test');
+  const spec = typeof rawSpec === 'string' ? rawSpec : undefined;
+  const installed = field(readJson('node_modules/@playwright/test/package.json'), 'version');
+  if (typeof installed !== 'string') {
+    throw new TypeError('node_modules/@playwright/test/package.json has no string "version".');
+  }
   const files = {
     '.github/workflows/ci.yml': read('.github/workflows/ci.yml'),
     'scripts/update-visual-baselines.sh': read('scripts/update-visual-baselines.sh'),
@@ -67,6 +89,6 @@ function main() {
   console.log(`Playwright version verified: v${installed} (package, install and image tags).`);
 }
 
-if (process.argv[1] === fileURLToPath(import.meta.url)) {
+if (process.argv[1] === import.meta.filename) {
   main();
 }
