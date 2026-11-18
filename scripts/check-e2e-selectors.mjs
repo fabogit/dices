@@ -68,7 +68,7 @@ export function findForbiddenSelectors(source) {
     } else {
       const ident = /^([A-Za-z_$][\w$]*)\s*[,)]/.exec(rest);
       if (ident && variables.has(ident[1])) {
-        selector = variables.get(ident[1]);
+        selector = variables.get(ident[1]) ?? null;
       }
     }
 
@@ -99,8 +99,7 @@ function collectSpecFiles(dir) {
     }
   }
 
-  // oxlint-disable-next-line unicorn/no-array-sort -- `Array#toSorted` is not in the default lib the type-aware linter uses for scripts, so it would resolve to an unsafe `error` type; sorting a copy keeps the input unmodified
-  return [...files].sort((a, b) => (a < b ? -1 : a > b ? 1 : 0));
+  return files.toSorted((a, b) => (a < b ? -1 : a > b ? 1 : 0));
 }
 
 function runSelfTest() {
