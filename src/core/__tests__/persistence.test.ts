@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vite-plus/test';
-import { isValidRollConfig } from '../csprng';
+import { isValidRollConfig } from '../limits';
 import { computeRoundResult, computeSeriesSummary } from '../engine';
 import {
   DEFAULT_PLAYER,
