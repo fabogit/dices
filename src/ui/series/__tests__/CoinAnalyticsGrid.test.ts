@@ -25,7 +25,7 @@ function renderGrid(analytics: CoinSeriesAnalytics, roundsCount: number) {
   const grid = view.getByTestId('analytics-metrics');
   /** The value row of the StatBox labelled `label`. */
   const statValue = (label: string): string =>
-    within(grid).getByText(label).nextElementSibling?.textContent?.replace(/\s+/g, ' ').trim() ??
+    within(grid).getByText(label).nextElementSibling?.textContent?.replaceAll(/\s+/g, ' ').trim() ??
     '';
   return { ...view, grid, statValue };
 }
