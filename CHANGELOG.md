@@ -1,5 +1,17 @@
 # Changelog
 
+## [1.1.4](https://github.com/fabogit/dices/compare/v1.1.3...v1.1.4) (2026-11-18)
+
+
+### Bug Fixes
+
+* **ui:** confirm before clearing history and give the clear-feed buttons distinct names ([#92](https://github.com/fabogit/dices/issues/92)) ([ba46746](https://github.com/fabogit/dices/commit/ba46746defe026c7464e48fea67b8ec2d07df50f))
+
+
+### Refactoring
+
+* **core:** split engine.ts and move presentation copy out of core and state ([#94](https://github.com/fabogit/dices/issues/94)) ([f7e3f7c](https://github.com/fabogit/dices/commit/f7e3f7ceb54074a9e8913a98927360e238523a90))
+
 ## [1.1.3](https://github.com/fabogit/dices/compare/v1.1.2...v1.1.3) (2026-11-18)
 
 
