@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.1.6](https://github.com/fabogit/dices/compare/v1.1.5...v1.1.6) (2026-11-18)
+
+
+### Refactoring
+
+* **ui:** replace CollapsiblePanel variants with styling hooks and keep collapsed state across modes ([#100](https://github.com/fabogit/dices/issues/100)) ([18a4339](https://github.com/fabogit/dices/commit/18a4339b4eb6b056ebfafec761fbad4c21b92e55))
+
 ## [1.1.5](https://github.com/fabogit/dices/compare/v1.1.4...v1.1.5) (2026-11-18)
 
 
