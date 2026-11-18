@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.1.2](https://github.com/fabogit/dices/compare/v1.1.1...v1.1.2) (2026-11-18)
+
+
+### Refactoring
+
+* **state:** provide RollState through a typed context ([#82](https://github.com/fabogit/dices/issues/82)) ([ed8ac73](https://github.com/fabogit/dices/commit/ed8ac733fa7971512ed8c8fbb0aa0508cf533bd9)), closes [#72](https://github.com/fabogit/dices/issues/72)
+
 ## [1.1.1](https://github.com/fabogit/dices/compare/v1.1.0...v1.1.1) (2026-11-16)
 
 
