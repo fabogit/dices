@@ -54,7 +54,7 @@ function createMemoryStorage(options: { throwOnSet?: boolean } = {}): Storage {
       store.delete(key);
     },
     setItem: (key: string, value: string) => {
-      if (options.throwOnSet) {
+      if (options.throwOnSet === true) {
         throw new Error('QuotaExceededError');
       }
       store.set(key, value);

@@ -160,8 +160,9 @@ export function getFaceNormal(faces: DieFaces, value: number): THREE.Vector3 {
   if (!Number.isInteger(value) || value < 1 || value > faces) {
     throw new RangeError(`Invalid value ${value} for d${faces} (must be integer in [1, ${faces}])`);
   }
-  const normal = FACE_NORMALS[faces][value - 1];
-  if (!normal) {
+  // Without noUncheckedIndexedAccess the index type is non-nullable, so widen it to keep the guard meaningful.
+  const normal: THREE.Vector3 | undefined = FACE_NORMALS[faces][value - 1];
+  if (normal === undefined) {
     throw new Error(`Normal not found for d${faces} value ${value}`);
   }
   return normal.clone();

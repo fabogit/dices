@@ -1,14 +1,17 @@
 import { defineConfig, devices } from '@playwright/test';
 
+// Treat an unset or empty CI variable as "not CI", matching the previous truthiness check.
+const isCI = (process.env.CI ?? '') !== '';
+
 export default defineConfig({
   testDir: './e2e',
   fullyParallel: false,
-  forbidOnly: !!process.env.CI,
-  retries: process.env.CI ? 2 : 0,
-  workers: process.env.CI ? 1 : 2,
+  forbidOnly: isCI,
+  retries: isCI ? 2 : 0,
+  workers: isCI ? 1 : 2,
   // On CI the 'github' reporter annotates tests that only passed on retry as warnings, so flaky
   // tests stay visible without failing the job (retries: 2 is kept on purpose).
-  reporter: process.env.CI
+  reporter: isCI
     ? [['github'], ['html', { open: 'never' }], ['list']]
     : [['html', { open: 'never' }], ['list']],
   expect: {
@@ -41,7 +44,7 @@ export default defineConfig({
   webServer: {
     command: 'pnpm run preview -- --host 127.0.0.1 --port 4173 --strictPort',
     url: 'http://127.0.0.1:4173',
-    reuseExistingServer: !process.env.CI,
+    reuseExistingServer: !isCI,
     timeout: 120_000,
   },
 });

@@ -137,8 +137,6 @@ export default defineConfig(({ mode }) => ({
       'typescript/no-confusing-void-expression': 'off',
       // Declined: awaits in loops are sequential on purpose (ordered rolls, e2e steps, UI interactions).
       'eslint/no-await-in-loop': 'off',
-      // Deferred: catches `0`/`''` treated as missing on nullable values; 12 sites to make explicit in 91b, after #75.
-      'typescript/strict-boolean-expressions': 'off',
       // Declined: arbitrary file-length cap; big test files and geometry tables are cohesive, splitting adds churn.
       'eslint/max-lines': 'off',
       // Declined: declaration order in geometries follows meaning (grouped vectors), not the alphabet.
