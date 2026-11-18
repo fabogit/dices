@@ -12,7 +12,9 @@
 
   let rightPanelTab = $state<RightPanelTab>('scoreboard');
 
-  const rightPanelTabs = $derived([
+  const rightPanelTabs = $derived<
+    ReadonlyArray<{ id: RightPanelTab; label: string; badge?: string | number }>
+  >([
     {
       id: 'scoreboard',
       label: 'Scoreboard',
@@ -37,35 +39,16 @@
     tabs={rightPanelTabs}
     activeTab={rightPanelTab}
     ariaLabel="Series analysis views"
-    onSelect={(id) => {
-      if (id === 'scoreboard' || id === 'analytics' || id === 'history') {
-        rightPanelTab = id;
-      }
-    }}
-  />
-
-  <div
-    id="tabpanel-scoreboard"
-    role="tabpanel"
-    aria-labelledby="tab-scoreboard"
-    hidden={rightPanelTab !== 'scoreboard'}
+    onSelect={(id) => (rightPanelTab = id)}
   >
-    <SeriesScoreboard />
-  </div>
-  <div
-    id="tabpanel-analytics"
-    role="tabpanel"
-    aria-labelledby="tab-analytics"
-    hidden={rightPanelTab !== 'analytics'}
-  >
-    <StatisticalBreakdown />
-  </div>
-  <div
-    id="tabpanel-history"
-    role="tabpanel"
-    aria-labelledby="tab-history"
-    hidden={rightPanelTab !== 'history'}
-  >
-    <HistoryPanel />
-  </div>
+    {#snippet panel(id)}
+      {#if id === 'scoreboard'}
+        <SeriesScoreboard />
+      {:else if id === 'analytics'}
+        <StatisticalBreakdown />
+      {:else}
+        <HistoryPanel />
+      {/if}
+    {/snippet}
+  </Tabs>
 {/if}
