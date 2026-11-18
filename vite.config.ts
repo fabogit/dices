@@ -252,6 +252,7 @@ export default defineConfig(({ mode }) => ({
         'src/three/geometries.ts',
         'src/three/DiceArena3D.ts',
         'src/ui/state/rollState.svelte.ts',
+        'src/ui/state/announcements.ts',
         'src/ui/primitives/**/*.svelte',
         'src/ui/{containers,layout,controls,arena,history,quick,series}/*.svelte',
       ],

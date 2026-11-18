@@ -28,6 +28,16 @@ import {
 } from '../../core/limits';
 import { LocalCryptoRollProvider, type IRollProvider } from '../../core/provider';
 import type { DiceArena3D } from '../../three/DiceArena3D';
+import {
+  HISTORY_CLEARED_ANNOUNCEMENT,
+  QUICK_FEED_CLEARED_ANNOUNCEMENT,
+  SERIES_LOCKED_ANNOUNCEMENT,
+  modeSwitchedAnnouncement,
+  quickRollAnnouncement,
+  seriesCompleteAnnouncement,
+  seriesResetAnnouncement,
+  seriesRoundAnnouncement,
+} from './announcements';
 
 export interface SeriesState {
   id: string;
@@ -236,8 +246,7 @@ export class RollState {
       }
     }
     this.mode = mode;
-    this.announcerMessage =
-      mode === 'quick' ? 'Switched to Quick Roll mode.' : 'Switched to Series mode.';
+    this.announcerMessage = modeSwitchedAnnouncement(mode);
   }
 
   // Arena attachment
@@ -252,7 +261,7 @@ export class RollState {
   // Rejects a change that would silently discard the rounds already rolled
   private rejectWhileSeriesRuns(locked: boolean): boolean {
     if (locked) {
-      this.announcerMessage = 'Series in progress. Reset the series to change the setup.';
+      this.announcerMessage = SERIES_LOCKED_ANNOUNCEMENT;
     }
     return locked;
   }
@@ -363,14 +372,7 @@ export class RollState {
       this.quickRolls = [round, ...this.quickRolls.slice(0, MAX_QUICK_ROLLS - 1)];
 
       if (this.mode === 'quick') {
-        if (round.kind === 'coin') {
-          const sideNames = round.values.map((v) => (v === 1 ? 'Heads' : 'Tails')).join(', ');
-          const outcome =
-            round.roundWinnerSide === 'TIE' ? 'Tied.' : `${round.roundWinnerSide} wins.`;
-          this.announcerMessage = `Quick roll: ${sideNames}. ${outcome}`;
-        } else {
-          this.announcerMessage = `Quick roll: Rolled ${round.values.join(', ')}. Sum: ${round.sum}.`;
-        }
+        this.announcerMessage = quickRollAnnouncement(round);
       }
 
       return round;
@@ -383,7 +385,7 @@ export class RollState {
     if (this.isRolling) return;
     this.quickRolls = [];
     this.quickRollCount = 0;
-    this.announcerMessage = 'Quick roll feed cleared.';
+    this.announcerMessage = QUICK_FEED_CLEARED_ANNOUNCEMENT;
   }
 
   // Series Rolling actions
@@ -425,35 +427,10 @@ export class RollState {
       }
 
       if (this.mode === 'series') {
-        // Generate a11y announcement
-        const roundNum = round.roundIndex + 1;
-        let roundAnnounce = '';
-        if (round.kind === 'coin') {
-          const sideNames = round.values.map((v) => (v === 1 ? 'Heads' : 'Tails')).join(', ');
-          const outcome =
-            round.roundWinnerSide === 'TIE'
-              ? 'Round tied.'
-              : `${round.roundWinnerSide} wins round.`;
-          roundAnnounce = `Round ${roundNum} of ${seriesLength}: ${sideNames}. ${outcome}`;
-        } else {
-          roundAnnounce = `Round ${roundNum} of ${seriesLength}: Rolled ${round.values.join(', ')}. Sum: ${round.sum}.`;
-        }
-
-        if (completedSummary) {
-          let seriesAnnounce = '';
-          if (completedSummary.kind === 'coin') {
-            seriesAnnounce = ` Series complete! ${
-              completedSummary.coinSeriesWinner === 'TIE'
-                ? 'Series ended in a tie'
-                : completedSummary.coinSeriesWinner + ' wins series'
-            } with ${completedSummary.headsRoundsWon} Heads rounds to ${completedSummary.tailsRoundsWon} Tails rounds.`;
-          } else {
-            seriesAnnounce = ` Series complete for ${series.playerName}! Total sum: ${completedSummary.totalSum}, Average: ${completedSummary.average.toFixed(1)}, Best round: ${completedSummary.bestRoundIndex + 1}.`;
-          }
-          this.announcerMessage = roundAnnounce + seriesAnnounce;
-        } else {
-          this.announcerMessage = roundAnnounce;
-        }
+        const roundAnnounce = seriesRoundAnnouncement(round, seriesLength);
+        this.announcerMessage = completedSummary
+          ? `${roundAnnounce} ${seriesCompleteAnnouncement(completedSummary)}`
+          : roundAnnounce;
       }
 
       return round;
@@ -520,13 +497,13 @@ export class RollState {
     this.skipAnimation();
     this.series = this.createSeriesState();
     if (options.announce !== false) {
-      this.announcerMessage = `Series reset for ${this.activePlayer.name}. Ready to roll.`;
+      this.announcerMessage = seriesResetAnnouncement(this.activePlayer.name);
     }
   }
 
   clearHistory(): void {
     this.history = [];
     this.saveState();
-    this.announcerMessage = 'Roll history cleared.';
+    this.announcerMessage = HISTORY_CLEARED_ANNOUNCEMENT;
   }
 }
