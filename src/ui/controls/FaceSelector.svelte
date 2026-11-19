@@ -70,21 +70,6 @@
 </fieldset>
 
 <style>
-  .field-group {
-    display: flex;
-    flex-direction: column;
-    gap: 0.5rem;
-    border: none;
-    padding: 0;
-    margin: 0;
-  }
-
-  .field-label {
-    font-size: 0.875rem;
-    font-weight: 600;
-    color: var(--text-body);
-  }
-
   .faces-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(88px, 1fr));

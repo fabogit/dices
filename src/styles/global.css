@@ -28,30 +28,22 @@ body {
   backdrop-filter: blur(8px);
 }
 
-.collapse-toggle-btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.35rem;
-  padding: 0.25rem 0.6rem;
-  min-block-size: 28px;
-  background: var(--surface-elevated);
-  border: 1px solid var(--border-subtle);
-  border-radius: 0.375rem;
-  color: var(--text-secondary);
-  font-size: 0.75rem;
+/* Form field wrapper and label shared by FaceSelector (fieldset/legend) and RangeStepper
+   (div/label). No ancestor or sibling rule targets these elements, and UA defaults cannot win
+   over author styles, so the global (0,1,0) copy behaves like the former scoped (0,2,0) ones. */
+.field-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  border: none;
+  padding: 0;
+  margin: 0;
+}
+
+.field-label {
+  font-size: 0.875rem;
   font-weight: 600;
-  cursor: pointer;
-  transition: all 0.15s ease;
-}
-
-.collapse-toggle-btn:hover {
-  background: var(--surface-hover);
-  color: var(--text-heading);
-}
-
-.collapse-toggle-btn .chevron {
-  font-size: 0.85rem;
-  color: var(--accent-blue);
+  color: var(--text-body);
 }
 
 .skip-link:focus-visible {
