@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.1.7](https://github.com/fabogit/dices/compare/v1.1.6...v1.1.7) (2026-11-19)
+
+
+### Refactoring
+
+* **styles:** replace raw colour literals with tokens and dedupe field styles ([#102](https://github.com/fabogit/dices/issues/102)) ([8f4890e](https://github.com/fabogit/dices/commit/8f4890edc0bc6cc68a8bd44e68f36b4217a124b0))
+
 ## [1.1.6](https://github.com/fabogit/dices/compare/v1.1.5...v1.1.6) (2026-11-18)
 
 
