@@ -98,7 +98,7 @@
     flex-wrap: wrap;
     gap: 1rem;
     padding: 0.85rem 1.5rem;
-    background: rgba(17, 24, 39, 0.9);
+    background: var(--color-gray-900-a90);
     border-bottom: 1px solid var(--border-color);
     backdrop-filter: blur(12px);
     position: sticky;

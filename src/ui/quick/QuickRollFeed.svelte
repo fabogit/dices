@@ -139,7 +139,7 @@
     justify-content: space-between;
     align-items: center;
     padding: 0.5rem 0.75rem;
-    border-bottom: 1px solid rgba(55, 65, 81, 0.4);
+    border-bottom: 1px solid var(--color-gray-700-a40);
     font-size: 0.825rem;
   }
 
@@ -195,12 +195,12 @@
     border-radius: 0.25rem;
     font-size: 0.72rem;
     font-weight: 700;
-    background: rgba(56, 189, 248, 0.2);
+    background: var(--color-sky-400-a20);
     color: var(--accent-blue);
   }
 
   .feed-outcome.tie {
-    background: rgba(156, 163, 175, 0.2);
+    background: var(--color-gray-400-a20);
     color: var(--text-secondary);
   }
 

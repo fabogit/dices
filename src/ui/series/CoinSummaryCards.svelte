@@ -75,13 +75,13 @@
   }
 
   .heads-card {
-    background: rgba(234, 179, 8, 0.1);
-    border-color: rgba(234, 179, 8, 0.3);
+    background: var(--color-yellow-500-a10);
+    border-color: var(--color-yellow-500-a30);
   }
 
   .tails-card {
-    background: rgba(148, 163, 184, 0.1);
-    border-color: rgba(148, 163, 184, 0.3);
+    background: var(--color-slate-400-a10);
+    border-color: var(--color-slate-400-a30);
   }
 
   .card-icon {
@@ -136,7 +136,7 @@
 
   .winner-banner {
     padding: 0.65rem;
-    background: rgba(30, 41, 59, 0.9);
+    background: var(--color-slate-800-a90);
     border: 1px solid var(--accent-blue);
     border-radius: 0.5rem;
     text-align: center;

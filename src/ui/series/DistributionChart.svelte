@@ -187,7 +187,7 @@
     background: var(--color-amber-500);
     z-index: 2;
     transform: translateX(-50%);
-    box-shadow: 0 0 4px rgba(245, 158, 11, 0.8);
+    box-shadow: 0 0 4px var(--color-amber-500-a80);
   }
 
   .dist-stats {

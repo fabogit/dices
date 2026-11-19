@@ -98,7 +98,7 @@
     padding: 0.5rem 0.65rem;
     min-block-size: 38px;
     background: var(--surface-elevated);
-    border: 1px solid rgba(156, 163, 175, 0.25);
+    border: 1px solid var(--color-gray-400-a25);
     border-radius: 0.5rem;
     color: var(--text-light);
     font-size: 0.825rem;
@@ -114,7 +114,7 @@
   }
 
   .face-badge-button.selected {
-    background: rgba(30, 41, 59, 0.9);
+    background: var(--color-slate-800-a90);
     border-color: var(--badge-accent, var(--accent-blue));
     box-shadow: 0 0 0 1px var(--badge-accent, var(--accent-blue));
     color: var(--text-white);

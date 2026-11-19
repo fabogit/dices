@@ -89,8 +89,12 @@
     flex-direction: column;
     gap: 0.4rem;
     padding: 0.75rem 0.85rem;
-    background: linear-gradient(135deg, rgba(30, 41, 59, 0.85) 0%, rgba(17, 24, 39, 0.95) 100%);
-    border: 1px solid rgba(56, 189, 248, 0.3);
+    background: linear-gradient(
+      135deg,
+      var(--color-slate-800-a85) 0%,
+      var(--color-gray-900-a95) 100%
+    );
+    border: 1px solid var(--color-sky-400-a30);
     border-radius: 0.5rem;
   }
 
@@ -128,27 +132,27 @@
   }
 
   .reliability-solid {
-    background: rgba(16, 185, 129, 0.2);
+    background: var(--color-emerald-500-a20);
     color: var(--color-emerald);
-    border: 1px solid rgba(16, 185, 129, 0.4);
+    border: 1px solid var(--color-emerald-500-a40);
   }
 
   .reliability-moderate {
-    background: rgba(245, 158, 11, 0.2);
+    background: var(--color-amber-500-a20);
     color: var(--color-amber);
-    border: 1px solid rgba(245, 158, 11, 0.4);
+    border: 1px solid var(--color-amber-500-a40);
   }
 
   .reliability-small {
-    background: rgba(239, 68, 68, 0.15);
+    background: var(--color-red-500-a15);
     color: var(--color-danger-light);
-    border: 1px solid rgba(239, 68, 68, 0.3);
+    border: 1px solid var(--color-red-500-a30);
   }
 
   .reliability-empty {
-    background: rgba(107, 114, 128, 0.2);
+    background: var(--color-gray-500-a20);
     color: var(--text-secondary);
-    border: 1px solid rgba(107, 114, 128, 0.4);
+    border: 1px solid var(--color-gray-500-a40);
   }
 
   .insight-text {

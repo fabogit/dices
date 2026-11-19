@@ -127,7 +127,7 @@
 
   .rounds-table td {
     padding: 0.45rem 0.65rem;
-    border-bottom: 1px solid rgba(55, 65, 81, 0.4);
+    border-bottom: 1px solid var(--color-gray-700-a40);
     color: var(--text-body);
   }
 
@@ -138,7 +138,7 @@
     z-index: 1;
     font-weight: 600;
     color: var(--accent-blue);
-    border-bottom: 1px solid rgba(55, 65, 81, 0.4);
+    border-bottom: 1px solid var(--color-gray-700-a40);
   }
 
   .empty-table-cell {
@@ -153,12 +153,12 @@
     border-radius: 0.25rem;
     font-size: 0.75rem;
     font-weight: 700;
-    background: rgba(56, 189, 248, 0.2);
+    background: var(--color-sky-400-a20);
     color: var(--accent-blue);
   }
 
   .outcome-pill.tie {
-    background: rgba(156, 163, 175, 0.2);
+    background: var(--color-gray-400-a20);
     color: var(--text-secondary);
   }
 

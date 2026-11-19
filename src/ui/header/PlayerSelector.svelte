@@ -81,7 +81,7 @@
 
   .btn-add-player:hover:not(:disabled) {
     border-color: var(--accent-blue);
-    background: rgba(56, 189, 248, 0.1);
+    background: var(--color-sky-400-a10);
   }
 
   .player-select:disabled,

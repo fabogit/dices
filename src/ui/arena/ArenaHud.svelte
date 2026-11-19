@@ -103,7 +103,7 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    background: rgba(3, 7, 18, 0.85);
+    background: var(--color-gray-950-a85);
     backdrop-filter: blur(4px);
     z-index: 20;
     padding: 1.5rem;
@@ -158,8 +158,8 @@
     align-items: center;
     gap: 0.5rem;
     padding: 0.35rem 0.75rem;
-    background: rgba(17, 24, 39, 0.8);
-    border: 1px solid rgba(156, 163, 175, 0.25);
+    background: var(--color-gray-900-a80);
+    border: 1px solid var(--color-gray-400-a25);
     border-radius: 9999px;
     font-size: 0.8rem;
     font-weight: 600;
@@ -184,9 +184,9 @@
   }
 
   .instant-badge {
-    background: rgba(124, 58, 237, 0.25);
+    background: var(--color-violet-600-a25);
     border-color: var(--accent-violet);
-    color: #c4b5fd;
+    color: var(--color-violet-300);
   }
 
   .hud-bottom {
@@ -199,8 +199,8 @@
     align-items: center;
     gap: 0.75rem;
     padding: 0.5rem 1rem;
-    background: rgba(17, 24, 39, 0.85);
-    border: 1px solid rgba(156, 163, 175, 0.3);
+    background: var(--color-gray-900-a85);
+    border: 1px solid var(--color-gray-400-a30);
     border-radius: 0.5rem;
     backdrop-filter: blur(6px);
   }
@@ -230,13 +230,13 @@
   }
 
   .hud-value-badge.coin.heads {
-    background: rgba(234, 179, 8, 0.25);
+    background: var(--color-yellow-500-a25);
     border: 1px solid var(--color-yellow-500);
     color: var(--color-gold-pale);
   }
 
   .hud-value-badge.coin.tails {
-    background: rgba(148, 163, 184, 0.25);
+    background: var(--color-slate-400-a25);
     border: 1px solid var(--text-muted);
     color: var(--text-bright);
   }

@@ -43,9 +43,9 @@
   }
 
   .instant-toggle-btn.active {
-    background: rgba(124, 58, 237, 0.3);
+    background: var(--color-violet-600-a30);
     border-color: var(--accent-violet);
-    color: #f5f3ff;
+    color: var(--color-violet-50);
   }
 
   .toggle-icon {
