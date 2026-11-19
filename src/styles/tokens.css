@@ -1,32 +1,70 @@
+/*
+ * Design tokens: the only place where colour values are written.
+ *
+ * Colours are built in three layers:
+ *   1. Palette channels (`--rgb-<palette>-<shade>: R, G, B;`): the bare channels of every
+ *      colour that is also used with transparency, named after the Tailwind palette, not a role.
+ *   2. Semantic tokens (`--surface-*`, `--text-*`, `--accent-*`, ...): derive from a channel
+ *      (`rgb(var(--rgb-...))`) when one exists; colours never used with transparency stay hex.
+ *      A colour is written once: never as both a hex and a channel triple.
+ *   3. Alpha variants (`--color-<palette>-<shade>-a<alpha x 100>`): one token per
+ *      (colour, alpha) pair a component uses, e.g. `--color-sky-400-a15` is 0.15 alpha.
+ *
+ * Rule: new colours are added here. Component styles (`.svelte` files) and the other files in
+ * src/styles reference tokens only; `pnpm run check:style-colors` fails on raw colour literals,
+ * including `rgba(var(--rgb-...), a)` written outside this file.
+ */
 :root {
   color-scheme: dark;
 
   /* Typography */
   font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
 
+  /* Palette channels (layer 1) */
+  --rgb-black: 0, 0, 0;
+  --rgb-white: 255, 255, 255;
+  --rgb-gray-400: 156, 163, 175;
+  --rgb-gray-500: 107, 114, 128;
+  --rgb-gray-600: 75, 85, 99;
+  --rgb-gray-700: 55, 65, 81;
+  --rgb-gray-800: 31, 41, 55;
+  --rgb-gray-900: 17, 24, 39;
+  --rgb-gray-950: 3, 7, 18;
+  --rgb-slate-400: 148, 163, 184;
+  --rgb-slate-800: 30, 41, 59;
+  --rgb-sky-400: 56, 189, 248;
+  --rgb-sky-600: 2, 132, 199;
+  --rgb-sky-700: 3, 105, 161;
+  --rgb-violet-600: 124, 58, 237;
+  --rgb-yellow-500: 234, 179, 8;
+  --rgb-yellow-600: 202, 138, 4;
+  --rgb-amber-500: 245, 158, 11;
+  --rgb-emerald-500: 16, 185, 129;
+  --rgb-red-500: 239, 68, 68;
+
   /* Core Surfaces & Backgrounds */
   --bg-dark: #090d16;
-  --surface-deepest: #030712;
+  --surface-deepest: rgb(var(--rgb-gray-950));
   --surface-footer: #0f1523;
   --surface-deep: #0f172a;
-  --surface-dark: #111827;
-  --surface-slate: #1e293b;
-  --surface-elevated: #1f2937;
-  --surface-hover: #374151;
-  --surface-panel: rgba(17, 24, 39, 0.75);
+  --surface-dark: rgb(var(--rgb-gray-900));
+  --surface-slate: rgb(var(--rgb-slate-800));
+  --surface-elevated: rgb(var(--rgb-gray-800));
+  --surface-hover: rgb(var(--rgb-gray-700));
+  --surface-panel: rgba(var(--rgb-gray-900), 0.75);
 
   /* Borders */
-  --border-color: rgba(75, 85, 99, 0.4);
-  --border-subtle: #374151;
-  --border-muted: #4b5563;
+  --border-color: rgba(var(--rgb-gray-600), 0.4);
+  --border-subtle: rgb(var(--rgb-gray-700));
+  --border-muted: rgb(var(--rgb-gray-600));
   --border-slate: #475569;
-  --border-dashed: #6b7280;
+  --border-dashed: rgb(var(--rgb-gray-500));
 
   /* Brand & Accent */
-  --primary-blue: #0369a1;
+  --primary-blue: rgb(var(--rgb-sky-700));
   --primary-blue-dark: #075985;
-  --accent-sky: #0284c7;
-  --accent-blue: #38bdf8;
+  --accent-sky: rgb(var(--rgb-sky-600));
+  --accent-blue: rgb(var(--rgb-sky-400));
   --accent-blue-soft: #60a5fa;
   --accent-blue-light: #7dd3fc;
   --accent-blue-pale: #93c5fd;
@@ -34,29 +72,93 @@
   --accent-violet: #a78bfa;
 
   /* Text Hierarchy */
-  --text-white: #ffffff;
+  --text-white: rgb(var(--rgb-white));
   --text-primary: #f9fafb;
   --text-heading: #f3f4f6;
   --text-bright: #f1f5f9;
   --text-body: #e5e7eb;
   --text-light: #d1d5db;
   --text-soft: #cbd5e1;
-  --text-secondary: #9ca3af;
-  --text-muted: #94a3b8;
+  --text-secondary: rgb(var(--rgb-gray-400));
+  --text-muted: rgb(var(--rgb-slate-400));
 
   /* Status & Semantic Feedback */
   --color-gold-pale: #fef08a;
   --color-gold-light: #fde047;
   --color-gold: #facc15;
   --color-amber: #fbbf24;
-  --color-amber-500: #f59e0b;
-  --color-yellow-500: #eab308;
-  --color-yellow-600: #ca8a04;
+  --color-amber-500: rgb(var(--rgb-amber-500));
+  --color-yellow-500: rgb(var(--rgb-yellow-500));
+  --color-yellow-600: rgb(var(--rgb-yellow-600));
   --color-amber-600: #d97706;
   --color-brown-deep: #422006;
   --color-emerald: #34d399;
-  --color-emerald-500: #10b981;
+  --color-emerald-500: rgb(var(--rgb-emerald-500));
   --color-danger-light: #fca5a5;
   --color-danger: #f87171;
-  --color-danger-bold: #ef4444;
+  --color-danger-bold: rgb(var(--rgb-red-500));
+
+  /* Palette colours without a semantic role */
+  --color-violet-50: #f5f3ff;
+  --color-violet-300: #c4b5fd;
+  --color-sky-900: #0c4a6e;
+  --color-slate-700: #334155;
+  --color-rose-500: #f43f5e;
+  --color-rose-700: #be123c;
+
+  /* Alpha variants (layer 3), grouped by palette */
+  --color-black-a30: rgba(var(--rgb-black), 0.3);
+  --color-black-a50: rgba(var(--rgb-black), 0.5);
+  --color-white-a20: rgba(var(--rgb-white), 0.2);
+
+  --color-gray-400-a20: rgba(var(--rgb-gray-400), 0.2);
+  --color-gray-400-a25: rgba(var(--rgb-gray-400), 0.25);
+  --color-gray-400-a30: rgba(var(--rgb-gray-400), 0.3);
+  --color-gray-500-a20: rgba(var(--rgb-gray-500), 0.2);
+  --color-gray-500-a40: rgba(var(--rgb-gray-500), 0.4);
+  --color-gray-600-a35: rgba(var(--rgb-gray-600), 0.35);
+  --color-gray-700-a40: rgba(var(--rgb-gray-700), 0.4);
+  --color-gray-800-a70: rgba(var(--rgb-gray-800), 0.7);
+  --color-gray-900-a80: rgba(var(--rgb-gray-900), 0.8);
+  --color-gray-900-a85: rgba(var(--rgb-gray-900), 0.85);
+  --color-gray-900-a90: rgba(var(--rgb-gray-900), 0.9);
+  --color-gray-900-a95: rgba(var(--rgb-gray-900), 0.95);
+  --color-gray-950-a75: rgba(var(--rgb-gray-950), 0.75);
+  --color-gray-950-a85: rgba(var(--rgb-gray-950), 0.85);
+
+  --color-slate-400-a10: rgba(var(--rgb-slate-400), 0.1);
+  --color-slate-400-a15: rgba(var(--rgb-slate-400), 0.15);
+  --color-slate-400-a25: rgba(var(--rgb-slate-400), 0.25);
+  --color-slate-400-a30: rgba(var(--rgb-slate-400), 0.3);
+  --color-slate-800-a85: rgba(var(--rgb-slate-800), 0.85);
+  --color-slate-800-a90: rgba(var(--rgb-slate-800), 0.9);
+
+  --color-sky-400-a10: rgba(var(--rgb-sky-400), 0.1);
+  --color-sky-400-a15: rgba(var(--rgb-sky-400), 0.15);
+  --color-sky-400-a20: rgba(var(--rgb-sky-400), 0.2);
+  --color-sky-400-a30: rgba(var(--rgb-sky-400), 0.3);
+  --color-sky-600-a40: rgba(var(--rgb-sky-600), 0.4);
+  --color-sky-700-a35: rgba(var(--rgb-sky-700), 0.35);
+
+  --color-violet-600-a25: rgba(var(--rgb-violet-600), 0.25);
+  --color-violet-600-a30: rgba(var(--rgb-violet-600), 0.3);
+
+  --color-yellow-500-a10: rgba(var(--rgb-yellow-500), 0.1);
+  --color-yellow-500-a15: rgba(var(--rgb-yellow-500), 0.15);
+  --color-yellow-500-a20: rgba(var(--rgb-yellow-500), 0.2);
+  --color-yellow-500-a25: rgba(var(--rgb-yellow-500), 0.25);
+  --color-yellow-500-a30: rgba(var(--rgb-yellow-500), 0.3);
+  --color-yellow-600-a15: rgba(var(--rgb-yellow-600), 0.15);
+
+  --color-amber-500-a20: rgba(var(--rgb-amber-500), 0.2);
+  --color-amber-500-a40: rgba(var(--rgb-amber-500), 0.4);
+  --color-amber-500-a80: rgba(var(--rgb-amber-500), 0.8);
+
+  --color-emerald-500-a20: rgba(var(--rgb-emerald-500), 0.2);
+  --color-emerald-500-a40: rgba(var(--rgb-emerald-500), 0.4);
+
+  --color-red-500-a15: rgba(var(--rgb-red-500), 0.15);
+  --color-red-500-a20: rgba(var(--rgb-red-500), 0.2);
+  --color-red-500-a30: rgba(var(--rgb-red-500), 0.3);
+  --color-red-500-a40: rgba(var(--rgb-red-500), 0.4);
 }
