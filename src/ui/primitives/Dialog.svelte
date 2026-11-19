@@ -65,7 +65,7 @@
   }
 
   .dialog-root::backdrop {
-    background: rgba(3, 7, 18, 0.75);
+    background: var(--color-gray-950-a75);
     backdrop-filter: blur(4px);
   }
 
@@ -77,7 +77,7 @@
     padding: 1.5rem;
     width: 100%;
     max-width: 360px;
-    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
+    box-shadow: 0 10px 25px var(--color-black-a50);
   }
 
   .dialog-title {

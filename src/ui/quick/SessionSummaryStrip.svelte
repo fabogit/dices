@@ -102,21 +102,21 @@
   }
 
   .pill-heads {
-    background: rgba(234, 179, 8, 0.15);
+    background: var(--color-yellow-500-a15);
     color: var(--color-gold-light);
-    border: 1px solid rgba(234, 179, 8, 0.3);
+    border: 1px solid var(--color-yellow-500-a30);
   }
 
   .pill-tails {
-    background: rgba(148, 163, 184, 0.15);
+    background: var(--color-slate-400-a15);
     color: var(--text-soft);
-    border: 1px solid rgba(148, 163, 184, 0.3);
+    border: 1px solid var(--color-slate-400-a30);
   }
 
   .pill-verdict {
-    background: rgba(56, 189, 248, 0.15);
+    background: var(--color-sky-400-a15);
     color: var(--accent-blue);
-    border: 1px solid rgba(56, 189, 248, 0.3);
+    border: 1px solid var(--color-sky-400-a30);
   }
 
   .pill-avg {
@@ -126,15 +126,15 @@
   }
 
   .pill-crit {
-    background: rgba(234, 179, 8, 0.15);
+    background: var(--color-yellow-500-a15);
     color: var(--color-gold);
-    border: 1px solid rgba(234, 179, 8, 0.3);
+    border: 1px solid var(--color-yellow-500-a30);
   }
 
   .pill-min {
-    background: rgba(239, 68, 68, 0.15);
+    background: var(--color-red-500-a15);
     color: var(--color-danger);
-    border: 1px solid rgba(239, 68, 68, 0.3);
+    border: 1px solid var(--color-red-500-a30);
   }
 
   .session-strip-insight {

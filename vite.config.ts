@@ -151,7 +151,7 @@ export default defineConfig(({ mode }) => ({
     },
     overrides: [
       {
-        files: ['src/**/*.{test,spec}.{js,ts}'],
+        files: ['src/**/*.{test,spec}.{js,ts}', 'scripts/__tests__/*.test.ts'],
         plugins: ['vitest'],
         rules: {
           'typescript/no-unsafe-type-assertion': 'off',
@@ -226,7 +226,7 @@ export default defineConfig(({ mode }) => ({
   },
   test: {
     environment: 'happy-dom',
-    include: ['src/**/*.{test,spec}.{js,ts}'],
+    include: ['src/**/*.{test,spec}.{js,ts}', 'scripts/__tests__/*.test.ts'],
     exclude: ['e2e/**', 'node_modules/**', 'dist/**'],
     coverage: {
       provider: 'v8',

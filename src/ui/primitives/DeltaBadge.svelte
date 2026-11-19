@@ -45,12 +45,12 @@
   }
 
   .delta-tag.positive {
-    background: rgba(16, 185, 129, 0.2);
+    background: var(--color-emerald-500-a20);
     color: var(--color-emerald);
   }
 
   .delta-tag.negative {
-    background: rgba(239, 68, 68, 0.2);
+    background: var(--color-red-500-a20);
     color: var(--color-danger);
   }
 
@@ -91,11 +91,11 @@
 
   .session-pill.pill-delta.pos {
     color: var(--color-emerald);
-    border-color: rgba(16, 185, 129, 0.4);
+    border-color: var(--color-emerald-500-a40);
   }
 
   .session-pill.pill-delta.neg {
     color: var(--color-danger);
-    border-color: rgba(239, 68, 68, 0.4);
+    border-color: var(--color-red-500-a40);
   }
 </style>

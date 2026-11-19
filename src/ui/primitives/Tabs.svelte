@@ -110,7 +110,7 @@
 
   .panel-tab-btn:hover {
     color: var(--text-primary);
-    background: rgba(31, 41, 55, 0.7);
+    background: var(--color-gray-800-a70);
   }
 
   .panel-tab-btn.active {
@@ -129,7 +129,7 @@
   }
 
   .panel-tab-btn.active .tab-badge {
-    background: rgba(255, 255, 255, 0.2);
+    background: var(--color-white-a20);
     color: var(--text-white);
   }
 

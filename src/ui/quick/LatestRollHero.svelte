@@ -125,9 +125,9 @@
       var(--surface-slate) 0%,
       var(--surface-dark) 100%
     );
-    border: 1px solid rgba(56, 189, 248, 0.3);
+    border: 1px solid var(--color-sky-400-a30);
     border-radius: 0.75rem;
-    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+    box-shadow: 0 4px 16px var(--color-black-a30);
   }
 
   .hero-top-row {
@@ -203,13 +203,13 @@
 
   .die-value-chip.crit-max {
     border-color: var(--color-gold);
-    background: rgba(234, 179, 8, 0.2);
+    background: var(--color-yellow-500-a20);
     color: var(--color-gold-pale);
   }
 
   .die-value-chip.crit-min {
     border-color: var(--color-danger-bold);
-    background: rgba(239, 68, 68, 0.2);
+    background: var(--color-red-500-a20);
     color: var(--color-danger-light);
   }
 
@@ -285,13 +285,13 @@
   }
 
   .coin-chip.heads {
-    background: rgba(234, 179, 8, 0.25);
+    background: var(--color-yellow-500-a25);
     border: 1px solid var(--color-yellow-500);
     color: var(--color-gold-pale);
   }
 
   .coin-chip.tails {
-    background: rgba(148, 163, 184, 0.25);
+    background: var(--color-slate-400-a25);
     border: 1px solid var(--text-muted);
     color: var(--text-bright);
   }

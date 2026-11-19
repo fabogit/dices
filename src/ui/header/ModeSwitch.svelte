@@ -71,7 +71,7 @@
   .mode-btn.active {
     background: var(--primary-blue);
     color: var(--text-white);
-    box-shadow: 0 2px 6px rgba(2, 132, 199, 0.4);
+    box-shadow: 0 2px 6px var(--color-sky-600-a40);
   }
 
   button:focus-visible {

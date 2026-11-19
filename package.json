@@ -14,12 +14,13 @@
     "test:e2e": "playwright test",
     "test:e2e:guard": "node scripts/check-e2e-selectors.mjs",
     "check:playwright-version": "node scripts/check-playwright-version.mjs",
+    "check:style-colors": "node scripts/check-style-colors.mjs",
     "lint": "vp lint",
     "format": "vp fmt --write",
     "format:check": "vp fmt --check",
     "check:types": "tsc --noEmit -p tsconfig.e2e.json && tsc --noEmit -p scripts/tsconfig.json",
     "check:svelte": "svelte-check --tsconfig ./tsconfig.json --fail-on-warnings",
-    "check": "pnpm run check:types && pnpm run check:svelte && vp check"
+    "check": "pnpm run check:types && pnpm run check:style-colors && pnpm run check:svelte && vp check"
   },
   "dependencies": {
     "three": "^0.187.0"

@@ -80,7 +80,7 @@
     flex-direction: column;
     gap: 0.5rem;
     padding-bottom: 0.75rem;
-    border-bottom: 1px solid rgba(75, 85, 99, 0.35);
+    border-bottom: 1px solid var(--color-gray-600-a35);
   }
 
   .leaderboard-header {
@@ -151,15 +151,15 @@
   }
 
   .luck-badge.luck-hot {
-    background: rgba(245, 158, 11, 0.2);
+    background: var(--color-amber-500-a20);
     color: var(--color-amber);
-    border: 1px solid rgba(245, 158, 11, 0.4);
+    border: 1px solid var(--color-amber-500-a40);
   }
 
   .luck-badge.luck-cold {
-    background: rgba(56, 189, 248, 0.15);
+    background: var(--color-sky-400-a15);
     color: var(--accent-blue);
-    border: 1px solid rgba(56, 189, 248, 0.3);
+    border: 1px solid var(--color-sky-400-a30);
   }
 
   .player-metrics-row {
