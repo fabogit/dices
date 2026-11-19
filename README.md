@@ -297,10 +297,10 @@ pnpm run preview
 ### Verification & Testing
 
 ```bash
-# Run the full static gate: tsc (e2e project), svelte-check, and vp check (oxfmt + oxlint + type-check)
+# Run the full static gate: tsc (e2e project + scripts), the style colour guard, svelte-check, and vp check (oxfmt + oxlint + type-check)
 pnpm run check
 
-# Execute comprehensive Vitest unit/component test suite (253 tests across core, formatters, 3D, state, and UI components)
+# Execute comprehensive Vitest unit/component test suite (326 tests across core, formatters, 3D, state, and UI components)
 pnpm test
 
 # Run Vitest test suite with V8 code coverage and per-area threshold enforcement

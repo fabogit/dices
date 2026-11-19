@@ -6,5 +6,5 @@
     "checkJs": true,
     "types": ["node"]
   },
-  "include": ["*.mjs"]
+  "include": ["*.mjs", "__tests__/*.ts"]
 }
